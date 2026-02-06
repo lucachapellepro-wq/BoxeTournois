@@ -26,9 +26,11 @@ Votre application est maintenant prête pour le déploiement ! Voici ce qui a é
 3. **Configurer les variables d'environnement**
    - Dans "Environment Variables", ajoute :
      ```
-     DATABASE_URL=postgresql://postgres:cM7rKq1fNFw3jFkX@db.lluhhqolvlyfdamafxuf.supabase.co:5432/postgres
+     DATABASE_URL=postgresql://postgres:cM7rKq1fNFw3jFkX@db.lluhhqolvlyfdamafxuf.supabase.co:6543/postgres?pgbouncer=true&connection_limit=1
      ```
-   - ⚠️ **Important** : Copie exactement cette URL (elle contient ton mot de passe Supabase)
+   - ⚠️ **Important** :
+     - Utilise le port **6543** (connection pooler) pour Vercel
+     - Les paramètres `pgbouncer=true` et `connection_limit=1` sont nécessaires pour les environnements serverless
 
 4. **Déployer**
    - Clique sur "Deploy"
@@ -49,7 +51,7 @@ vercel
 
 # Ajouter la variable d'environnement
 vercel env add DATABASE_URL
-# Colle: postgresql://postgres:cM7rKq1fNFw3jFkX@db.lluhhqolvlyfdamafxuf.supabase.co:5432/postgres
+# Colle: postgresql://postgres:cM7rKq1fNFw3jFkX@db.lluhhqolvlyfdamafxuf.supabase.co:6543/postgres?pgbouncer=true&connection_limit=1
 
 # Redéployer avec les variables
 vercel --prod
@@ -68,10 +70,25 @@ Vercel déploiera automatiquement la nouvelle version ! 🎉
 
 ## 🗄️ Informations Supabase
 
+### Connexions
+
+**Pour développement local** (port 5432) :
+```
+postgresql://postgres:cM7rKq1fNFw3jFkX@db.lluhhqolvlyfdamafxuf.supabase.co:5432/postgres
+```
+
+**Pour Vercel/Production** (port 6543 avec pooler) :
+```
+postgresql://postgres:cM7rKq1fNFw3jFkX@db.lluhhqolvlyfdamafxuf.supabase.co:6543/postgres?pgbouncer=true&connection_limit=1
+```
+
+### Détails
 - **Host**: db.lluhhqolvlyfdamafxuf.supabase.co
 - **Database**: postgres
 - **User**: postgres
 - **Password**: cM7rKq1fNFw3jFkX
+- **Port Direct**: 5432 (local)
+- **Port Pooler**: 6543 (Vercel/serverless)
 
 Tu peux gérer ta base de données sur [supabase.com](https://supabase.com) → Ton projet → "Table Editor"
 

@@ -1,0 +1,127 @@
+import { Match } from "@/types/match";
+import { GANTS_COULEUR } from "@/lib/categories";
+
+interface MatchCardEditableProps {
+  match: Match;
+}
+
+export function MatchCardEditable({ match }: MatchCardEditableProps) {
+  const getGantColor = (gant: string) => {
+    return GANTS_COULEUR.find((g) => g.value === gant)?.color || "#666";
+  };
+
+  const getGantLabel = (gant: string) => {
+    return GANTS_COULEUR.find((g) => g.value === gant)?.label || gant;
+  };
+
+  // Si les deux boxeurs sont null (match de prévu complet - finale, demi, etc.)
+  if (!match.boxeur1 && !match.boxeur2) {
+    return (
+      <div className="match-card match-tbd">
+        <div className="match-waiting">
+          <div className="match-waiting-icon">⏳</div>
+          <div className="match-waiting-text">Match de prévu</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Si boxeur2 est null (boxeur seul, pas d'adversaire)
+  if (!match.boxeur2) {
+    return (
+      <div className="match-card">
+        {match.boxeur1 && (
+          <div className="match-fighter">
+            <div className="match-fighter-name">
+              <strong>{match.boxeur1.nom.toUpperCase()}</strong> {match.boxeur1.prenom}
+            </div>
+            <div className="match-fighter-info">
+              <span className="badge badge-club">{match.boxeur1.club.nom}</span>
+              <span className="badge badge-sexe">{match.boxeur1.sexe}</span>
+              <span className="badge">{match.boxeur1.poids}kg</span>
+              <span
+                className="badge-gant"
+                style={{
+                  borderColor: getGantColor(match.boxeur1.gant),
+                  backgroundColor: `${getGantColor(match.boxeur1.gant)}20`,
+                  color: getGantColor(match.boxeur1.gant),
+                }}
+              >
+                <span
+                  className="gant-dot"
+                  style={{ backgroundColor: getGantColor(match.boxeur1.gant) }}
+                ></span>
+                {getGantLabel(match.boxeur1.gant)}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Match normal avec 2 boxeurs
+  const isBoxeur1Winner = match.winnerId === match.boxeur1Id;
+  const isBoxeur2Winner = match.winnerId === match.boxeur2Id;
+
+  return (
+    <div className={`match-card ${match.status === "COMPLETED" ? "match-completed" : ""}`}>
+      {/* Boxeur 1 */}
+      <div className={`match-fighter ${isBoxeur1Winner ? "match-winner" : ""}`}>
+        <div className="match-fighter-name">
+          <strong>{match.boxeur1.nom.toUpperCase()}</strong> {match.boxeur1.prenom}
+          {isBoxeur1Winner && <span className="winner-badge">🏆</span>}
+        </div>
+        <div className="match-fighter-info">
+          <span className="badge badge-club">{match.boxeur1.club.nom}</span>
+          <span className="badge badge-sexe">{match.boxeur1.sexe}</span>
+          <span className="badge">{match.boxeur1.poids}kg</span>
+          <span
+            className="badge-gant"
+            style={{
+              borderColor: getGantColor(match.boxeur1.gant),
+              backgroundColor: `${getGantColor(match.boxeur1.gant)}20`,
+              color: getGantColor(match.boxeur1.gant),
+            }}
+          >
+            <span
+              className="gant-dot"
+              style={{ backgroundColor: getGantColor(match.boxeur1.gant) }}
+            ></span>
+            {getGantLabel(match.boxeur1.gant)}
+          </span>
+        </div>
+      </div>
+
+      <div className="match-vs">VS</div>
+
+      {/* Boxeur 2 */}
+      <div className={`match-fighter ${isBoxeur2Winner ? "match-winner" : ""}`}>
+        <div className="match-fighter-name">
+          <strong>{match.boxeur2.nom.toUpperCase()}</strong> {match.boxeur2.prenom}
+          {isBoxeur2Winner && <span className="winner-badge">🏆</span>}
+        </div>
+        <div className="match-fighter-info">
+          <span className="badge badge-club">{match.boxeur2.club.nom}</span>
+          <span className="badge badge-sexe">{match.boxeur2.sexe}</span>
+          <span className="badge">{match.boxeur2.poids}kg</span>
+          <span
+            className="badge-gant"
+            style={{
+              borderColor: getGantColor(match.boxeur2.gant),
+              backgroundColor: `${getGantColor(match.boxeur2.gant)}20`,
+              color: getGantColor(match.boxeur2.gant),
+            }}
+          >
+            <span
+              className="gant-dot"
+              style={{ backgroundColor: getGantColor(match.boxeur2.gant) }}
+            ></span>
+            {getGantLabel(match.boxeur2.gant)}
+          </span>
+        </div>
+      </div>
+
+    </div>
+  );
+}

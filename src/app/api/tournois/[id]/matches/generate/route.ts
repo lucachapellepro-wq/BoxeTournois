@@ -1,0 +1,175 @@
+import { prisma } from "@/lib/prisma";
+import { generateMatches, linkBracketMatches } from "@/lib/matchGeneration";
+import { NextRequest, NextResponse } from "next/server";
+
+// POST /api/tournois/[id]/matches/generate - Générer tous les matchs
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
+  try {
+    const body = await request.json();
+    const { regenerate } = body;
+
+    const tournoiId = parseInt(id);
+
+    // Vérifier si le tournoi existe
+    const tournoi = await prisma.tournoi.findUnique({
+      where: { id: tournoiId },
+      include: {
+        boxeurs: {
+          include: {
+            boxeur: {
+              include: {
+                club: true,
+              },
+            },
+          },
+        },
+        matches: true,
+      },
+    });
+
+    if (!tournoi) {
+      return NextResponse.json(
+        { error: "Tournoi non trouvé" },
+        { status: 404 }
+      );
+    }
+
+    // Vérifier si des matchs existent déjà
+    if (tournoi.matches.length > 0 && !regenerate) {
+      return NextResponse.json(
+        {
+          error: "Des matchs existent déjà pour ce tournoi",
+          hint: "Utilisez regenerate: true pour les régénérer",
+        },
+        { status: 409 }
+      );
+    }
+
+    // Si régénération, supprimer tous les matchs existants
+    if (regenerate && tournoi.matches.length > 0) {
+      await prisma.match.deleteMany({
+        where: { tournoiId },
+      });
+    }
+
+    // Extraire les boxeurs
+    const boxeurs = tournoi.boxeurs.map((tb) => tb.boxeur);
+
+    if (boxeurs.length === 0) {
+      return NextResponse.json(
+        { error: "Aucun boxeur inscrit au tournoi" },
+        { status: 400 }
+      );
+    }
+
+    // Générer les matchs (logique métier)
+    const matchesData = generateMatches(boxeurs, tournoiId);
+
+    if (matchesData.length === 0) {
+      return NextResponse.json(
+        {
+          message: "Aucun match généré (tous les groupes ont 1 seul boxeur)",
+          matches: [],
+          stats: { total: 0, brackets: 0, pools: 0 },
+        },
+        { status: 200 }
+      );
+    }
+
+    // Créer tous les matchs en transaction
+    const createdMatches = await prisma.$transaction(async (tx) => {
+      // Créer les matchs
+      const matches = await Promise.all(
+        matchesData.map((data) => {
+          // Créer avec les relations connectées
+          const createData: any = {
+            tournoi: { connect: { id: data.tournoiId } },
+            matchType: data.matchType,
+            sexe: data.sexe,
+            categorieAge: data.categorieAge || "",
+            categoriePoids: data.categoriePoids,
+            gant: data.gant || "",
+            categoryDisplay: data.categoryDisplay,
+            displayOrder: data.displayOrder,
+          };
+
+          // Ajouter boxeur1 si présent (peut être null pour TBD)
+          if (data.boxeur1Id) {
+            createData.boxeur1 = { connect: { id: data.boxeur1Id } };
+          }
+
+          // Ajouter boxeur2 si présent
+          if (data.boxeur2Id) {
+            createData.boxeur2 = { connect: { id: data.boxeur2Id } };
+          }
+
+          // Ajouter les champs de bracket si présents
+          if (data.bracketRound) {
+            createData.bracketRound = data.bracketRound;
+            createData.bracketPosition = data.bracketPosition ?? 0;
+          }
+
+          // Ajouter poolName si présent
+          if (data.poolName) {
+            createData.poolName = data.poolName;
+          }
+
+          return tx.match.create({
+            data: createData,
+          });
+        })
+      );
+
+      // Lier les matchs de bracket avec nextMatchId
+      const bracketMatches = matches.filter(
+        (m) => m.matchType === "BRACKET" && m.bracketRound !== null
+      );
+
+      if (bracketMatches.length > 0) {
+        const links = linkBracketMatches(
+          bracketMatches.map((m) => ({
+            id: m.id,
+            bracketRound: m.bracketRound,
+            bracketPosition: m.bracketPosition,
+          }))
+        );
+
+        // Mettre à jour les nextMatchId
+        await Promise.all(
+          links.map((link) =>
+            tx.match.update({
+              where: { id: link.id },
+              data: { nextMatchId: link.nextMatchId },
+            })
+          )
+        );
+      }
+
+      return matches;
+    });
+
+    // Calculer les stats
+    const stats = {
+      total: createdMatches.length,
+      brackets: createdMatches.filter((m) => m.matchType === "BRACKET").length,
+      pools: createdMatches.filter((m) => m.matchType === "POOL").length,
+    };
+
+    return NextResponse.json({
+      message: "Matchs générés avec succès",
+      matches: createdMatches,
+      stats,
+    });
+  } catch (error) {
+    console.error("Erreur génération matchs:", error);
+    return NextResponse.json(
+      { error: "Erreur lors de la génération" },
+      { status: 500 }
+    );
+  }
+}

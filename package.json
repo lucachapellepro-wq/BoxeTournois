@@ -1,0 +1,29 @@
+{
+  "name": "tournoi-boxe",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
+    "db:seed": "tsx prisma/seed.ts",
+    "postinstall": "prisma generate",
+    "vercel-build": "prisma migrate deploy && next build"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.2",
+    "next": "^16.1.6",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "prisma": "^6.19.2",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0"
+  }
+}

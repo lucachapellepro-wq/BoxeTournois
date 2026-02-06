@@ -1,0 +1,117 @@
+// prisma/schema.prisma
+// Base de données PostgreSQL pour production (Vercel)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================
+// MODÈLE : Club de boxe
+// =============================================
+model Club {
+  id        Int      @id @default(autoincrement())
+  nom       String
+  ville     String
+  coach     String?
+  boxeurs   Boxeur[]
+  createdAt DateTime @default(now())
+}
+
+// =============================================
+// MODÈLE : Boxeur
+// =============================================
+model Boxeur {
+  id              Int                @id @default(autoincrement())
+  nom             String
+  prenom          String
+  dateNaissance   DateTime
+  sexe            String             // "M" ou "F"
+  poids           Float
+  gant            String             // Grade : bleu, vert, rouge, blanc, jaune, etc.
+  club            Club               @relation(fields: [clubId], references: [id])
+  clubId          Int
+  categoriePoids  String?            // Calculé automatiquement
+  categorieAge    String?            // Calculé automatiquement
+  infoIncomplete  Boolean            @default(false) // Marque manuelle d'info incomplète
+  tournois        TournoiBoxeur[]    // Relation many-to-many
+  matchesAsBoxeur1 Match[]           @relation("Boxeur1Matches")
+  matchesAsBoxeur2 Match[]           @relation("Boxeur2Matches")
+  matchesWon       Match[]           @relation("WonMatches")
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+}
+
+// =============================================
+// MODÈLE : Tournoi
+// =============================================
+model Tournoi {
+  id        Int              @id @default(autoincrement())
+  nom       String
+  date      DateTime
+  boxeurs   TournoiBoxeur[]  // Relation many-to-many
+  matches   Match[]          // Matchs du tournoi
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+// =============================================
+// TABLE DE LIAISON : Tournoi ↔ Boxeur
+// =============================================
+model TournoiBoxeur {
+  tournoi   Tournoi  @relation(fields: [tournoiId], references: [id], onDelete: Cascade)
+  tournoiId Int
+  boxeur    Boxeur   @relation(fields: [boxeurId], references: [id], onDelete: Cascade)
+  boxeurId  Int
+
+  @@id([tournoiId, boxeurId])
+}
+
+// =============================================
+// MODÈLE : Match (Combat)
+// =============================================
+model Match {
+  id          Int      @id @default(autoincrement())
+  tournoi     Tournoi  @relation(fields: [tournoiId], references: [id], onDelete: Cascade)
+  tournoiId   Int
+
+  // Participants (null = TBD ou En attente)
+  boxeur1     Boxeur?  @relation(name: "Boxeur1Matches", fields: [boxeur1Id], references: [id], onDelete: Cascade)
+  boxeur1Id   Int?
+  boxeur2     Boxeur?  @relation(name: "Boxeur2Matches", fields: [boxeur2Id], references: [id], onDelete: Cascade)
+  boxeur2Id   Int?
+
+  // Type et catégorie
+  matchType   String   // "BRACKET" | "POOL"
+  sexe            String   @default("M") // "M" | "F"
+  categorieAge    String
+  categoriePoids  String
+  gant            String
+  categoryDisplay String  // "Poussins - Mouche (24-27kg)"
+
+  // Pour BRACKET : hiérarchie
+  bracketRound    String?  // "FINAL" | "DEMI" | "QUART" | "HUITIEME"
+  bracketPosition Int?     // Position dans le round (0, 1, 2...)
+  nextMatchId     Int?     // Match suivant (vainqueur va ici)
+  nextMatch       Match?   @relation(name: "NextMatch", fields: [nextMatchId], references: [id], onDelete: SetNull)
+  previousMatches Match[]  @relation(name: "NextMatch")
+
+  // Pour POOL : identification poule
+  poolName        String?  // "A" | "B" | "C"
+
+  // Résultat
+  status      String   @default("PENDING")  // "PENDING" | "COMPLETED" | "FORFEIT"
+  winnerId    Int?
+  winner      Boxeur?  @relation(name: "WonMatches", fields: [winnerId], references: [id], onDelete: SetNull)
+
+  displayOrder Int     @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tournoiId, categorieAge, categoriePoids, gant])
+  @@index([tournoiId, matchType])
+}

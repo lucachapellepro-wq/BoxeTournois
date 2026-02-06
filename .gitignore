@@ -6,3 +6,9 @@ prisma/backups
 prisma/exports
 src/generated
 .env
+.env.local
+.env*.local
+
+# Fichiers de migration de données
+vercel-postgres-import.json
+migration-data.json

@@ -7,7 +7,15 @@
       "Bash(npx prisma db push:*)",
       "Bash(npm run dev:*)",
       "Bash(sqlite3:*)",
-      "Bash(npx prisma studio:*)"
+      "Bash(npx prisma studio:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(if [ -f .env ])",
+      "Bash(then cat .env)",
+      "Bash(else echo \"Fichier .env n''existe pas\")",
+      "Bash(fi)",
+      "Bash(npx prisma migrate reset:*)",
+      "Bash(PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=\"je veux garder les dionnées de dev , celle sur kle serveur osef\" npx prisma migrate reset:*)"
     ]
   }
 }

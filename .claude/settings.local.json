@@ -7,9 +7,7 @@
       "Bash(npx prisma db push:*)",
       "Bash(npm run dev:*)",
       "Bash(sqlite3:*)",
-      "Bash(npx prisma studio:*)",
-      "Bash(DATABASE_URL=\"file:./prisma/dev.db\" npx tsx:*)",
-      "Bash(git add:*)"
+      "Bash(npx prisma studio:*)"
     ]
   }
 }

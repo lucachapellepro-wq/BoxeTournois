@@ -355,14 +355,15 @@ export default function FeuilleTournoiPage() {
                 onDragOver={(e) => handleDragOver(e, index)}
                 onDrop={(e) => handleDrop(e, index)}
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "60px 200px 1fr 80px 1fr",
+                  display: "flex",
+                  alignItems: "center",
                   gap: 16,
-                  padding: "20px 12px",
+                  padding: "8px 12px",
                   backgroundColor: index % 2 === 0 ? "#0a0a0a" : "#000",
                   borderBottom: "1px solid #1a1a1a",
                   cursor: "move",
                   transition: "background-color 0.2s",
+                  fontSize: 14,
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = "#1a1a1a";
@@ -375,8 +376,9 @@ export default function FeuilleTournoiPage() {
                 {/* Numéro */}
                 <div
                   style={{
+                    minWidth: 40,
                     textAlign: "center",
-                    fontSize: 24,
+                    fontSize: 20,
                     fontWeight: "bold",
                     color: "#d4a337",
                   }}
@@ -384,108 +386,31 @@ export default function FeuilleTournoiPage() {
                   {currentMatchNumber}
                 </div>
 
-                {/* Catégorie */}
-                <div style={{ fontSize: 13 }}>
-                  <div style={{ fontWeight: "bold", marginBottom: 4 }}>
-                    {match.categoriePoids}
-                  </div>
-                  <div style={{ color: "#888", fontSize: 12 }}>
-                    {match.categorieAge}
-                  </div>
-                  {match.matchType === "BRACKET" && match.bracketRound && (
-                    <div
-                      style={{
-                        marginTop: 4,
-                        fontSize: 11,
-                        color: "#d4a337",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {match.bracketRound}
-                    </div>
-                  )}
-                  {match.matchType === "POOL" && match.poolName && (
-                    <div
-                      style={{
-                        marginTop: 4,
-                        fontSize: 11,
-                        color: "#2ecc71",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Poule {match.poolName}
-                    </div>
-                  )}
+                {/* Catégorie / Sexe */}
+                <div style={{ minWidth: 200, fontWeight: "600", color: "#fff" }}>
+                  {match.categoriePoids} {match.sexe === "F" ? "♀" : "♂"}
+                  {match.matchType === "BRACKET" && match.bracketRound && ` - ${match.bracketRound}`}
+                  {match.matchType === "POOL" && match.poolName && ` - Poule ${match.poolName}`}
                 </div>
 
-                {/* Coin Bleu */}
-                <div
-                  style={{
-                    padding: "12px 16px",
-                    backgroundColor: "#3498db15",
-                    borderLeft: "4px solid #3498db",
-                    borderRadius: 6,
-                  }}
-                >
+                {/* Boxeur 1 */}
+                <div style={{ flex: 1, color: "#3498db", fontWeight: "500" }}>
                   {match.boxeur1 ? (
-                    <>
-                      <div style={{ fontWeight: "bold", fontSize: 16 }}>
-                        {match.boxeur1.nom.toUpperCase()} {match.boxeur1.prenom}
-                      </div>
-                      <div style={{ color: "#888", fontSize: 13, marginTop: 4 }}>
-                        {match.boxeur1.club.nom}
-                      </div>
-                      <div style={{ color: "#666", fontSize: 12, marginTop: 4 }}>
-                        {match.boxeur1.sexe} • {calculateAge(match.boxeur1.dateNaissance)} ans • {match.boxeur1.poids}kg • {match.boxeur1.gant}
-                      </div>
-                    </>
+                    `${match.boxeur1.nom.toUpperCase()} ${match.boxeur1.prenom} (${match.boxeur1.club.nom})`
                   ) : (
-                    <div style={{ color: "#666", fontStyle: "italic" }}>
-                      En attente
-                    </div>
+                    <span style={{ color: "#666", fontStyle: "italic" }}>TBD</span>
                   )}
                 </div>
 
                 {/* VS */}
-                <div
-                  style={{
-                    textAlign: "center",
-                    fontSize: 20,
-                    fontWeight: "bold",
-                    color: "#666",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  VS
-                </div>
+                <div style={{ color: "#666", fontWeight: "bold", padding: "0 4px" }}>vs</div>
 
-                {/* Coin Rouge */}
-                <div
-                  style={{
-                    padding: "12px 16px",
-                    backgroundColor: "#e6394615",
-                    borderLeft: "4px solid #e63946",
-                    borderRadius: 6,
-                  }}
-                >
+                {/* Boxeur 2 */}
+                <div style={{ flex: 1, color: "#e63946", fontWeight: "500" }}>
                   {match.boxeur2 ? (
-                    <>
-                      <div style={{ fontWeight: "bold", fontSize: 16 }}>
-                        {match.boxeur2.nom.toUpperCase()} {match.boxeur2.prenom}
-                      </div>
-                      <div style={{ color: "#888", fontSize: 13, marginTop: 4 }}>
-                        {match.boxeur2.club.nom}
-                      </div>
-                      <div style={{ color: "#666", fontSize: 12, marginTop: 4 }}>
-                        {match.boxeur2.sexe} • {calculateAge(match.boxeur2.dateNaissance)} ans • {match.boxeur2.poids}kg • {match.boxeur2.gant}
-                      </div>
-                    </>
+                    `${match.boxeur2.nom.toUpperCase()} ${match.boxeur2.prenom} (${match.boxeur2.club.nom})`
                   ) : (
-                    <div style={{ color: "#666", fontStyle: "italic" }}>
-                      En attente
-                    </div>
+                    <span style={{ color: "#666", fontStyle: "italic" }}>TBD</span>
                   )}
                 </div>
               </div>

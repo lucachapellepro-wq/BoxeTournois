@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 // POST /api/tournois/[id]/matches/manual - Créer un match manuel
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
 
@@ -18,14 +18,14 @@ export async function POST(
     if (!boxeur1Id || !boxeur2Id) {
       return NextResponse.json(
         { error: "Les deux boxeurs sont requis" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (boxeur1Id === boxeur2Id) {
       return NextResponse.json(
         { error: "Un boxeur ne peut pas s'affronter lui-même" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -50,7 +50,7 @@ export async function POST(
     if (!boxeur1 || !boxeur2) {
       return NextResponse.json(
         { error: "Un ou plusieurs boxeurs non trouvés dans ce tournoi" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -58,7 +58,7 @@ export async function POST(
     if (boxeur1.categoriePoids !== boxeur2.categoriePoids) {
       return NextResponse.json(
         { error: "Les boxeurs doivent avoir la même catégorie de poids" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -69,10 +69,10 @@ export async function POST(
         boxeur1: { connect: { id: boxeur1Id } },
         boxeur2: { connect: { id: boxeur2Id } },
         matchType: "POOL", // Les matchs manuels sont considérés comme des matchs de poule
-        categorieAge: categorieAge || boxeur1.categorieAge,
-        categoriePoids: boxeur1.categoriePoids,
+        categorieAge: categorieAge || boxeur1.categorieAge || "",
+        categoriePoids: boxeur1.categoriePoids || "",
         gant: gant || boxeur1.gant,
-        categoryDisplay: `${boxeur1.categorieAge} - ${boxeur1.categoriePoids}`,
+        categoryDisplay: `${boxeur1.categorieAge || ""} - ${boxeur1.categoriePoids || ""}`,
         poolName: "MANUEL",
         displayOrder: 999, // Les matchs manuels sont affichés en dernier
       },
@@ -90,7 +90,7 @@ export async function POST(
     console.error("Erreur création match manuel:", error);
     return NextResponse.json(
       { error: "Erreur lors de la création du match manuel" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

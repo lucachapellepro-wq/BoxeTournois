@@ -24,7 +24,7 @@ export function useClubs() {
       data: {
         nom?: string;
         ville?: string;
-        coach?: string;
+        coach?: string | null;
       }
     ) => {
       try {

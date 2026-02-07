@@ -49,7 +49,7 @@ export default function ClubsPage() {
 
   const handleUpdateClub = async (
     id: number,
-    data: { nom?: string; ville?: string; coach?: string }
+    data: { nom?: string; ville?: string; coach?: string | null }
   ) => {
     const success = await updateClub(id, data);
     if (success) {
@@ -62,7 +62,7 @@ export default function ClubsPage() {
   const handleUpdateBoxeur = async (
     id: number,
     field: string,
-    value: string | number
+    value: string | number | boolean
   ) => {
     const success = await updateBoxeur(id, { [field]: value });
     if (success) {

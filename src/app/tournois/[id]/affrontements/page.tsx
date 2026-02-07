@@ -128,8 +128,8 @@ export default function AffrontementsPage() {
 
     // Retourner les boxeurs inscrits au tournoi mais sans match
     return tournoi.boxeurs
-      .map((tb) => tb.boxeur)
-      .filter((b) => !boxeursWithMatchIds.has(b.id));
+      .map((tb: any) => tb.boxeur)
+      .filter((b: any) => !boxeursWithMatchIds.has(b.id));
   }, [tournoi, matches]);
 
   if (loading && !tournoi) {

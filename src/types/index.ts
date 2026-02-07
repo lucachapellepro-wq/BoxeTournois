@@ -1,6 +1,7 @@
 export interface Club {
   id: number;
   nom: string;
+  coach: string | null;
   ville: string;
 }
 

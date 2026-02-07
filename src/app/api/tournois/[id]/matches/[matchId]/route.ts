@@ -45,7 +45,7 @@ export async function PUT(
 
   try {
     const body = await request.json();
-    const { winnerId, score1, score2, status } = body;
+    const { winnerId, status } = body;
 
     // Récupérer le match actuel
     const currentMatch = await prisma.match.findUnique({
@@ -78,8 +78,6 @@ export async function PUT(
         where: { id: parseInt(matchId) },
         data: {
           winnerId,
-          score1,
-          score2,
           status: status || "COMPLETED",
         },
         include: {

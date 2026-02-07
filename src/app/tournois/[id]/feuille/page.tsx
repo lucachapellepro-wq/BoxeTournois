@@ -182,8 +182,9 @@ export default function FeuilleTournoiPage() {
     window.print();
   };
 
-  const calculateAge = (dateNaissance: string) => {
+  const calculateAge = (dateNaissance: string | null) => {
     const today = new Date();
+    if (!dateNaissance) return "?";
     const birthDate = new Date(dateNaissance);
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();

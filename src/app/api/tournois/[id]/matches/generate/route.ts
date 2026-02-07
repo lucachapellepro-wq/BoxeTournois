@@ -58,7 +58,12 @@ export async function POST(
     }
 
     // Extraire les boxeurs
-    const boxeurs = tournoi.boxeurs.map((tb) => tb.boxeur);
+    const boxeurs = tournoi.boxeurs.map((tb) => ({
+      ...tb.boxeur,
+      dateNaissance: tb.boxeur.dateNaissance?.toISOString() || "",
+      categoriePoids: tb.boxeur.categoriePoids || "",
+      categorieAge: tb.boxeur.categorieAge || "",
+    }));
 
     if (boxeurs.length === 0) {
       return NextResponse.json(

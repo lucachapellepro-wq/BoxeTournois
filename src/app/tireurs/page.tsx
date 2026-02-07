@@ -116,7 +116,7 @@ export default function TireursPage() {
   const handleUpdate = async (
     id: number,
     field: string,
-    value: string | number
+    value: string | number | boolean
   ) => {
     const success = await updateBoxeur(id, { [field]: value });
     if (success) {

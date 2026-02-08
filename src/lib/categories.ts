@@ -64,6 +64,18 @@ export function getGantColor(gant: string): string {
   return GANTS_COULEUR.find((g) => g.value === gant)?.color || "#888";
 }
 
+/** Retourne un objet style CSS pour un badge de gant */
+export function getGantStyle(gant: string): React.CSSProperties {
+  const g = GANTS_COULEUR.find((x) => x.value === gant);
+  if (!g) return {};
+  const isWhite = gant === "blanc";
+  return {
+    color: isWhite ? "#1a1a1a" : g.color,
+    borderColor: g.color,
+    backgroundColor: isWhite ? g.color : `${g.color}20`,
+  };
+}
+
 // =============================================
 // CATÉGORIES DE POIDS — Jeunes (jusqu'à Cadet inclus)
 // =============================================

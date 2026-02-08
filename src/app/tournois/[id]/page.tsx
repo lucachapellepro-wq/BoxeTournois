@@ -5,28 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import { useBoxeurs } from "@/hooks/useBoxeurs";
 import { useToast } from "@/hooks/useToast";
 import { Toast } from "@/components/Toast";
-import { Tournoi } from "@/hooks/useTournois";
+import { Boxeur, TournoiDetail } from "@/types";
+import { formatDate, calculateAge } from "@/lib/ui-helpers";
 import Link from "next/link";
-
-interface TournoiDetail extends Tournoi {
-  boxeurs: Array<{
-    boxeur: {
-      id: number;
-      nom: string;
-      prenom: string;
-      dateNaissance: string;
-      sexe: string;
-      poids: number;
-      gant: string;
-      categoriePoids: string;
-      categorieAge: string;
-      club: {
-        id: number;
-        nom: string;
-      };
-    };
-  }>;
-}
 
 export default function TournoiDetailPage() {
   const params = useParams();
@@ -96,28 +77,6 @@ export default function TournoiDetailPage() {
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("fr-FR", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  const calculateAge = (dateNaissance: string | null) => {
-    const today = new Date();
-    if (!dateNaissance) return "?";
-    const birthDate = new Date(dateNaissance);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
   // Boxeurs déjà inscrits au tournoi
   const enrolledBoxeursIds = tournoi?.boxeurs.map((tb) => tb.boxeur.id) || [];
 
@@ -142,7 +101,7 @@ export default function TournoiDetailPage() {
     if (!acc[clubNom]) acc[clubNom] = [];
     acc[clubNom].push(tb.boxeur);
     return acc;
-  }, {} as Record<string, any[]>);
+  }, {} as Record<string, Boxeur[]>);
 
   if (loading) {
     return (

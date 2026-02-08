@@ -1,26 +1,11 @@
 import { Boxeur, getAnneeFromDate } from "@/types";
-import { GANTS_COULEUR } from "@/lib/categories";
+import { GANTS_COULEUR, getGantStyle, getGantLabel } from "@/lib/categories";
 
 interface TireursRecapProps {
   groupedByCategory: [string, Boxeur[]][];
 }
 
 export function TireursRecap({ groupedByCategory }: TireursRecapProps) {
-  const getGantStyle = (gant: string) => {
-    const g = GANTS_COULEUR.find((x) => x.value === gant);
-    if (!g) return {};
-    const isWhite = gant === "blanc";
-    return {
-      color: isWhite ? "#1a1a1a" : g.color,
-      borderColor: g.color,
-      backgroundColor: isWhite ? g.color : `${g.color}20`,
-    };
-  };
-
-  const getGantLabel = (gant: string) => {
-    return GANTS_COULEUR.find((x) => x.value === gant)?.label || gant;
-  };
-
   if (groupedByCategory.length === 0) {
     return (
       <div className="card">

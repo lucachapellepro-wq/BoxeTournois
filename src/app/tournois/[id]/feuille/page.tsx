@@ -3,15 +3,17 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useMatches } from "@/hooks/useMatches";
+import { calculateAge } from "@/lib/ui-helpers";
 import Link from "next/link";
 import { Match } from "@/types/match";
+import { TournoiDetail } from "@/types";
 
 export default function FeuilleTournoiPage() {
   const params = useParams();
   const tournoiId = parseInt(params.id as string);
   const { matches: initialMatches, fetchMatches } = useMatches(tournoiId);
 
-  const [tournoi, setTournoi] = useState<any>(null);
+  const [tournoi, setTournoi] = useState<TournoiDetail | null>(null);
   const [matches, setMatches] = useState<(Match | { separator: true })[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [minSpacing, setMinSpacing] = useState<number>(2);
@@ -180,18 +182,6 @@ export default function FeuilleTournoiPage() {
 
   const handlePrint = () => {
     window.print();
-  };
-
-  const calculateAge = (dateNaissance: string | null) => {
-    const today = new Date();
-    if (!dateNaissance) return "?";
-    const birthDate = new Date(dateNaissance);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
   };
 
   if (!tournoi) {

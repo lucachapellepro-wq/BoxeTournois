@@ -1,4 +1,4 @@
-import { Match } from "@/lib/matching";
+import { Match } from "@/types/match";
 import { MatchCard } from "./MatchCard";
 import { useMemo } from "react";
 
@@ -12,10 +12,10 @@ export function TournamentBrackets({ matches }: TournamentBracketsProps) {
     const groups = new Map<string, Match[]>();
 
     matches.forEach((match) => {
-      if (!groups.has(match.category)) {
-        groups.set(match.category, []);
+      if (!groups.has(match.categoryDisplay)) {
+        groups.set(match.categoryDisplay, []);
       }
-      groups.get(match.category)!.push(match);
+      groups.get(match.categoryDisplay)!.push(match);
     });
 
     // Convertir en array et trier par nom de catégorie

@@ -9,7 +9,7 @@ import { BracketView } from "@/components/BracketView";
 import { PoolView } from "@/components/PoolView";
 import { BoxeursSeulsView } from "@/components/BoxeursSeulsView";
 import Link from "next/link";
-import { Boxeur } from "@/types";
+import { Boxeur, TournoiDetail } from "@/types";
 
 export default function AffrontementsPage() {
   const params = useParams();
@@ -17,7 +17,7 @@ export default function AffrontementsPage() {
   const { matches, loading, stats, fetchMatches, generateMatches } = useMatches(tournoiId);
   const { toast, showToast } = useToast();
 
-  const [tournoi, setTournoi] = useState<any>(null);
+  const [tournoi, setTournoi] = useState<TournoiDetail | null>(null);
   const [activeTab, setActiveTab] = useState<"BRACKET" | "POOL">("BRACKET");
   const [showConfirmGenerate, setShowConfirmGenerate] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -128,8 +128,8 @@ export default function AffrontementsPage() {
 
     // Retourner les boxeurs inscrits au tournoi mais sans match
     return tournoi.boxeurs
-      .map((tb: any) => tb.boxeur)
-      .filter((b: any) => !boxeursWithMatchIds.has(b.id));
+      .map((tb) => tb.boxeur)
+      .filter((b) => !boxeursWithMatchIds.has(b.id));
   }, [tournoi, matches]);
 
   if (loading && !tournoi) {

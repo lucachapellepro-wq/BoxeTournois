@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { generateMatches, linkBracketMatches } from "@/lib/matchGeneration";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -92,7 +93,7 @@ export async function POST(
       const matches = await Promise.all(
         matchesData.map((data) => {
           // Créer avec les relations connectées
-          const createData: any = {
+          const createData: Prisma.MatchCreateInput = {
             tournoi: { connect: { id: data.tournoiId } },
             matchType: data.matchType,
             sexe: data.sexe,

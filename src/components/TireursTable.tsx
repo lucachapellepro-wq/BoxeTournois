@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import { Boxeur, getAnneeFromDate } from "@/types";
-import { GANTS_COULEUR } from "@/lib/categories";
+import { Boxeur, SortValue, getAnneeFromDate } from "@/types";
+import { GANTS_COULEUR, getGantStyle } from "@/lib/categories";
 import { EditableCell } from "./EditableCell";
 
 type SortColumn =
@@ -51,8 +51,8 @@ export function TireursTable({
     if (!sortColumn) return boxeurs;
 
     return [...boxeurs].sort((a, b) => {
-      let aVal: any;
-      let bVal: any;
+      let aVal: SortValue;
+      let bVal: SortValue;
 
       switch (sortColumn) {
         case "nom":
@@ -114,17 +114,6 @@ export function TireursTable({
   const handleToggleInfoIncomplete = async (boxeur: Boxeur) => {
     const newValue = !boxeur.infoIncomplete;
     await onUpdate(boxeur.id, "infoIncomplete", newValue);
-  };
-
-  const getGantStyle = (gant: string) => {
-    const g = GANTS_COULEUR.find((x) => x.value === gant);
-    if (!g) return {};
-    const isWhite = gant === "blanc";
-    return {
-      color: isWhite ? "#1a1a1a" : g.color,
-      borderColor: g.color,
-      backgroundColor: isWhite ? g.color : `${g.color}20`,
-    };
   };
 
   if (loading) {

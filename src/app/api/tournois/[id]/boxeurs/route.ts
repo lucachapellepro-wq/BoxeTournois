@@ -51,9 +51,9 @@ export async function POST(
     });
 
     return NextResponse.json(tournoiBoxeur, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Si c'est une erreur de contrainte unique (boxeur déjà inscrit)
-    if (error.code === "P2002") {
+    if (error instanceof Error && "code" in error && (error as { code: string }).code === "P2002") {
       return NextResponse.json(
         { error: "Ce boxeur est déjà inscrit au tournoi" },
         { status: 400 }

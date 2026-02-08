@@ -1,19 +1,11 @@
 import { Match } from "@/types/match";
-import { GANTS_COULEUR } from "@/lib/categories";
+import { getGantColor, getGantLabel } from "@/lib/categories";
 
 interface MatchCardEditableProps {
   match: Match;
 }
 
 export function MatchCardEditable({ match }: MatchCardEditableProps) {
-  const getGantColor = (gant: string) => {
-    return GANTS_COULEUR.find((g) => g.value === gant)?.color || "#666";
-  };
-
-  const getGantLabel = (gant: string) => {
-    return GANTS_COULEUR.find((g) => g.value === gant)?.label || gant;
-  };
-
   // Si les deux boxeurs sont null (match de prévu complet - finale, demi, etc.)
   if (!match.boxeur1 && !match.boxeur2) {
     return (

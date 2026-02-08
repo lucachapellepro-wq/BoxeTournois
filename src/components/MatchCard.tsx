@@ -1,19 +1,11 @@
-import { Match } from "@/lib/matching";
-import { GANTS_COULEUR } from "@/lib/categories";
+import { Match } from "@/types/match";
+import { getGantColor, getGantLabel } from "@/lib/categories";
 
 interface MatchCardProps {
   match: Match;
 }
 
 export function MatchCard({ match }: MatchCardProps) {
-  const getGantColor = (gant: string) => {
-    return GANTS_COULEUR.find((g) => g.value === gant)?.color || "#666";
-  };
-
-  const getGantLabel = (gant: string) => {
-    return GANTS_COULEUR.find((g) => g.value === gant)?.label || gant;
-  };
-
   return (
     <div className="match-card">
       {match.status === "paired" && match.boxeur2 ? (

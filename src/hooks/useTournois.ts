@@ -1,13 +1,5 @@
 import { useState, useCallback } from "react";
-
-export interface Tournoi {
-  id: number;
-  nom: string;
-  date: string;
-  _count?: {
-    boxeurs: number;
-  };
-}
+import { Tournoi } from "@/types";
 
 export function useTournois() {
   const [tournois, setTournois] = useState<Tournoi[]>([]);

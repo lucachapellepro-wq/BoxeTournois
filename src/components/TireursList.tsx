@@ -1,5 +1,5 @@
 import { Boxeur, getAnneeFromDate } from "@/types";
-import { GANTS_COULEUR } from "@/lib/categories";
+import { GANTS_COULEUR, getGantStyle, getGantLabel } from "@/lib/categories";
 
 interface TireursListProps {
   boxeurs: Boxeur[];
@@ -9,21 +9,6 @@ interface TireursListProps {
 }
 
 export function TireursList({ boxeurs, loading, onDelete, onOpenModal }: TireursListProps) {
-  const getGantStyle = (gant: string) => {
-    const g = GANTS_COULEUR.find((x) => x.value === gant);
-    if (!g) return {};
-    const isWhite = gant === "blanc";
-    return {
-      color: isWhite ? "#1a1a1a" : g.color,
-      borderColor: g.color,
-      backgroundColor: isWhite ? g.color : `${g.color}20`,
-    };
-  };
-
-  const getGantLabel = (gant: string) => {
-    return GANTS_COULEUR.find((x) => x.value === gant)?.label || gant;
-  };
-
   if (loading) {
     return (
       <div className="card">

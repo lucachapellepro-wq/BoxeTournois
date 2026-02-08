@@ -1,6 +1,0 @@
-    const boxeurs = tournoi.boxeurs.map((tb) => ({
-      ...tb.boxeur,
-      dateNaissance: tb.boxeur.dateNaissance?.toISOString() || "",
-      categoriePoids: tb.boxeur.categoriePoids || "",
-      categorieAge: tb.boxeur.categorieAge || "",
-    }));

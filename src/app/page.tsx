@@ -5,6 +5,8 @@ import { useTournois } from "@/hooks/useTournois";
 import { useToast } from "@/hooks/useToast";
 import { ModalTournoi } from "@/components/ModalTournoi";
 import { Toast } from "@/components/Toast";
+import { formatDate } from "@/lib/ui-helpers";
+import { Tournoi } from "@/types";
 import Link from "next/link";
 
 export default function TournoiPage() {
@@ -30,7 +32,7 @@ export default function TournoiPage() {
     setShowModal(true);
   };
 
-  const handleOpenEdit = (tournoi: any) => {
+  const handleOpenEdit = (tournoi: Tournoi) => {
     setForm({
       nom: tournoi.nom,
       date: new Date(tournoi.date).toISOString().split("T")[0],
@@ -77,16 +79,6 @@ export default function TournoiPage() {
     } else {
       showToast("Erreur suppression", "error");
     }
-  };
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("fr-FR", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
   };
 
   return (

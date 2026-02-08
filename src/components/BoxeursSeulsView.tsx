@@ -1,19 +1,11 @@
 import { Boxeur } from "@/types";
-import { GANTS_COULEUR } from "@/lib/categories";
+import { getGantColor, getGantLabel } from "@/lib/categories";
 
 interface BoxeursSeulsViewProps {
   boxeurs: Boxeur[];
 }
 
 export function BoxeursSeulsView({ boxeurs }: BoxeursSeulsViewProps) {
-  const getGantColor = (gant: string) => {
-    return GANTS_COULEUR.find((g) => g.value === gant)?.color || "#666";
-  };
-
-  const getGantLabel = (gant: string) => {
-    return GANTS_COULEUR.find((g) => g.value === gant)?.label || gant;
-  };
-
   if (boxeurs.length === 0) return null;
 
   // Grouper par sexe puis catégorie

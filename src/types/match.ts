@@ -53,6 +53,7 @@ export interface Match {
   winnerId: number | null;
   winner?: Boxeur | null;
 
+  boxeur2Manual: boolean;
   displayOrder: number;
   createdAt: string;
   updatedAt: string;

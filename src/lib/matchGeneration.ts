@@ -181,9 +181,9 @@ function generate5(boxers: Boxeur[], cat: CategoryInfo, tid: number): MatchCreat
   return [
     ...pouleA,
     ...pouleB,
-    createBracketMatch(tid, cat, null, null, BracketRound.DEMI, 0, offset),
-    createBracketMatch(tid, cat, null, null, BracketRound.DEMI, 1, offset + 1),
-    createBracketMatch(tid, cat, null, null, BracketRound.FINAL, 0, offset + 2),
+    createPoolMatch(tid, cat, null, null, "DEMI 1", offset),
+    createPoolMatch(tid, cat, null, null, "DEMI 2", offset + 1),
+    createPoolMatch(tid, cat, null, null, "FINALE", offset + 2),
   ];
 }
 

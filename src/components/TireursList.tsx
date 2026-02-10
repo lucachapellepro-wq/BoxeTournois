@@ -12,7 +12,7 @@ export function TireursList({ boxeurs, loading, onDelete, onOpenModal }: Tireurs
   if (loading) {
     return (
       <div className="card">
-        <div className="empty-state"><p>Chargement...</p></div>
+        <div className="loading-state"><div className="spinner" /></div>
       </div>
     );
   }

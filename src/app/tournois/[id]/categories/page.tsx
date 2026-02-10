@@ -85,9 +85,7 @@ export default function CategoriesPage() {
     return (
       <div className="container" style={{ paddingTop: 40 }}>
         <div className="card">
-          <p style={{ textAlign: "center", padding: 40, color: "#888" }}>
-            Chargement...
-          </p>
+          <div className="loading-state"><div className="spinner" /></div>
         </div>
       </div>
     );

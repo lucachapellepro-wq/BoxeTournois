@@ -90,40 +90,35 @@ export default function FeuilleTournoiPage() {
       return result;
     };
 
-    // Si ce sont des matchs provisoires, respecter l'ordre par catégorie/sexe
-    if (isProvisional) {
-      // Grouper par catégorie/sexe
-      const byCategorySexe = new Map<string, Match[]>();
-      matchesToOrganize.forEach(match => {
-        const key = `${match.sexe}|${match.categorieAge}|${match.categoriePoids}|${match.gant}`;
-        if (!byCategorySexe.has(key)) {
-          byCategorySexe.set(key, []);
-        }
-        byCategorySexe.get(key)!.push(match);
-      });
+    // Grouper par catégorie/sexe pour respecter l'ordre des rounds
+    const byCategorySexe = new Map<string, Match[]>();
+    matchesToOrganize.forEach(match => {
+      const key = `${match.sexe}|${match.categorieAge}|${match.categoriePoids}|${match.gant}`;
+      if (!byCategorySexe.has(key)) {
+        byCategorySexe.set(key, []);
+      }
+      byCategorySexe.get(key)!.push(match);
+    });
 
-      // Pour chaque groupe, organiser par ordre de round
-      const allOrganized: Match[] = [];
-      byCategorySexe.forEach(matches => {
-        // Séparer par round
-        const demis = matches.filter(m => m.matchType === "BRACKET" && m.bracketRound === "DEMI");
-        const finales = matches.filter(m => m.matchType === "BRACKET" && m.bracketRound === "FINAL");
-        const poules = matches.filter(m => m.matchType === "POOL");
-        const autres = matches.filter(m =>
-          m.matchType !== "POOL" &&
-          (!m.bracketRound || (m.bracketRound !== "DEMI" && m.bracketRound !== "FINAL"))
-        );
+    // Pour chaque groupe, organiser par ordre de round
+    const allOrganized: Match[] = [];
+    byCategorySexe.forEach(matches => {
+      // Séparer par round
+      const isDemi = (m: Match) => m.bracketRound === "DEMI" || (m.poolName?.startsWith("DEMI") ?? false);
+      const isFinale = (m: Match) => m.bracketRound === "FINAL" || m.poolName === "FINALE";
+      const isPoule = (m: Match) => m.matchType === "POOL" && !isDemi(m) && !isFinale(m) && m.poolName !== "MANUEL";
 
-        // Ajouter dans l'ordre : autres → demis/poules → finales
-        allOrganized.push(...autres, ...demis, ...poules, ...finales);
-      });
+      const demis = matches.filter(isDemi);
+      const finales = matches.filter(isFinale);
+      const poules = matches.filter(isPoule);
+      const autres = matches.filter(m => !isDemi(m) && !isFinale(m) && !isPoule(m));
 
-      // Mélanger tout en respectant les contraintes
-      return spaceMatches(allOrganized);
-    }
+      // Ajouter dans l'ordre : autres → poules → demis → finales
+      allOrganized.push(...autres, ...poules, ...demis, ...finales);
+    });
 
-    // Sinon, tout mélanger simplement
-    return spaceMatches(matchesToOrganize);
+    // Mélanger tout en respectant les contraintes d'espacement
+    return spaceMatches(allOrganized);
   };
 
   const fetchTournoi = async () => {
@@ -184,13 +179,29 @@ export default function FeuilleTournoiPage() {
     window.print();
   };
 
+  const getMatchColor = (match: Match): string => {
+    if (match.poolName === "MANUEL") return "#e67e22"; // Orange - Combats ajoutés
+    if (match.boxeur2Manual) return "#e91e8c"; // Rose vif - Adversaire ajouté
+    if (match.bracketRound === "FINAL" || match.poolName === "FINALE") return "#e74c3c"; // Rouge - Finales
+    if (match.bracketRound === "DEMI" || match.poolName?.startsWith("DEMI")) return "#8e44ad"; // Violet - Demis
+    if (match.matchType === "POOL") return "#27ae60"; // Vert - Poules
+    return "#2980b9"; // Bleu - Élimination
+  };
+
+  const getMatchLabel = (match: Match): string => {
+    if (match.poolName === "MANUEL") return "Ajouté";
+    if (match.boxeur2Manual) return "Adv. ajouté";
+    if (match.bracketRound === "FINAL" || match.poolName === "FINALE") return "Finale";
+    if (match.bracketRound === "DEMI" || match.poolName?.startsWith("DEMI")) return "Demi";
+    if (match.matchType === "POOL") return "Poule";
+    return "Élim.";
+  };
+
   if (!tournoi) {
     return (
       <div className="container" style={{ paddingTop: 40 }}>
         <div className="card">
-          <p style={{ textAlign: "center", padding: 40, color: "#888" }}>
-            Chargement...
-          </p>
+          <div className="loading-state"><div className="spinner" /></div>
         </div>
       </div>
     );
@@ -277,14 +288,31 @@ export default function FeuilleTournoiPage() {
           </p>
         </div>
 
+        {/* Légende des couleurs */}
+        <div className="no-print" style={{ display: "flex", gap: 20, marginTop: 24, marginBottom: 16, flexWrap: "wrap" }}>
+          {[
+            { color: "#27ae60", label: "Poule" },
+            { color: "#8e44ad", label: "Demi-finale" },
+            { color: "#e74c3c", label: "Finale" },
+            { color: "#2980b9", label: "Élimination" },
+            { color: "#e91e8c", label: "Adversaire ajouté" },
+            { color: "#e67e22", label: "Combat ajouté" },
+          ].map(({ color, label }) => (
+            <div key={label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 14, height: 14, borderRadius: 3, backgroundColor: color }} />
+              <span style={{ fontSize: 13, color: "#aaa" }}>{label}</span>
+            </div>
+          ))}
+        </div>
+
         {/* Tableau des matchs */}
-        <div style={{ marginTop: 32 }}>
+        <div style={{ marginTop: 8 }}>
           {/* Header du tableau */}
           <div
             className="feuille-table-header"
             style={{
               display: "grid",
-              gridTemplateColumns: "60px 200px 1fr 80px 1fr",
+              gridTemplateColumns: "60px 70px 200px 1fr 80px 1fr",
               gap: 16,
               padding: "16px 12px",
               backgroundColor: "#1a1a1a",
@@ -295,10 +323,11 @@ export default function FeuilleTournoiPage() {
             }}
           >
             <div style={{ textAlign: "center" }}>N°</div>
+            <div style={{ textAlign: "center" }}>Type</div>
             <div>Catégorie</div>
-            <div style={{ textAlign: "center", color: "#3498db" }}>🔵 COIN BLEU</div>
+            <div style={{ textAlign: "center", color: "#3498db" }}>COIN BLEU</div>
             <div style={{ textAlign: "center" }}>VS</div>
-            <div style={{ textAlign: "center", color: "#e63946" }}>🔴 COIN ROUGE</div>
+            <div style={{ textAlign: "center", color: "#e63946" }}>COIN ROUGE</div>
           </div>
 
           {/* Lignes des matchs */}
@@ -337,6 +366,9 @@ export default function FeuilleTournoiPage() {
                 matchNumber++;
                 const currentMatchNumber = matchNumber;
 
+                const matchColor = getMatchColor(match);
+                const matchLabel = getMatchLabel(match);
+
                 return (
               <div
                 key={match.id}
@@ -352,6 +384,7 @@ export default function FeuilleTournoiPage() {
                   padding: "8px 12px",
                   backgroundColor: index % 2 === 0 ? "#0a0a0a" : "#000",
                   borderBottom: "1px solid #1a1a1a",
+                  borderLeft: `4px solid ${matchColor}`,
                   cursor: "move",
                   transition: "background-color 0.2s",
                   fontSize: 14,
@@ -378,11 +411,27 @@ export default function FeuilleTournoiPage() {
                   {currentMatchNumber}
                 </div>
 
+                {/* Badge type */}
+                <div style={{ minWidth: 60, textAlign: "center" }}>
+                  <span style={{
+                    display: "inline-block",
+                    padding: "2px 8px",
+                    borderRadius: 4,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    backgroundColor: `${matchColor}20`,
+                    color: matchColor,
+                    border: `1px solid ${matchColor}40`,
+                  }}>
+                    {matchLabel}
+                  </span>
+                </div>
+
                 {/* Catégorie / Sexe */}
                 <div className="match-row-category" style={{ minWidth: 200, fontWeight: "600", color: "#fff" }}>
                   {match.categoriePoids} {match.sexe === "F" ? "♀" : "♂"}
                   {match.matchType === "BRACKET" && match.bracketRound && ` - ${match.bracketRound}`}
-                  {match.matchType === "POOL" && match.poolName && ` - Poule ${match.poolName}`}
+                  {match.matchType === "POOL" && match.poolName && match.poolName !== "MANUEL" && ` - Poule ${match.poolName}`}
                 </div>
 
                 {/* Boxeur 1 */}

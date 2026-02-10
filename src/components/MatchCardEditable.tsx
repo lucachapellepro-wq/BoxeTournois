@@ -3,9 +3,11 @@ import { getGantColor, getGantLabel } from "@/lib/categories";
 
 interface MatchCardEditableProps {
   match: Match;
+  onAddOpponent?: (match: Match) => void;
+  onDelete?: (matchId: number) => void;
 }
 
-export function MatchCardEditable({ match }: MatchCardEditableProps) {
+export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardEditableProps) {
   // Si les deux boxeurs sont null (match de prévu complet - finale, demi, etc.)
   if (!match.boxeur1 && !match.boxeur2) {
     return (
@@ -21,7 +23,16 @@ export function MatchCardEditable({ match }: MatchCardEditableProps) {
   // Si boxeur2 est null (boxeur seul, pas d'adversaire)
   if (!match.boxeur2) {
     return (
-      <div className="match-card">
+      <div className="match-card match-solo" style={{ position: "relative" }}>
+        {onAddOpponent && (
+          <button
+            className="btn-add-opponent"
+            onClick={() => onAddOpponent(match)}
+            title="Ajouter un adversaire"
+          >
+            +
+          </button>
+        )}
         {match.boxeur1 && (
           <div className="match-fighter">
             <div className="match-fighter-name">
@@ -53,11 +64,28 @@ export function MatchCardEditable({ match }: MatchCardEditableProps) {
   }
 
   // Match normal avec 2 boxeurs
+  const isManual = match.poolName === "MANUEL";
   const isBoxeur1Winner = match.winnerId === match.boxeur1Id;
   const isBoxeur2Winner = match.winnerId === match.boxeur2Id;
 
+  const cardClass = [
+    "match-card",
+    match.status === "COMPLETED" ? "match-completed" : "",
+  ].filter(Boolean).join(" ");
+
   return (
-    <div className={`match-card ${match.status === "COMPLETED" ? "match-completed" : ""}`}>
+    <div className={cardClass}>
+      {isManual && onDelete && (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
+          <button
+            className="btn-delete-match"
+            onClick={() => onDelete(match.id)}
+            title="Supprimer ce combat"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       {/* Boxeur 1 */}
       <div className={`match-fighter ${isBoxeur1Winner ? "match-winner" : ""}`}>
         <div className="match-fighter-name">
@@ -88,7 +116,7 @@ export function MatchCardEditable({ match }: MatchCardEditableProps) {
       <div className="match-vs">VS</div>
 
       {/* Boxeur 2 */}
-      <div className={`match-fighter ${isBoxeur2Winner ? "match-winner" : ""}`}>
+      <div className={`match-fighter ${isBoxeur2Winner ? "match-winner" : ""} ${match.boxeur2Manual ? "match-fighter-added" : ""}`}>
         <div className="match-fighter-name">
           <strong>{match.boxeur2.nom.toUpperCase()}</strong> {match.boxeur2.prenom}
           {isBoxeur2Winner && <span className="winner-badge">🏆</span>}

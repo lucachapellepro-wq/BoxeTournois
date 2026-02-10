@@ -139,6 +139,52 @@ export function useMatches(tournoiId: number) {
     [tournoiId, fetchMatches]
   );
 
+  const addOpponentToMatch = useCallback(
+    async (matchId: number, boxeur2Id: number) => {
+      try {
+        const res = await fetch(
+          `/api/tournois/${tournoiId}/matches/${matchId}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ boxeur2Id }),
+          }
+        );
+
+        if (res.ok) {
+          await fetchMatches();
+          return true;
+        }
+        return false;
+      } catch (error) {
+        console.error("Erreur ajout adversaire:", error);
+        return false;
+      }
+    },
+    [tournoiId, fetchMatches]
+  );
+
+  const deleteMatch = useCallback(
+    async (matchId: number) => {
+      try {
+        const res = await fetch(
+          `/api/tournois/${tournoiId}/matches/${matchId}`,
+          { method: "DELETE" }
+        );
+
+        if (res.ok) {
+          await fetchMatches();
+          return true;
+        }
+        return false;
+      } catch (error) {
+        console.error("Erreur suppression match:", error);
+        return false;
+      }
+    },
+    [tournoiId, fetchMatches]
+  );
+
   const deleteAllMatches = useCallback(async () => {
     try {
       const res = await fetch(`/api/tournois/${tournoiId}/matches`, {
@@ -163,7 +209,9 @@ export function useMatches(tournoiId: number) {
     fetchMatches,
     generateMatches,
     createManualMatch,
+    addOpponentToMatch,
     updateMatchResult,
+    deleteMatch,
     deleteAllMatches,
   };
 }

@@ -5,9 +5,10 @@ import { useMemo } from "react";
 interface PoolViewProps {
   matches: Match[];
   category: string;
+  onAddOpponent?: (match: Match) => void;
 }
 
-export function PoolView({ matches, category }: PoolViewProps) {
+export function PoolView({ matches, category, onAddOpponent }: PoolViewProps) {
   // Grouper par poolName
   const matchesByPool = useMemo(() => {
     const pools = new Map<string, Match[]>();
@@ -44,6 +45,7 @@ export function PoolView({ matches, category }: PoolViewProps) {
                 <MatchCardEditable
                   key={match.id}
                   match={match}
+                  onAddOpponent={onAddOpponent}
                 />
               ))}
             </div>

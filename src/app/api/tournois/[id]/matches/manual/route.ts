@@ -54,27 +54,20 @@ export async function POST(
       );
     }
 
-    // Vérifier que les boxeurs ont la même catégorie de poids
-    if (boxeur1.categoriePoids !== boxeur2.categoriePoids) {
-      return NextResponse.json(
-        { error: "Les boxeurs doivent avoir la même catégorie de poids" },
-        { status: 400 },
-      );
-    }
-
-    // Créer le match manuel
+    // Créer le match manuel (aucune restriction de catégorie)
     const match = await prisma.match.create({
       data: {
         tournoi: { connect: { id: tournoiId } },
         boxeur1: { connect: { id: boxeur1Id } },
         boxeur2: { connect: { id: boxeur2Id } },
-        matchType: "POOL", // Les matchs manuels sont considérés comme des matchs de poule
+        matchType: "POOL",
+        sexe: boxeur1.sexe === boxeur2.sexe ? boxeur1.sexe : "M",
         categorieAge: categorieAge || boxeur1.categorieAge || "",
-        categoriePoids: boxeur1.categoriePoids || "",
+        categoriePoids: categoriePoids || boxeur1.categoriePoids || "",
         gant: gant || boxeur1.gant,
-        categoryDisplay: `${boxeur1.categorieAge || ""} - ${boxeur1.categoriePoids || ""}`,
+        categoryDisplay: "MANUEL",
         poolName: "MANUEL",
-        displayOrder: 999, // Les matchs manuels sont affichés en dernier
+        displayOrder: 999,
       },
       include: {
         boxeur1: { include: { club: true } },

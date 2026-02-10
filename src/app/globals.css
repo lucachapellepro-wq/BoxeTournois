@@ -306,6 +306,89 @@ select option { background: var(--bg-secondary); color: var(--text-primary); }
 .match-tbd {
   opacity: 0.6;
 }
+.match-manual {
+  border-color: #f39c12;
+  border-width: 2px;
+  background: rgba(243, 156, 18, 0.08);
+}
+.match-manual:hover {
+  border-color: #e67e22;
+}
+.match-finale {
+  border-color: #e74c3c;
+  border-width: 2px;
+  background: rgba(231, 76, 60, 0.08);
+}
+.match-finale:hover {
+  border-color: #c0392b;
+}
+.match-demi {
+  border-color: #9b59b6;
+  border-width: 2px;
+  background: rgba(155, 89, 182, 0.08);
+}
+.match-demi:hover {
+  border-color: #8e44ad;
+}
+.match-manual-label {
+  background: #f39c12;
+  color: #000;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.btn-delete-match {
+  background: none;
+  border: 1px solid #e6394640;
+  color: #e63946;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.btn-delete-match:hover {
+  background: #e6394620;
+  border-color: #e63946;
+}
+.match-solo {
+  border-style: dashed;
+}
+.btn-add-opponent {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: #3b82f6;
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.btn-add-opponent:hover {
+  background: #2563eb;
+}
+.match-fighter-added {
+  background: rgba(46, 204, 113, 0.12);
+  border-left: 3px solid #2ecc71;
+  padding-left: 10px;
+  border-radius: 6px;
+}
 .match-fighter {
   flex: 1;
   min-width: 0;
@@ -421,6 +504,25 @@ select option { background: var(--bg-secondary); color: var(--text-primary); }
 /* ANIMATIONS */
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto;
+}
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 40px;
+  color: var(--text-secondary);
+}
 
 /* RESPONSIVE — 768px */
 @media (max-width: 768px) {

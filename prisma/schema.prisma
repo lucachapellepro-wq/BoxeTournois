@@ -108,6 +108,8 @@ model Match {
   winnerId    Int?
   winner      Boxeur?  @relation(name: "WonMatches", fields: [winnerId], references: [id], onDelete: SetNull)
 
+  boxeur2Manual Boolean @default(false) // boxeur2 ajouté manuellement
+
   displayOrder Int     @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

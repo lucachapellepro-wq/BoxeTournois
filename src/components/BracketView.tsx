@@ -5,9 +5,10 @@ import { useMemo } from "react";
 interface BracketViewProps {
   matches: Match[];
   category: string;
+  onAddOpponent?: (match: Match) => void;
 }
 
-export function BracketView({ matches, category }: BracketViewProps) {
+export function BracketView({ matches, category, onAddOpponent }: BracketViewProps) {
   // Grouper par bracketRound
   const matchesByRound = useMemo(() => {
     const rounds = new Map<string, Match[]>();
@@ -58,6 +59,7 @@ export function BracketView({ matches, category }: BracketViewProps) {
               <MatchCardEditable
                 key={match.id}
                 match={match}
+                onAddOpponent={onAddOpponent}
               />
             ))}
           </div>

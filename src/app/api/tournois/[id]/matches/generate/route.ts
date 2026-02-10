@@ -87,49 +87,38 @@ export async function POST(
       );
     }
 
-    // Créer tous les matchs en transaction
+    // Créer tous les matchs en transaction avec timeout étendu
     const createdMatches = await prisma.$transaction(async (tx) => {
-      // Créer les matchs
-      const matches = await Promise.all(
-        matchesData.map((data) => {
-          // Créer avec les relations connectées
-          const createData: Prisma.MatchCreateInput = {
-            tournoi: { connect: { id: data.tournoiId } },
-            matchType: data.matchType,
-            sexe: data.sexe,
-            categorieAge: data.categorieAge || "",
-            categoriePoids: data.categoriePoids,
-            gant: data.gant || "",
-            categoryDisplay: data.categoryDisplay,
-            displayOrder: data.displayOrder,
-          };
+      // Créer les matchs séquentiellement pour éviter le timeout
+      const matches = [];
+      for (const data of matchesData) {
+        const createData: Prisma.MatchCreateInput = {
+          tournoi: { connect: { id: data.tournoiId } },
+          matchType: data.matchType,
+          sexe: data.sexe,
+          categorieAge: data.categorieAge || "",
+          categoriePoids: data.categoriePoids,
+          gant: data.gant || "",
+          categoryDisplay: data.categoryDisplay,
+          displayOrder: data.displayOrder,
+        };
 
-          // Ajouter boxeur1 si présent (peut être null pour TBD)
-          if (data.boxeur1Id) {
-            createData.boxeur1 = { connect: { id: data.boxeur1Id } };
-          }
+        if (data.boxeur1Id) {
+          createData.boxeur1 = { connect: { id: data.boxeur1Id } };
+        }
+        if (data.boxeur2Id) {
+          createData.boxeur2 = { connect: { id: data.boxeur2Id } };
+        }
+        if (data.bracketRound) {
+          createData.bracketRound = data.bracketRound;
+          createData.bracketPosition = data.bracketPosition ?? 0;
+        }
+        if (data.poolName) {
+          createData.poolName = data.poolName;
+        }
 
-          // Ajouter boxeur2 si présent
-          if (data.boxeur2Id) {
-            createData.boxeur2 = { connect: { id: data.boxeur2Id } };
-          }
-
-          // Ajouter les champs de bracket si présents
-          if (data.bracketRound) {
-            createData.bracketRound = data.bracketRound;
-            createData.bracketPosition = data.bracketPosition ?? 0;
-          }
-
-          // Ajouter poolName si présent
-          if (data.poolName) {
-            createData.poolName = data.poolName;
-          }
-
-          return tx.match.create({
-            data: createData,
-          });
-        })
-      );
+        matches.push(await tx.match.create({ data: createData }));
+      }
 
       // Lier les matchs de bracket avec nextMatchId
       const bracketMatches = matches.filter(
@@ -145,19 +134,16 @@ export async function POST(
           }))
         );
 
-        // Mettre à jour les nextMatchId
-        await Promise.all(
-          links.map((link) =>
-            tx.match.update({
-              where: { id: link.id },
-              data: { nextMatchId: link.nextMatchId },
-            })
-          )
-        );
+        for (const link of links) {
+          await tx.match.update({
+            where: { id: link.id },
+            data: { nextMatchId: link.nextMatchId },
+          });
+        }
       }
 
       return matches;
-    });
+    }, { timeout: 30000 });
 
     // Calculer les stats
     const stats = {

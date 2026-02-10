@@ -119,9 +119,7 @@ export function TireursTable({
   if (loading) {
     return (
       <div className="card">
-        <p style={{ textAlign: "center", padding: "40px", color: "#888" }}>
-          Chargement...
-        </p>
+        <div className="loading-state"><div className="spinner" /></div>
       </div>
     );
   }

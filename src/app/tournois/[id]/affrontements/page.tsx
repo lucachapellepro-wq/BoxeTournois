@@ -8,22 +8,26 @@ import { Toast } from "@/components/Toast";
 import { BracketView } from "@/components/BracketView";
 import { PoolView } from "@/components/PoolView";
 import { BoxeursSeulsView } from "@/components/BoxeursSeulsView";
+import { MatchCardEditable } from "@/components/MatchCardEditable";
 import Link from "next/link";
 import { Boxeur, TournoiDetail } from "@/types";
+import { Match } from "@/types/match";
 
 export default function AffrontementsPage() {
   const params = useParams();
   const tournoiId = parseInt(params.id as string);
-  const { matches, loading, stats, fetchMatches, generateMatches, createManualMatch } = useMatches(tournoiId);
+  const { matches, loading, stats, fetchMatches, generateMatches, createManualMatch, addOpponentToMatch, deleteMatch } = useMatches(tournoiId);
   const { toast, showToast } = useToast();
 
   const [tournoi, setTournoi] = useState<TournoiDetail | null>(null);
-  const [activeTab, setActiveTab] = useState<"BRACKET" | "POOL">("BRACKET");
+  const [activeTab, setActiveTab] = useState<"BRACKET" | "POOL" | "ADDED">("BRACKET");
   const [showConfirmGenerate, setShowConfirmGenerate] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [matchBuilder, setMatchBuilder] = useState<{ boxeur1: Boxeur | null }>({ boxeur1: null });
   const [showMatchModal, setShowMatchModal] = useState(false);
   const [matchSearch, setMatchSearch] = useState("");
+  const [addingToMatchId, setAddingToMatchId] = useState<number | null>(null);
+  const [creatingMatch, setCreatingMatch] = useState(false);
 
   useEffect(() => {
     fetchTournoi();
@@ -64,26 +68,61 @@ export default function AffrontementsPage() {
 
   const handleOpenMatchBuilder = (boxeur?: Boxeur) => {
     setMatchBuilder({ boxeur1: boxeur || null });
+    setAddingToMatchId(null);
+    setShowMatchModal(true);
+    setMatchSearch("");
+  };
+
+  const handleDeleteMatch = async (matchId: number) => {
+    const success = await deleteMatch(matchId);
+    if (success) {
+      showToast("Combat supprimé ✓", "success");
+    } else {
+      showToast("Erreur lors de la suppression", "error");
+    }
+  };
+
+  const handleAddOpponent = (match: Match) => {
+    setAddingToMatchId(match.id);
+    setMatchBuilder({ boxeur1: match.boxeur1 });
     setShowMatchModal(true);
     setMatchSearch("");
   };
 
   const handleSelectBoxeur = async (boxeur: Boxeur) => {
-    if (!matchBuilder.boxeur1) {
+    if (!matchBuilder.boxeur1 && !addingToMatchId) {
       // Étape 1 : sélectionner boxeur 1
       setMatchBuilder({ boxeur1: boxeur });
       setMatchSearch("");
-    } else {
-      // Étape 2 : créer le match
-      const success = await createManualMatch(matchBuilder.boxeur1.id, boxeur.id);
-      if (success) {
-        showToast("Combat ajouté ✓", "success");
-        setShowMatchModal(false);
-        setMatchBuilder({ boxeur1: null });
-        setMatchSearch("");
+      return;
+    }
+
+    setCreatingMatch(true);
+    try {
+      if (addingToMatchId) {
+        const success = await addOpponentToMatch(addingToMatchId, boxeur.id);
+        if (success) {
+          showToast("Adversaire ajouté ✓", "success");
+          setShowMatchModal(false);
+          setMatchBuilder({ boxeur1: null });
+          setAddingToMatchId(null);
+          setMatchSearch("");
+        } else {
+          showToast("Erreur lors de l'ajout", "error");
+        }
       } else {
-        showToast("Erreur lors de la création", "error");
+        const success = await createManualMatch(matchBuilder.boxeur1!.id, boxeur.id);
+        if (success) {
+          showToast("Combat ajouté ✓", "success");
+          setShowMatchModal(false);
+          setMatchBuilder({ boxeur1: null });
+          setMatchSearch("");
+        } else {
+          showToast("Erreur lors de la création", "error");
+        }
       }
+    } finally {
+      setCreatingMatch(false);
     }
   };
 
@@ -94,7 +133,12 @@ export default function AffrontementsPage() {
   );
 
   const poolMatches = useMemo(
-    () => matches.filter((m) => m.matchType === "POOL"),
+    () => matches.filter((m) => m.matchType === "POOL" && m.poolName !== "MANUEL"),
+    [matches]
+  );
+
+  const addedMatches = useMemo(
+    () => matches.filter((m) => m.poolName === "MANUEL"),
     [matches]
   );
 
@@ -160,13 +204,11 @@ export default function AffrontementsPage() {
       .filter((b) => !boxeursWithMatchIds.has(b.id));
   }, [tournoi, matches]);
 
-  if (loading && !tournoi) {
+  if (!tournoi || (loading && matches.length === 0)) {
     return (
       <div className="container" style={{ paddingTop: 40 }}>
         <div className="card">
-          <p style={{ textAlign: "center", padding: 40, color: "#888" }}>
-            Chargement...
-          </p>
+          <div className="loading-state"><div className="spinner" /></div>
         </div>
       </div>
     );
@@ -212,7 +254,9 @@ export default function AffrontementsPage() {
               className="btn btn-primary"
               onClick={() => handleGenerateMatches(false)}
               disabled={generating}
+              style={{ display: "flex", alignItems: "center", gap: 8 }}
             >
+              {generating && <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />}
               {generating ? "Génération..." : "Générer le tirage"}
             </button>
           ) : (
@@ -288,6 +332,14 @@ export default function AffrontementsPage() {
             >
               Poules ({poolMatches.length})
             </button>
+            {addedMatches.length > 0 && (
+              <button
+                className={`tab ${activeTab === "ADDED" ? "tab-active" : ""}`}
+                onClick={() => setActiveTab("ADDED")}
+              >
+                Combats ajoutés ({addedMatches.length})
+              </button>
+            )}
           </div>
 
           {/* Brackets */}
@@ -321,6 +373,7 @@ export default function AffrontementsPage() {
                           key={category}
                           matches={categoryMatches}
                           category={category}
+                          onAddOpponent={handleAddOpponent}
                         />
                       ))}
                     </div>
@@ -345,6 +398,7 @@ export default function AffrontementsPage() {
                           key={category}
                           matches={categoryMatches}
                           category={category}
+                          onAddOpponent={handleAddOpponent}
                         />
                       ))}
                     </div>
@@ -385,6 +439,7 @@ export default function AffrontementsPage() {
                           key={category}
                           matches={categoryMatches}
                           category={category}
+                          onAddOpponent={handleAddOpponent}
                         />
                       ))}
                     </div>
@@ -409,12 +464,41 @@ export default function AffrontementsPage() {
                           key={category}
                           matches={categoryMatches}
                           category={category}
+                          onAddOpponent={handleAddOpponent}
                         />
                       ))}
                     </div>
                   )}
                 </>
               )}
+            </div>
+          )}
+
+          {/* Combats ajoutés */}
+          {activeTab === "ADDED" && (
+            <div style={{ marginTop: 24 }}>
+              <div className="pool-view">
+                <div className="pool-grid">
+                  <div className="pool-card">
+                    <h4 className="pool-title">
+                      Combats ajoutés
+                      <span className="pool-count">
+                        ({addedMatches.length} combat{addedMatches.length > 1 ? "s" : ""})
+                      </span>
+                    </h4>
+                    <div className="pool-matches">
+                      {addedMatches.map((match) => (
+                        <MatchCardEditable
+                          key={match.id}
+                          match={match}
+                          onAddOpponent={handleAddOpponent}
+                          onDelete={handleDeleteMatch}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -427,7 +511,7 @@ export default function AffrontementsPage() {
 
       {/* Modal sélection adversaire */}
       {showMatchModal && (
-        <div className="modal-overlay" onClick={() => { setShowMatchModal(false); setMatchBuilder({ boxeur1: null }); setMatchSearch(""); }}>
+        <div className="modal-overlay" onClick={() => { setShowMatchModal(false); setMatchBuilder({ boxeur1: null }); setAddingToMatchId(null); setMatchSearch(""); }}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="modal-title">
@@ -437,7 +521,7 @@ export default function AffrontementsPage() {
               </h2>
               <button
                 className="modal-close"
-                onClick={() => { setShowMatchModal(false); setMatchBuilder({ boxeur1: null }); setMatchSearch(""); }}
+                onClick={() => { setShowMatchModal(false); setMatchBuilder({ boxeur1: null }); setAddingToMatchId(null); setMatchSearch(""); }}
               >
                 ×
               </button>
@@ -481,7 +565,10 @@ export default function AffrontementsPage() {
                       <button
                         className="btn btn-primary btn-sm"
                         onClick={() => handleSelectBoxeur(b)}
+                        disabled={creatingMatch}
+                        style={{ display: "flex", alignItems: "center", gap: 6 }}
                       >
+                        {creatingMatch && matchBuilder.boxeur1 && <div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />}
                         {matchBuilder.boxeur1 ? "Sélectionner" : "Choisir"}
                       </button>
                     </div>
@@ -521,8 +608,10 @@ export default function AffrontementsPage() {
                 className="btn btn-danger"
                 onClick={() => handleGenerateMatches(true)}
                 disabled={generating}
+                style={{ display: "flex", alignItems: "center", gap: 8 }}
               >
-                {generating ? "Génération..." : "Régénérer"}
+                {generating && <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />}
+                {generating ? "Régénération..." : "Régénérer"}
               </button>
             </div>
           </div>

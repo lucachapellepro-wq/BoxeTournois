@@ -97,9 +97,7 @@ export default function TournoiPage() {
 
       {loading ? (
         <div className="card">
-          <p style={{ textAlign: "center", padding: "40px", color: "#888" }}>
-            Chargement...
-          </p>
+          <div className="loading-state"><div className="spinner" /></div>
         </div>
       ) : tournois.length === 0 ? (
         <div className="card">

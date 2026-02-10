@@ -117,6 +117,28 @@ export function useMatches(tournoiId: number) {
     [tournoiId, fetchMatches]
   );
 
+  const createManualMatch = useCallback(
+    async (boxeur1Id: number, boxeur2Id: number) => {
+      try {
+        const res = await fetch(`/api/tournois/${tournoiId}/matches/manual`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ boxeur1Id, boxeur2Id }),
+        });
+
+        if (res.ok) {
+          await fetchMatches();
+          return true;
+        }
+        return false;
+      } catch (error) {
+        console.error("Erreur création match manuel:", error);
+        return false;
+      }
+    },
+    [tournoiId, fetchMatches]
+  );
+
   const deleteAllMatches = useCallback(async () => {
     try {
       const res = await fetch(`/api/tournois/${tournoiId}/matches`, {
@@ -140,6 +162,7 @@ export function useMatches(tournoiId: number) {
     stats,
     fetchMatches,
     generateMatches,
+    createManualMatch,
     updateMatchResult,
     deleteAllMatches,
   };

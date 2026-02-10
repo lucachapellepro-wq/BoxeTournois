@@ -17,7 +17,10 @@
       "Bash(npx prisma migrate reset:*)",
       "Bash(PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=\"je veux garder les dionnées de dev , celle sur kle serveur osef\" npx prisma migrate reset:*)",
       "Bash(npm run build:*)",
-      "Bash(\"src/app/api/tournois/[id]/matches/generate/route.ts.patch\" << 'EOF'\n    const boxeurs = tournoi.boxeurs.map\\(\\(tb\\) => \\({\n      ...tb.boxeur,\n      dateNaissance: tb.boxeur.dateNaissance?.toISOString\\(\\) || \"\",\n      categoriePoids: tb.boxeur.categoriePoids || \"\",\n      categorieAge: tb.boxeur.categorieAge || \"\",\n    }\\)\\);\nEOF)"
+      "Bash(\"src/app/api/tournois/[id]/matches/generate/route.ts.patch\" << 'EOF'\n    const boxeurs = tournoi.boxeurs.map\\(\\(tb\\) => \\({\n      ...tb.boxeur,\n      dateNaissance: tb.boxeur.dateNaissance?.toISOString\\(\\) || \"\",\n      categoriePoids: tb.boxeur.categoriePoids || \"\",\n      categorieAge: tb.boxeur.categorieAge || \"\",\n    }\\)\\);\nEOF)",
+      "Bash(dir:*)",
+      "Bash(npx next build)",
+      "Bash(git rm:*)"
     ]
   }
 }

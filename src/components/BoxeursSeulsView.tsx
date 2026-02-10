@@ -3,9 +3,10 @@ import { getGantColor, getGantLabel } from "@/lib/categories";
 
 interface BoxeursSeulsViewProps {
   boxeurs: Boxeur[];
+  onAddMatch?: (boxeur: Boxeur) => void;
 }
 
-export function BoxeursSeulsView({ boxeurs }: BoxeursSeulsViewProps) {
+export function BoxeursSeulsView({ boxeurs, onAddMatch }: BoxeursSeulsViewProps) {
   if (boxeurs.length === 0) return null;
 
   // Grouper par sexe puis catégorie
@@ -59,7 +60,17 @@ export function BoxeursSeulsView({ boxeurs }: BoxeursSeulsViewProps) {
                 style={{ flexDirection: "column", alignItems: "flex-start", gap: 8 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%" }}>
-                  <div style={{ fontSize: 24 }}>⏳</div>
+                  {onAddMatch && (
+                    <button
+                      className="btn btn-primary btn-sm"
+                      onClick={() => onAddMatch(boxeur)}
+                      title="Ajouter un combat"
+                      style={{ padding: "6px 10px", fontSize: 16 }}
+                    >
+                      +
+                    </button>
+                  )}
+                  {!onAddMatch && <div style={{ fontSize: 24 }}>⏳</div>}
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 16, fontWeight: "bold" }}>
                       {boxeur.nom.toUpperCase()} {boxeur.prenom}
@@ -125,7 +136,17 @@ export function BoxeursSeulsView({ boxeurs }: BoxeursSeulsViewProps) {
                     style={{ flexDirection: "column", alignItems: "flex-start", gap: 8 }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%" }}>
-                      <div style={{ fontSize: 24 }}>⏳</div>
+                      {onAddMatch && (
+                    <button
+                      className="btn btn-primary btn-sm"
+                      onClick={() => onAddMatch(boxeur)}
+                      title="Ajouter un combat"
+                      style={{ padding: "6px 10px", fontSize: 16 }}
+                    >
+                      +
+                    </button>
+                  )}
+                  {!onAddMatch && <div style={{ fontSize: 24 }}>⏳</div>}
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: 16, fontWeight: "bold" }}>
                           {boxeur.nom.toUpperCase()} {boxeur.prenom}

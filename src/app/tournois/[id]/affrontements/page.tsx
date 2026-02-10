@@ -14,13 +14,16 @@ import { Boxeur, TournoiDetail } from "@/types";
 export default function AffrontementsPage() {
   const params = useParams();
   const tournoiId = parseInt(params.id as string);
-  const { matches, loading, stats, fetchMatches, generateMatches } = useMatches(tournoiId);
+  const { matches, loading, stats, fetchMatches, generateMatches, createManualMatch } = useMatches(tournoiId);
   const { toast, showToast } = useToast();
 
   const [tournoi, setTournoi] = useState<TournoiDetail | null>(null);
   const [activeTab, setActiveTab] = useState<"BRACKET" | "POOL">("BRACKET");
   const [showConfirmGenerate, setShowConfirmGenerate] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [matchBuilder, setMatchBuilder] = useState<{ boxeur1: Boxeur | null }>({ boxeur1: null });
+  const [showMatchModal, setShowMatchModal] = useState(false);
+  const [matchSearch, setMatchSearch] = useState("");
 
   useEffect(() => {
     fetchTournoi();
@@ -56,6 +59,31 @@ export default function AffrontementsPage() {
       showToast("Erreur réseau", "error");
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleOpenMatchBuilder = (boxeur?: Boxeur) => {
+    setMatchBuilder({ boxeur1: boxeur || null });
+    setShowMatchModal(true);
+    setMatchSearch("");
+  };
+
+  const handleSelectBoxeur = async (boxeur: Boxeur) => {
+    if (!matchBuilder.boxeur1) {
+      // Étape 1 : sélectionner boxeur 1
+      setMatchBuilder({ boxeur1: boxeur });
+      setMatchSearch("");
+    } else {
+      // Étape 2 : créer le match
+      const success = await createManualMatch(matchBuilder.boxeur1.id, boxeur.id);
+      if (success) {
+        showToast("Combat ajouté ✓", "success");
+        setShowMatchModal(false);
+        setMatchBuilder({ boxeur1: null });
+        setMatchSearch("");
+      } else {
+        showToast("Erreur lors de la création", "error");
+      }
     }
   };
 
@@ -161,18 +189,24 @@ export default function AffrontementsPage() {
             })}
           </p>
         </div>
-        <div style={{ display: "flex", gap: 12 }}>
+        <div className="page-header-actions" style={{ display: "flex", gap: 12 }}>
           <Link href={`/tournois/${tournoiId}`} className="btn btn-ghost">
-            ← Retour au tournoi
+            ← Retour
           </Link>
           <Link href={`/tournois/${tournoiId}/categories`} className="btn btn-ghost">
             📊 Catégories
           </Link>
           {matches.length > 0 && (
             <Link href={`/tournois/${tournoiId}/feuille`} className="btn btn-secondary">
-              📋 Feuille du tournoi
+              📋 Feuille
             </Link>
           )}
+          <button
+            className="btn btn-primary"
+            onClick={() => handleOpenMatchBuilder()}
+          >
+            + Combat manuel
+          </button>
           {matches.length === 0 ? (
             <button
               className="btn btn-primary"
@@ -383,6 +417,78 @@ export default function AffrontementsPage() {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Boxeurs sans adversaire */}
+      {boxeursSeuls.length > 0 && (
+        <BoxeursSeulsView boxeurs={boxeursSeuls} onAddMatch={handleOpenMatchBuilder} />
+      )}
+
+      {/* Modal sélection adversaire */}
+      {showMatchModal && (
+        <div className="modal-overlay" onClick={() => { setShowMatchModal(false); setMatchBuilder({ boxeur1: null }); setMatchSearch(""); }}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">
+                {matchBuilder.boxeur1
+                  ? `Adversaire de ${matchBuilder.boxeur1.nom.toUpperCase()} ${matchBuilder.boxeur1.prenom}`
+                  : "Sélectionner le 1er boxeur"}
+              </h2>
+              <button
+                className="modal-close"
+                onClick={() => { setShowMatchModal(false); setMatchBuilder({ boxeur1: null }); setMatchSearch(""); }}
+              >
+                ×
+              </button>
+            </div>
+            <div style={{ padding: "0 24px 24px" }}>
+              <input
+                type="text"
+                placeholder="Rechercher par nom, prénom ou club..."
+                value={matchSearch}
+                onChange={(e) => setMatchSearch(e.target.value)}
+                autoFocus
+                style={{ width: "100%", marginBottom: 16 }}
+              />
+              <div style={{ maxHeight: 400, overflowY: "auto" }}>
+                {tournoi?.boxeurs
+                  .map((tb) => tb.boxeur)
+                  .filter((b) => {
+                    if (matchBuilder.boxeur1 && b.id === matchBuilder.boxeur1.id) return false;
+                    if (!matchSearch) return true;
+                    const s = matchSearch.toLowerCase();
+                    return b.nom.toLowerCase().includes(s) || b.prenom.toLowerCase().includes(s) || b.club.nom.toLowerCase().includes(s);
+                  })
+                  .map((b) => (
+                    <div
+                      key={b.id}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "10px 12px",
+                        borderBottom: "1px solid var(--border)",
+                        gap: 12,
+                      }}
+                    >
+                      <div>
+                        <strong>{b.nom.toUpperCase()}</strong> {b.prenom}
+                        <span style={{ color: "#888", marginLeft: 8, fontSize: 13 }}>
+                          {b.club.nom} — {b.categoriePoids} — {b.sexe === "M" ? "H" : "F"}
+                        </span>
+                      </div>
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => handleSelectBoxeur(b)}
+                      >
+                        {matchBuilder.boxeur1 ? "Sélectionner" : "Choisir"}
+                      </button>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

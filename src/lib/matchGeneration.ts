@@ -127,8 +127,11 @@ export function generateMatches(
     } else if (count === 4) {
       // 4 boxeurs : 2 demis + finale TBD
       matches.push(...generate4(groupBoxeurs, category, tournoiId));
-    } else if (count <= 6) {
-      // 5-6 boxeurs : 2 poules + finale TBD
+    } else if (count === 5) {
+      // 5 boxeurs : 2 demis + 1 finale TBD (1 exempt par demi)
+      matches.push(...generate5(groupBoxeurs, category, tournoiId));
+    } else if (count === 6) {
+      // 6 boxeurs : 2 poules de 3 + finale TBD
       matches.push(...generatePoolsWithFinal(groupBoxeurs, category, tournoiId));
     } else if (count === 7) {
       // 7 boxeurs : poule de 4 + poule de 3
@@ -169,7 +172,22 @@ function generate4(boxers: Boxeur[], cat: CategoryInfo, tid: number): MatchCreat
   ];
 }
 
-/** 5-6 boxeurs : 2 poules + finale TBD */
+/** 5 boxeurs : poule de 3 + poule de 2 + 2 demis TBD + 1 finale TBD */
+function generate5(boxers: Boxeur[], cat: CategoryInfo, tid: number): MatchCreateData[] {
+  const sorted = smartPairing(boxers);
+  const pouleA = generateRoundRobin(sorted.slice(0, 3), cat, tid, "A", 0);
+  const pouleB = generateRoundRobin(sorted.slice(3, 5), cat, tid, "B", pouleA.length);
+  const offset = pouleA.length + pouleB.length;
+  return [
+    ...pouleA,
+    ...pouleB,
+    createBracketMatch(tid, cat, null, null, BracketRound.DEMI, 0, offset),
+    createBracketMatch(tid, cat, null, null, BracketRound.DEMI, 1, offset + 1),
+    createBracketMatch(tid, cat, null, null, BracketRound.FINAL, 0, offset + 2),
+  ];
+}
+
+/** 6 boxeurs : 2 poules de 3 + finale TBD */
 function generatePoolsWithFinal(
   boxers: Boxeur[],
   cat: CategoryInfo,

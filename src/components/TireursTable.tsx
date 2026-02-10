@@ -208,7 +208,7 @@ export function TireursTable({
                   borderLeft: hasIncompleteInfo(b) ? "5px solid #ffc107" : undefined,
                 }}
               >
-                <td>
+                <td data-label="Nom">
                   <EditableCell
                     value={`${b.nom.toUpperCase()} ${b.prenom}`}
                     type="text"
@@ -223,12 +223,12 @@ export function TireursTable({
                     }}
                   />
                 </td>
-                <td>
+                <td data-label="Sexe">
                   <span className="badge badge-sexe">
                     {b.sexe === "M" ? "H" : "F"}
                   </span>
                 </td>
-                <td>
+                <td data-label="Année">
                   <EditableCell
                     value={getAnneeFromDate(b.dateNaissance)}
                     type="number"
@@ -243,7 +243,7 @@ export function TireursTable({
                     ans)
                   </span>
                 </td>
-                <td>
+                <td data-label="Poids">
                   <EditableCell
                     value={b.poids}
                     type="number"
@@ -253,7 +253,7 @@ export function TireursTable({
                   />{" "}
                   kg
                 </td>
-                <td>
+                <td data-label="Gant">
                   <span className="badge-gant" style={getGantStyle(b.gant)}>
                     <EditableCell
                       value={b.gant}
@@ -265,18 +265,18 @@ export function TireursTable({
                     />
                   </span>
                 </td>
-                <td>
+                <td data-label="Cat. Poids">
                   <span className="badge badge-category">
                     {b.categoriePoids}
                   </span>
                 </td>
-                <td>
+                <td data-label="Cat. Âge" className="mobile-hide">
                   <span className="badge badge-category">{b.categorieAge}</span>
                 </td>
-                <td>
+                <td data-label="Club">
                   <span className="badge badge-club">{b.club.nom}</span>
                 </td>
-                <td style={{ textAlign: "center" }}>
+                <td data-label="Info" className="mobile-hide" style={{ textAlign: "center" }}>
                   {hasIncompleteInfo(b) ? (
                     <span
                       title="Cliquez pour marquer comme complet"
@@ -299,7 +299,7 @@ export function TireursTable({
                     </span>
                   )}
                 </td>
-                <td>
+                <td data-label="">
                   <button
                     className="btn-icon btn-danger"
                     onClick={() => onDelete(b.id)}

@@ -139,7 +139,7 @@ export default function TournoiDetailPage() {
           <h1 className="page-title">🏆 {tournoi.nom}</h1>
           <p className="page-subtitle">{formatDate(tournoi.date)}</p>
         </div>
-        <div style={{ display: "flex", gap: "12px" }}>
+        <div className="page-header-actions" style={{ display: "flex", gap: "12px" }}>
           <Link href={`/tournois/${params.id}/categories`} className="btn btn-secondary">
             📊 Catégories
           </Link>
@@ -153,20 +153,18 @@ export default function TournoiDetailPage() {
       </div>
 
       {/* Statistiques */}
-      <div className="card">
-        <div style={{ display: "flex", gap: "24px", justifyContent: "center" }}>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "32px", fontWeight: "bold", color: "#3B82F6" }}>
-              {tournoi.boxeurs.length}
-            </div>
-            <div style={{ color: "#666" }}>Boxeurs inscrits</div>
+      <div className="stats-row" style={{ marginTop: 16 }}>
+        <div className="stat-card">
+          <div className="stat-value" style={{ color: "#3B82F6" }}>
+            {tournoi.boxeurs.length}
           </div>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "32px", fontWeight: "bold", color: "#22C55E" }}>
-              {Object.keys(boxeursByClub || {}).length}
-            </div>
-            <div style={{ color: "#666" }}>Clubs participants</div>
+          <div className="stat-label">Boxeurs inscrits</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-value" style={{ color: "#22C55E" }}>
+            {Object.keys(boxeursByClub || {}).length}
           </div>
+          <div className="stat-label">Clubs participants</div>
         </div>
       </div>
 
@@ -208,26 +206,26 @@ export default function TournoiDetailPage() {
                 <tbody>
                   {boxeurs.map((b) => (
                     <tr key={b.id}>
-                      <td>
+                      <td data-label="Nom">
                         <strong>{b.nom.toUpperCase()}</strong> {b.prenom}
                       </td>
-                      <td>
+                      <td data-label="Sexe">
                         <span className="badge badge-sexe">
                           {b.sexe === "M" ? "H" : "F"}
                         </span>
                       </td>
-                      <td>{calculateAge(b.dateNaissance)} ans</td>
-                      <td>{b.poids} kg</td>
-                      <td>
+                      <td data-label="Âge">{calculateAge(b.dateNaissance)} ans</td>
+                      <td data-label="Poids">{b.poids} kg</td>
+                      <td data-label="Gant">
                         <span className="badge">{b.gant}</span>
                       </td>
-                      <td>
+                      <td data-label="Cat. Poids">
                         <span className="badge badge-category">{b.categoriePoids}</span>
                       </td>
-                      <td>
+                      <td data-label="Cat. Âge" className="mobile-hide">
                         <span className="badge badge-category">{b.categorieAge}</span>
                       </td>
-                      <td>
+                      <td data-label="">
                         <button
                           className="btn btn-sm btn-danger"
                           onClick={() => handleRemoveBoxeur(b.id)}
@@ -274,7 +272,7 @@ export default function TournoiDetailPage() {
                       : "Tous les boxeurs sont déjà inscrits"}
                   </p>
                 ) : (
-                  <table>
+                  <div className="table-wrapper"><table>
                     <thead>
                       <tr>
                         <th>Nom</th>
@@ -291,33 +289,33 @@ export default function TournoiDetailPage() {
                     <tbody>
                       {filteredBoxeurs.map((b) => (
                         <tr key={b.id}>
-                          <td>
+                          <td data-label="Nom">
                             <strong>{b.nom.toUpperCase()}</strong> {b.prenom}
                           </td>
-                          <td>
+                          <td data-label="Club">
                             <span className="badge badge-club">{b.club.nom}</span>
                           </td>
-                          <td>
+                          <td data-label="Sexe">
                             <span className="badge badge-sexe">
                               {b.sexe === "M" ? "H" : "F"}
                             </span>
                           </td>
-                          <td>{calculateAge(b.dateNaissance)} ans</td>
-                          <td>{b.poids} kg</td>
-                          <td>
+                          <td data-label="Âge">{calculateAge(b.dateNaissance)} ans</td>
+                          <td data-label="Poids">{b.poids} kg</td>
+                          <td data-label="Gant">
                             <span className="badge">{b.gant}</span>
                           </td>
-                          <td>
+                          <td data-label="Cat. Poids">
                             <span className="badge badge-category">
                               {b.categoriePoids}
                             </span>
                           </td>
-                          <td>
+                          <td data-label="Cat. Âge" className="mobile-hide">
                             <span className="badge badge-category">
                               {b.categorieAge}
                             </span>
                           </td>
-                          <td>
+                          <td data-label="">
                             <button
                               className="btn btn-sm btn-primary"
                               onClick={() => {
@@ -331,7 +329,7 @@ export default function TournoiDetailPage() {
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                  </table></div>
                 )}
               </div>
             </div>

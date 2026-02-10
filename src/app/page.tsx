@@ -126,18 +126,18 @@ export default function TournoiPage() {
               <tbody>
                 {tournois.map((t) => (
                   <tr key={t.id}>
-                    <td>
+                    <td data-label="Tournoi">
                       <Link href={`/tournois/${t.id}`} style={{ textDecoration: "none", color: "inherit" }}>
                         <strong style={{ cursor: "pointer", color: "#2563eb" }}>{t.nom}</strong>
                       </Link>
                     </td>
-                    <td>{formatDate(t.date)}</td>
-                    <td>
+                    <td data-label="Date">{formatDate(t.date)}</td>
+                    <td data-label="Tireurs">
                       <span className="badge badge-category">
                         {t._count?.boxeurs || 0} tireurs
                       </span>
                     </td>
-                    <td>
+                    <td data-label="">
                       <div style={{ display: "flex", gap: "8px" }}>
                         <button
                           className="btn btn-sm btn-ghost"

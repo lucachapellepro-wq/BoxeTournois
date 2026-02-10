@@ -218,7 +218,7 @@ export default function FeuilleTournoiPage() {
 
       <div className="feuille-container" style={{ padding: "40px 20px", maxWidth: 1200, margin: "0 auto" }}>
         {/* Header - No print */}
-        <div className="no-print" style={{ marginBottom: 32, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div className="no-print feuille-header" style={{ marginBottom: 32, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <h1 style={{ fontSize: 28, marginBottom: 8 }}>
               📋 Feuille de tournoi
@@ -227,7 +227,7 @@ export default function FeuilleTournoiPage() {
               Glisse-dépose pour réorganiser • Imprime pour la feuille officielle
             </p>
           </div>
-          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <div className="feuille-controls" style={{ display: "flex", gap: 12, alignItems: "center" }}>
             <Link href={`/tournois/${tournoiId}/affrontements`} className="btn btn-ghost">
               ← Retour
             </Link>
@@ -281,6 +281,7 @@ export default function FeuilleTournoiPage() {
         <div style={{ marginTop: 32 }}>
           {/* Header du tableau */}
           <div
+            className="feuille-table-header"
             style={{
               display: "grid",
               gridTemplateColumns: "60px 200px 1fr 80px 1fr",
@@ -365,6 +366,7 @@ export default function FeuilleTournoiPage() {
               >
                 {/* Numéro */}
                 <div
+                  className="match-row-number"
                   style={{
                     minWidth: 40,
                     textAlign: "center",
@@ -377,14 +379,14 @@ export default function FeuilleTournoiPage() {
                 </div>
 
                 {/* Catégorie / Sexe */}
-                <div style={{ minWidth: 200, fontWeight: "600", color: "#fff" }}>
+                <div className="match-row-category" style={{ minWidth: 200, fontWeight: "600", color: "#fff" }}>
                   {match.categoriePoids} {match.sexe === "F" ? "♀" : "♂"}
                   {match.matchType === "BRACKET" && match.bracketRound && ` - ${match.bracketRound}`}
                   {match.matchType === "POOL" && match.poolName && ` - Poule ${match.poolName}`}
                 </div>
 
                 {/* Boxeur 1 */}
-                <div style={{ flex: 1, color: "#3498db", fontWeight: "500" }}>
+                <div className="match-row-fighter" style={{ flex: 1, color: "#3498db", fontWeight: "500" }}>
                   {match.boxeur1 ? (
                     `${match.boxeur1.nom.toUpperCase()} ${match.boxeur1.prenom} (${match.boxeur1.club.nom})`
                   ) : (
@@ -393,10 +395,10 @@ export default function FeuilleTournoiPage() {
                 </div>
 
                 {/* VS */}
-                <div style={{ color: "#666", fontWeight: "bold", padding: "0 4px" }}>vs</div>
+                <div className="match-row-vs" style={{ color: "#666", fontWeight: "bold", padding: "0 4px" }}>vs</div>
 
                 {/* Boxeur 2 */}
-                <div style={{ flex: 1, color: "#e63946", fontWeight: "500" }}>
+                <div className="match-row-fighter" style={{ flex: 1, color: "#e63946", fontWeight: "500" }}>
                   {match.boxeur2 ? (
                     `${match.boxeur2.nom.toUpperCase()} ${match.boxeur2.prenom} (${match.boxeur2.club.nom})`
                   ) : (

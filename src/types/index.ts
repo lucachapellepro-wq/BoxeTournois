@@ -16,6 +16,7 @@ export interface Boxeur {
   categoriePoids: string;
   categorieAge: string;
   club: Club;
+  typeCompetition: string;
   infoIncomplete: boolean;
 }
 

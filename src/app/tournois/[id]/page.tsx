@@ -77,6 +77,23 @@ export default function TournoiDetailPage() {
     }
   };
 
+  const handleToggleType = async (boxeur: Boxeur) => {
+    const newType = boxeur.typeCompetition === "TOURNOI" ? "INTERCLUB" : "TOURNOI";
+    try {
+      const res = await fetch(`/api/boxeurs/${boxeur.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ typeCompetition: newType }),
+      });
+      if (res.ok) {
+        showToast(`Type changé → ${newType}`, "success");
+        fetchTournoi();
+      }
+    } catch {
+      showToast("Erreur", "error");
+    }
+  };
+
   // Boxeurs déjà inscrits au tournoi
   const enrolledBoxeursIds = tournoi?.boxeurs.map((tb) => tb.boxeur.id) || [];
 
@@ -195,6 +212,7 @@ export default function TournoiDetailPage() {
                   <tr>
                     <th>Nom</th>
                     <th>Sexe</th>
+                    <th>Type</th>
                     <th>Âge</th>
                     <th>Poids</th>
                     <th>Gant</th>
@@ -212,6 +230,20 @@ export default function TournoiDetailPage() {
                       <td data-label="Sexe">
                         <span className="badge badge-sexe">
                           {b.sexe === "M" ? "H" : "F"}
+                        </span>
+                      </td>
+                      <td data-label="Type">
+                        <span
+                          className="badge"
+                          style={{
+                            backgroundColor: b.typeCompetition === "INTERCLUB" ? "#22C55E20" : "#3B82F620",
+                            color: b.typeCompetition === "INTERCLUB" ? "#22C55E" : "#3B82F6",
+                            cursor: "pointer",
+                          }}
+                          onClick={() => handleToggleType(b)}
+                          title="Cliquer pour changer"
+                        >
+                          {b.typeCompetition === "INTERCLUB" ? "I" : "T"}
                         </span>
                       </td>
                       <td data-label="Âge">{calculateAge(b.dateNaissance)} ans</td>
@@ -278,6 +310,7 @@ export default function TournoiDetailPage() {
                         <th>Nom</th>
                         <th>Club</th>
                         <th>Sexe</th>
+                        <th>Type</th>
                         <th>Âge</th>
                         <th>Poids</th>
                         <th>Gant</th>
@@ -298,6 +331,28 @@ export default function TournoiDetailPage() {
                           <td data-label="Sexe">
                             <span className="badge badge-sexe">
                               {b.sexe === "M" ? "H" : "F"}
+                            </span>
+                          </td>
+                          <td data-label="Type">
+                            <span
+                              className="badge"
+                              style={{
+                                backgroundColor: b.typeCompetition === "INTERCLUB" ? "#22C55E20" : "#3B82F620",
+                                color: b.typeCompetition === "INTERCLUB" ? "#22C55E" : "#3B82F6",
+                                cursor: "pointer",
+                              }}
+                              onClick={async () => {
+                                const newType = b.typeCompetition === "TOURNOI" ? "INTERCLUB" : "TOURNOI";
+                                await fetch(`/api/boxeurs/${b.id}`, {
+                                  method: "PUT",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ typeCompetition: newType }),
+                                });
+                                fetchBoxeurs();
+                              }}
+                              title="Cliquer pour changer"
+                            >
+                              {b.typeCompetition === "INTERCLUB" ? "I" : "T"}
                             </span>
                           </td>
                           <td data-label="Âge">{calculateAge(b.dateNaissance)} ans</td>

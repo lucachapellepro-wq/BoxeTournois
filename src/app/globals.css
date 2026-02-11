@@ -624,6 +624,13 @@ select option { background: var(--bg-secondary); color: var(--text-primary); }
   .toast { left: 12px; right: 12px; bottom: 12px; text-align: center; }
 }
 
+/* PRINT — cacher le header global */
+@media print {
+  .header {
+    display: none !important;
+  }
+}
+
 /* RESPONSIVE — 480px (très petit écran) */
 @media (max-width: 480px) {
   .stats-row { grid-template-columns: 1fr; }

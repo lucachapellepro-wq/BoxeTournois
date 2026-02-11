@@ -41,6 +41,7 @@ export function useBoxeurs() {
         anneeNaissance?: string;
         poids?: string;
         gant?: string;
+        typeCompetition?: string;
         infoIncomplete?: boolean;
       },
     ) => {

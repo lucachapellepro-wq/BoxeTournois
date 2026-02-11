@@ -12,6 +12,7 @@ interface BoxeurCreateInput {
   poids: string;
   gant: string;
   clubId: string;
+  typeCompetition?: string;
 }
 
 type BoxeurWithClub = Boxeur & { club: Club };
@@ -37,6 +38,7 @@ export async function POST(request: NextRequest) {
       poids,
       gant,
       clubId,
+      typeCompetition,
     }: BoxeurCreateInput = body;
 
     if (
@@ -74,6 +76,7 @@ export async function POST(request: NextRequest) {
         clubId: parseInt(clubId),
         categorieAge,
         categoriePoids,
+        typeCompetition: typeCompetition || "TOURNOI",
       },
       include: { club: true },
     });

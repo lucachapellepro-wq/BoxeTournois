@@ -11,7 +11,8 @@ type SortColumn =
   | "gant"
   | "categoriePoids"
   | "categorieAge"
-  | "club";
+  | "club"
+  | "typeCompetition";
 type SortDirection = "asc" | "desc";
 
 interface TireursTableProps {
@@ -87,6 +88,10 @@ export function TireursTable({
           aVal = a.club.nom.toLowerCase();
           bVal = b.club.nom.toLowerCase();
           break;
+        case "typeCompetition":
+          aVal = a.typeCompetition;
+          bVal = b.typeCompetition;
+          break;
       }
 
       if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
@@ -157,6 +162,12 @@ export function TireursTable({
                 Sexe{getSortIcon("sexe")}
               </th>
               <th
+                onClick={() => handleSort("typeCompetition")}
+                style={{ cursor: "pointer" }}
+              >
+                Type{getSortIcon("typeCompetition")}
+              </th>
+              <th
                 onClick={() => handleSort("annee")}
                 style={{ cursor: "pointer" }}
               >
@@ -224,6 +235,23 @@ export function TireursTable({
                 <td data-label="Sexe">
                   <span className="badge badge-sexe">
                     {b.sexe === "M" ? "H" : "F"}
+                  </span>
+                </td>
+                <td data-label="Type">
+                  <span
+                    className="badge"
+                    style={{
+                      backgroundColor: b.typeCompetition === "INTERCLUB" ? "#22C55E20" : "#3B82F620",
+                      color: b.typeCompetition === "INTERCLUB" ? "#22C55E" : "#3B82F6",
+                      cursor: "pointer",
+                    }}
+                    onClick={async () => {
+                      const newType = b.typeCompetition === "TOURNOI" ? "INTERCLUB" : "TOURNOI";
+                      await onUpdate(b.id, "typeCompetition", newType);
+                    }}
+                    title="Cliquer pour changer"
+                  >
+                    {b.typeCompetition === "INTERCLUB" ? "I" : "T"}
                   </span>
                 </td>
                 <td data-label="Année">

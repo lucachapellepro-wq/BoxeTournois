@@ -24,7 +24,7 @@ export async function PUT(
   const { id } = await params;
   try {
     const body = await request.json();
-    const { nom, prenom, anneeNaissance, poids, gant, sexe, infoIncomplete } = body;
+    const { nom, prenom, anneeNaissance, poids, gant, sexe, infoIncomplete, typeCompetition } = body;
 
     // Préparer les données à mettre à jour
     const updateData: {
@@ -37,12 +37,14 @@ export async function PUT(
       categorieAge?: string;
       categoriePoids?: string;
       infoIncomplete?: boolean;
+      typeCompetition?: string;
     } = {};
 
     if (nom) updateData.nom = nom;
     if (prenom) updateData.prenom = prenom;
     if (sexe) updateData.sexe = sexe;
     if (gant) updateData.gant = gant;
+    if (typeCompetition) updateData.typeCompetition = typeCompetition;
     if (typeof infoIncomplete === "boolean") updateData.infoIncomplete = infoIncomplete;
 
     // Si année de naissance modifiée, convertir en Date

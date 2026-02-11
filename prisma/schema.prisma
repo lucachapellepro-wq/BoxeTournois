@@ -37,6 +37,7 @@ model Boxeur {
   clubId          Int
   categoriePoids  String?            // Calculé automatiquement
   categorieAge    String?            // Calculé automatiquement
+  typeCompetition String             @default("TOURNOI") // "TOURNOI" | "INTERCLUB"
   infoIncomplete  Boolean            @default(false) // Marque manuelle d'info incomplète
   tournois        TournoiBoxeur[]    // Relation many-to-many
   matchesAsBoxeur1 Match[]           @relation("Boxeur1Matches")

@@ -13,6 +13,7 @@ interface Boxeur {
   categoriePoids: string;
   categorieAge: string;
   gant: string;
+  typeCompetition: string;
   club: {
     nom: string;
   };
@@ -32,6 +33,7 @@ export default function CategoriesPage() {
   const tournoiId = parseInt(params.id as string);
   const [tournoi, setTournoi] = useState<TournoiDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [typeFilter, setTypeFilter] = useState<"TOUS" | "TOURNOI" | "INTERCLUB">("TOUS");
 
   useEffect(() => {
     fetchTournoi();
@@ -60,6 +62,7 @@ export default function CategoriesPage() {
 
     tournoi.boxeurs.forEach((tb) => {
       const boxeur = tb.boxeur;
+      if (typeFilter !== "TOUS" && boxeur.typeCompetition !== typeFilter) return;
       const key = boxeur.categoriePoids;
 
       if (boxeur.sexe === "F") {
@@ -75,7 +78,7 @@ export default function CategoriesPage() {
       F: Array.from(femmes.entries()).sort(([a], [b]) => a.localeCompare(b)),
       M: Array.from(hommes.entries()).sort(([a], [b]) => a.localeCompare(b)),
     };
-  }, [tournoi]);
+  }, [tournoi, typeFilter]);
 
   const totalBoxeurs = tournoi?.boxeurs.length || 0;
   const totalFemmes = categoriesBySexe.F.reduce((acc, [, boxeurs]) => acc + boxeurs.length, 0);
@@ -154,6 +157,19 @@ export default function CategoriesPage() {
         </div>
       </div>
 
+      {/* Filtre Tournoi/Interclub */}
+      <div style={{ display: "flex", gap: 8, marginTop: 24 }}>
+        {(["TOUS", "TOURNOI", "INTERCLUB"] as const).map((t) => (
+          <button
+            key={t}
+            className={`btn btn-sm ${typeFilter === t ? "btn-primary" : "btn-ghost"}`}
+            onClick={() => setTypeFilter(t)}
+          >
+            {t === "TOUS" ? "Tous" : t === "TOURNOI" ? "Tournoi" : "Interclub"}
+          </button>
+        ))}
+      </div>
+
       {/* Femmes */}
       {categoriesBySexe.F.length > 0 && (
         <div style={{ marginTop: 32 }}>
@@ -206,6 +222,16 @@ export default function CategoriesPage() {
                         <strong>{boxeur.nom.toUpperCase()}</strong> {boxeur.prenom}
                       </div>
                       <div style={{ display: "flex", gap: 4 }}>
+                        <span
+                          className="badge"
+                          style={{
+                            fontSize: 11,
+                            backgroundColor: boxeur.typeCompetition === "INTERCLUB" ? "#22C55E20" : "#3B82F620",
+                            color: boxeur.typeCompetition === "INTERCLUB" ? "#22C55E" : "#3B82F6",
+                          }}
+                        >
+                          {boxeur.typeCompetition === "INTERCLUB" ? "I" : "T"}
+                        </span>
                         <span
                           className="badge"
                           style={{
@@ -288,6 +314,16 @@ export default function CategoriesPage() {
                         <strong>{boxeur.nom.toUpperCase()}</strong> {boxeur.prenom}
                       </div>
                       <div style={{ display: "flex", gap: 4 }}>
+                        <span
+                          className="badge"
+                          style={{
+                            fontSize: 11,
+                            backgroundColor: boxeur.typeCompetition === "INTERCLUB" ? "#22C55E20" : "#3B82F620",
+                            color: boxeur.typeCompetition === "INTERCLUB" ? "#22C55E" : "#3B82F6",
+                          }}
+                        >
+                          {boxeur.typeCompetition === "INTERCLUB" ? "I" : "T"}
+                        </span>
                         <span
                           className="badge"
                           style={{

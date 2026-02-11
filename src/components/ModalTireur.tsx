@@ -10,6 +10,7 @@ interface FormData {
   poids: string;
   gant: string;
   clubId: string;
+  typeCompetition: string;
 }
 
 interface ModalTireurProps {
@@ -139,6 +140,16 @@ export function ModalTireur({
             >
               <option value="M">Homme (Tireur)</option>
               <option value="F">Femme (Tireuse)</option>
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Type</label>
+            <select
+              value={form.typeCompetition}
+              onChange={(e) => onChange({ ...form, typeCompetition: e.target.value })}
+            >
+              <option value="TOURNOI">Tournoi</option>
+              <option value="INTERCLUB">Interclub</option>
             </select>
           </div>
           <div className="form-group">

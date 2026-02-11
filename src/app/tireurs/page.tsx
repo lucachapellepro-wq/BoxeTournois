@@ -31,6 +31,7 @@ export default function TireursPage() {
     poids: "",
     gant: "bleu",
     clubId: "",
+    typeCompetition: "TOURNOI",
   });
 
   const [clubForm, setClubForm] = useState({
@@ -72,6 +73,7 @@ export default function TireursPage() {
           poids: "",
           gant: "bleu",
           clubId: "",
+          typeCompetition: "TOURNOI",
         });
         setShowModal(false);
         fetchBoxeurs();

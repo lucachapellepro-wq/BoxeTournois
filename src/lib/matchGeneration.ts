@@ -91,17 +91,17 @@ export function generateMatches(
 ): MatchCreateData[] {
   const matches: MatchCreateData[] = [];
 
-  // Grouper par SEXE + CATÉGORIE DE POIDS
+  // Grouper par SEXE + CATÉGORIE DE POIDS + TYPE COMPETITION
   const groups = new Map<string, Boxeur[]>();
   boxeurs.forEach((b) => {
-    const key = `${b.sexe}|${b.categoriePoids}`;
+    const key = `${b.sexe}|${b.categoriePoids}|${b.typeCompetition}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(b);
   });
 
   // Pour chaque groupe, générer selon le nombre
   groups.forEach((groupBoxeurs, key) => {
-    const [sexe, catPoids] = key.split("|");
+    const [sexe, catPoids, typeCompetition] = key.split("|");
 
     const category: CategoryInfo = {
       sexe,
@@ -113,6 +113,13 @@ export function generateMatches(
 
     const count = groupBoxeurs.length;
 
+    // INTERCLUB : pas de tournoi, juste des matchs 1v1 simples
+    if (typeCompetition === "INTERCLUB") {
+      matches.push(...generateInterclub(groupBoxeurs, category, tournoiId));
+      return;
+    }
+
+    // TOURNOI : structure complète avec brackets/poules
     if (count === 1) {
       // 1 boxeur : finale seul
       matches.push(
@@ -151,6 +158,37 @@ export function generateMatches(
 // =============================================
 // STRATÉGIES DE GÉNÉRATION
 // =============================================
+
+/** INTERCLUB : même structure que tournoi mais sans matchs provisoires (TBD) */
+function generateInterclub(boxers: Boxeur[], cat: CategoryInfo, tid: number): MatchCreateData[] {
+  const count = boxers.length;
+  let matches: MatchCreateData[] = [];
+
+  if (count === 1) {
+    matches.push(createBracketMatch(tid, cat, boxers[0].id, null, BracketRound.FINAL, 0, 0));
+  } else if (count === 2) {
+    matches.push(...generate2(boxers, cat, tid));
+  } else if (count === 3) {
+    matches.push(...generate3(boxers, cat, tid));
+  } else if (count === 4) {
+    matches.push(...generate4(boxers, cat, tid));
+  } else if (count === 5) {
+    matches.push(...generate5(boxers, cat, tid));
+  } else if (count === 6) {
+    matches.push(...generatePoolsWithFinal(boxers, cat, tid));
+  } else if (count === 7) {
+    matches.push(...generateTwoPools(boxers, cat, tid));
+  } else if (count === 8) {
+    matches.push(...generate8(boxers, cat, tid));
+  } else {
+    matches.push(...generateLargePools(boxers, cat, tid));
+  }
+
+  // Filtrer les matchs provisoires (TBD) : supprimer ceux où les deux boxeurs sont null
+  matches = matches.filter(m => m.boxeur1Id !== null || m.boxeur2Id !== null);
+
+  return matches;
+}
 
 /** 2 boxeurs : 1 finale */
 function generate2(boxers: Boxeur[], cat: CategoryInfo, tid: number): MatchCreateData[] {

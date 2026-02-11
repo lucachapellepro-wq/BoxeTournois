@@ -20,7 +20,7 @@ export default function AffrontementsPage() {
   const { toast, showToast } = useToast();
 
   const [tournoi, setTournoi] = useState<TournoiDetail | null>(null);
-  const [activeTab, setActiveTab] = useState<"BRACKET" | "POOL" | "ADDED">("BRACKET");
+  const [activeTab, setActiveTab] = useState<"BRACKET" | "POOL" | "INTERCLUB" | "ADDED">("BRACKET");
   const [showConfirmGenerate, setShowConfirmGenerate] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [matchBuilder, setMatchBuilder] = useState<{ boxeur1: Boxeur | null }>({ boxeur1: null });
@@ -126,14 +126,24 @@ export default function AffrontementsPage() {
     }
   };
 
-  // Filtrer les matchs par type
+  // Détecter si un match est interclub
+  const isInterclub = (m: Match) => {
+    return m.boxeur1?.typeCompetition === "INTERCLUB" || m.boxeur2?.typeCompetition === "INTERCLUB" || m.poolName === "INTERCLUB";
+  };
+
+  // Filtrer les matchs par type — séparer tournoi et interclub
   const bracketMatches = useMemo(
-    () => matches.filter((m) => m.matchType === "BRACKET"),
+    () => matches.filter((m) => m.matchType === "BRACKET" && !isInterclub(m)),
     [matches]
   );
 
   const poolMatches = useMemo(
-    () => matches.filter((m) => m.matchType === "POOL" && m.poolName !== "MANUEL"),
+    () => matches.filter((m) => m.matchType === "POOL" && m.poolName !== "MANUEL" && !isInterclub(m)),
+    [matches]
+  );
+
+  const interclubMatches = useMemo(
+    () => matches.filter((m) => isInterclub(m) && m.poolName !== "MANUEL"),
     [matches]
   );
 
@@ -182,6 +192,24 @@ export default function AffrontementsPage() {
       M: Array.from(hommes.entries()).sort(([a], [b]) => a.localeCompare(b)),
     };
   }, [poolMatches]);
+
+  const interclubBySexe = useMemo(() => {
+    const femmes = new Map<string, Match[]>();
+    const hommes = new Map<string, Match[]>();
+
+    interclubMatches.forEach((m) => {
+      const groups = m.sexe === "F" ? femmes : hommes;
+      if (!groups.has(m.categoryDisplay)) {
+        groups.set(m.categoryDisplay, []);
+      }
+      groups.get(m.categoryDisplay)!.push(m);
+    });
+
+    return {
+      F: Array.from(femmes.entries()).sort(([a], [b]) => a.localeCompare(b)),
+      M: Array.from(hommes.entries()).sort(([a], [b]) => a.localeCompare(b)),
+    };
+  }, [interclubMatches]);
 
   // Boxeurs sans adversaire (pas dans les matchs)
   const boxeursSeuls = useMemo(() => {
@@ -332,6 +360,15 @@ export default function AffrontementsPage() {
             >
               Poules ({poolMatches.length})
             </button>
+            {interclubMatches.length > 0 && (
+              <button
+                className={`tab ${activeTab === "INTERCLUB" ? "tab-active" : ""}`}
+                onClick={() => setActiveTab("INTERCLUB")}
+                style={{ color: activeTab === "INTERCLUB" ? "#22C55E" : undefined }}
+              >
+                Interclub ({interclubMatches.length})
+              </button>
+            )}
             {addedMatches.length > 0 && (
               <button
                 className={`tab ${activeTab === "ADDED" ? "tab-active" : ""}`}
@@ -474,6 +511,104 @@ export default function AffrontementsPage() {
             </div>
           )}
 
+          {/* Interclub */}
+          {activeTab === "INTERCLUB" && (
+            <div>
+              {interclubMatches.length === 0 ? (
+                <div className="card">
+                  <div className="empty-state">
+                    <div className="empty-state-icon">🤝</div>
+                    <p>Aucune rencontre interclub</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Femmes */}
+                  {interclubBySexe.F.length > 0 && (
+                    <div style={{ marginTop: 24 }}>
+                      <h2
+                        style={{
+                          fontSize: 28,
+                          marginBottom: 24,
+                          color: "#e63946",
+                          borderBottom: "3px solid #e63946",
+                          paddingBottom: 12,
+                        }}
+                      >
+                        👩 FEMMES
+                      </h2>
+                      {interclubBySexe.F.map(([category, categoryMatches]) => (
+                        <div key={category} className="pool-view">
+                          <h3 className="pool-category">{category}</h3>
+                          <div className="pool-grid">
+                            <div className="pool-card">
+                              <h4 className="pool-title">
+                                Rencontres interclub
+                                <span className="pool-count">
+                                  ({categoryMatches.length} combat{categoryMatches.length > 1 ? "s" : ""})
+                                </span>
+                              </h4>
+                              <div className="pool-matches">
+                                {categoryMatches.map((match) => (
+                                  <MatchCardEditable
+                                    key={match.id}
+                                    match={match}
+                                    onAddOpponent={handleAddOpponent}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Hommes */}
+                  {interclubBySexe.M.length > 0 && (
+                    <div style={{ marginTop: 48 }}>
+                      <h2
+                        style={{
+                          fontSize: 28,
+                          marginBottom: 24,
+                          color: "#3498db",
+                          borderBottom: "3px solid #3498db",
+                          paddingBottom: 12,
+                        }}
+                      >
+                        👨 HOMMES
+                      </h2>
+                      {interclubBySexe.M.map(([category, categoryMatches]) => (
+                        <div key={category} className="pool-view">
+                          <h3 className="pool-category">{category}</h3>
+                          <div className="pool-grid">
+                            <div className="pool-card">
+                              <h4 className="pool-title">
+                                Rencontres interclub
+                                <span className="pool-count">
+                                  ({categoryMatches.length} combat{categoryMatches.length > 1 ? "s" : ""})
+                                </span>
+                              </h4>
+                              <div className="pool-matches">
+                                {categoryMatches.map((match) => (
+                                  <MatchCardEditable
+                                    key={match.id}
+                                    match={match}
+                                    onAddOpponent={handleAddOpponent}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
           {/* Combats ajoutés */}
           {activeTab === "ADDED" && (
             <div style={{ marginTop: 24 }}>
@@ -558,6 +693,14 @@ export default function AffrontementsPage() {
                     >
                       <div>
                         <strong>{b.nom.toUpperCase()}</strong> {b.prenom}
+                        <span className="badge" style={{
+                          marginLeft: 6,
+                          fontSize: 10,
+                          backgroundColor: b.typeCompetition === "INTERCLUB" ? "#22C55E20" : "#3B82F620",
+                          color: b.typeCompetition === "INTERCLUB" ? "#22C55E" : "#3B82F6",
+                        }}>
+                          {b.typeCompetition === "INTERCLUB" ? "I" : "T"}
+                        </span>
                         <span style={{ color: "#888", marginLeft: 8, fontSize: 13 }}>
                           {b.club.nom} — {b.categoriePoids} — {b.sexe === "M" ? "H" : "F"}
                         </span>

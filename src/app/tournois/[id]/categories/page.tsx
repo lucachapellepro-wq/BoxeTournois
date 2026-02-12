@@ -75,8 +75,8 @@ export default function CategoriesPage() {
     });
 
     return {
-      F: Array.from(femmes.entries()).sort(([a], [b]) => a.localeCompare(b)),
-      M: Array.from(hommes.entries()).sort(([a], [b]) => a.localeCompare(b)),
+      F: Array.from(femmes.entries()).sort(([a], [b]) => { const w = (s: string) => { const m = s.match(/(\d+)/); return m ? parseInt(m[1]) : 0; }; return w(a) - w(b); }),
+      M: Array.from(hommes.entries()).sort(([a], [b]) => { const w = (s: string) => { const m = s.match(/(\d+)/); return m ? parseInt(m[1]) : 0; }; return w(a) - w(b); }),
     };
   }, [tournoi, typeFilter]);
 
@@ -230,7 +230,7 @@ export default function CategoriesPage() {
                             color: boxeur.typeCompetition === "INTERCLUB" ? "#22C55E" : "#3B82F6",
                           }}
                         >
-                          {boxeur.typeCompetition === "INTERCLUB" ? "I" : "T"}
+                          {boxeur.typeCompetition === "INTERCLUB" ? "Interclub" : "Tournoi"}
                         </span>
                         <span
                           className="badge"
@@ -322,7 +322,7 @@ export default function CategoriesPage() {
                             color: boxeur.typeCompetition === "INTERCLUB" ? "#22C55E" : "#3B82F6",
                           }}
                         >
-                          {boxeur.typeCompetition === "INTERCLUB" ? "I" : "T"}
+                          {boxeur.typeCompetition === "INTERCLUB" ? "Interclub" : "Tournoi"}
                         </span>
                         <span
                           className="badge"

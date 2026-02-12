@@ -145,7 +145,7 @@ export default function TireursPage() {
       if (!map[key]) map[key] = [];
       map[key].push(b);
     });
-    return Object.entries(map).sort((a, b) => a[0].localeCompare(b[0]));
+    return Object.entries(map).sort((a, b) => { const w = (s: string) => { const m = s.match(/(\d+)/); return m ? parseInt(m[1]) : 0; }; return w(a[0]) - w(b[0]); });
   }, [boxeurs]);
 
   return (

@@ -8,6 +8,7 @@ import { ClubSelector } from "@/components/ClubSelector";
 import { ClubDetail } from "@/components/ClubDetail";
 import { TireursTable } from "@/components/TireursTable";
 import { ModalClub } from "@/components/ModalClub";
+import { ModalTireur } from "@/components/ModalTireur";
 import { Toast } from "@/components/Toast";
 
 export default function ClubsPage() {
@@ -17,11 +18,24 @@ export default function ClubsPage() {
 
   const [selectedClubId, setSelectedClubId] = useState<number | null>(null);
   const [showClubModal, setShowClubModal] = useState(false);
+  const [showTireurModal, setShowTireurModal] = useState(false);
+  const [savingTireur, setSavingTireur] = useState(false);
 
   const [clubForm, setClubForm] = useState({
     nom: "",
     ville: "",
     coach: "",
+  });
+
+  const [tireurForm, setTireurForm] = useState({
+    nom: "",
+    prenom: "",
+    anneeNaissance: "",
+    sexe: "M",
+    poids: "",
+    gant: "bleu",
+    clubId: "",
+    typeCompetition: "TOURNOI",
   });
 
   useEffect(() => {
@@ -82,6 +96,41 @@ export default function ClubsPage() {
     }
   };
 
+  const handleOpenTireurModal = () => {
+    setTireurForm({
+      nom: "", prenom: "", anneeNaissance: "", sexe: "M",
+      poids: "", gant: "bleu",
+      clubId: selectedClubId ? String(selectedClubId) : "",
+      typeCompetition: "TOURNOI",
+    });
+    setShowTireurModal(true);
+  };
+
+  const handleAddTireur = async () => {
+    if (!tireurForm.nom || !tireurForm.prenom || !tireurForm.anneeNaissance || !tireurForm.poids || !tireurForm.clubId) {
+      showToast("Remplis tous les champs !", "error");
+      return;
+    }
+    setSavingTireur(true);
+    try {
+      const res = await fetch("/api/boxeurs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(tireurForm),
+      });
+      if (res.ok) {
+        showToast("Tireur ajouté ✓", "success");
+        setShowTireurModal(false);
+        fetchBoxeurs();
+      } else {
+        showToast("Erreur lors de l'ajout", "error");
+      }
+    } catch {
+      showToast("Erreur réseau", "error");
+    }
+    setSavingTireur(false);
+  };
+
   const selectedClub = clubs.find((c) => c.id === selectedClubId);
   const filteredBoxeurs = selectedClubId
     ? boxeurs.filter((b) => b.club.id === selectedClubId)
@@ -131,10 +180,16 @@ export default function ClubsPage() {
             <>
               <ClubDetail club={selectedClub} onUpdate={handleUpdateClub} />
 
-              <div className="section-header">
-                <h2>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 24, marginBottom: 16 }}>
+                <h2 style={{ fontSize: 28 }}>
                   Tireurs de ce club ({filteredBoxeurs.length})
                 </h2>
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={handleOpenTireurModal}
+                >
+                  + Ajouter un tireur
+                </button>
               </div>
 
               {filteredBoxeurs.length === 0 ? (
@@ -142,6 +197,9 @@ export default function ClubsPage() {
                   <div className="empty-state">
                     <div className="empty-state-icon">👥</div>
                     <p>Aucun tireur dans ce club</p>
+                    <button className="btn btn-primary" onClick={handleOpenTireurModal}>
+                      + Ajouter le premier tireur
+                    </button>
                   </div>
                 </div>
               ) : (
@@ -150,7 +208,7 @@ export default function ClubsPage() {
                   loading={false}
                   onDelete={handleDeleteBoxeur}
                   onUpdate={handleUpdateBoxeur}
-                  onOpenModal={() => {}}
+                  onOpenModal={handleOpenTireurModal}
                 />
               )}
             </>
@@ -164,6 +222,17 @@ export default function ClubsPage() {
         onClose={() => setShowClubModal(false)}
         onSubmit={handleAddClub}
         onChange={setClubForm}
+      />
+
+      <ModalTireur
+        show={showTireurModal}
+        form={tireurForm}
+        clubs={clubs}
+        saving={savingTireur}
+        onClose={() => setShowTireurModal(false)}
+        onSubmit={handleAddTireur}
+        onChange={setTireurForm}
+        onOpenClubModal={() => { setShowTireurModal(false); setShowClubModal(true); }}
       />
 
       {toast.visible && <Toast message={toast.message} type={toast.type} />}

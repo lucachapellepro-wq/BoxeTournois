@@ -243,7 +243,7 @@ export default function TournoiDetailPage() {
                           onClick={() => handleToggleType(b)}
                           title={b.typeCompetition === "INTERCLUB" ? "Interclub — Cliquer pour changer" : "Tournoi — Cliquer pour changer"}
                         >
-                          {b.typeCompetition === "INTERCLUB" ? "I" : "T"}
+                          {b.typeCompetition === "INTERCLUB" ? "Interclub" : "Tournoi"}
                         </span>
                       </td>
                       <td data-label="Âge">{calculateAge(b.dateNaissance)} ans</td>
@@ -352,7 +352,7 @@ export default function TournoiDetailPage() {
                               }}
                               title={b.typeCompetition === "INTERCLUB" ? "Interclub — Cliquer pour changer" : "Tournoi — Cliquer pour changer"}
                             >
-                              {b.typeCompetition === "INTERCLUB" ? "I" : "T"}
+                              {b.typeCompetition === "INTERCLUB" ? "Interclub" : "Tournoi"}
                             </span>
                           </td>
                           <td data-label="Âge">{calculateAge(b.dateNaissance)} ans</td>

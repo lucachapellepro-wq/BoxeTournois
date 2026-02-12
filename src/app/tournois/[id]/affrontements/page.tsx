@@ -20,7 +20,7 @@ export default function AffrontementsPage() {
   const { toast, showToast } = useToast();
 
   const [tournoi, setTournoi] = useState<TournoiDetail | null>(null);
-  const [activeTab, setActiveTab] = useState<"BRACKET" | "POOL" | "INTERCLUB">("BRACKET");
+  const [activeTab, setActiveTab] = useState<"BRACKET" | "POOL" | "INTERCLUB" | "WINNERS">("BRACKET");
   const [showConfirmGenerate, setShowConfirmGenerate] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [matchBuilder, setMatchBuilder] = useState<{ boxeur1: Boxeur | null }>({ boxeur1: null });
@@ -150,6 +150,53 @@ export default function AffrontementsPage() {
     [matches]
   );
 
+  // Vainqueurs directs : boxeurs seuls dans leur catégorie + tireurs Tournoi dans interclub
+  type WinnerEntry = { boxeur: Boxeur; category: string; sexe: string; source: "solo" | "interclub" };
+
+  const winners = useMemo(() => {
+    const result: WinnerEntry[] = [];
+
+    // 1. Boxeurs seuls (match avec un seul boxeur)
+    matches.forEach((m) => {
+      if ((m.boxeur1 && !m.boxeur2)) {
+        result.push({ boxeur: m.boxeur1, category: m.categoryDisplay, sexe: m.sexe, source: "solo" });
+      } else if (!m.boxeur1 && m.boxeur2) {
+        result.push({ boxeur: m.boxeur2, category: m.categoryDisplay, sexe: m.sexe, source: "solo" });
+      }
+    });
+
+    // 2. Tireurs Tournoi dans les rencontres interclub (MIXTE, MANUEL, boxeur2Manual)
+    matches.forEach((m) => {
+      if (!(isMixte(m) || isInterclub(m))) return;
+      if (m.boxeur1?.typeCompetition === "TOURNOI") {
+        result.push({ boxeur: m.boxeur1, category: m.categoryDisplay, sexe: m.sexe, source: "interclub" });
+      }
+      if (m.boxeur2?.typeCompetition === "TOURNOI") {
+        result.push({ boxeur: m.boxeur2, category: m.categoryDisplay, sexe: m.sexe, source: "interclub" });
+      }
+    });
+
+    return result;
+  }, [matches]);
+
+  const winnersBySexe = useMemo(() => {
+    const femmes = new Map<string, WinnerEntry[]>();
+    const hommes = new Map<string, WinnerEntry[]>();
+
+    winners.forEach((w) => {
+      const groups = w.sexe === "F" ? femmes : hommes;
+      if (!groups.has(w.category)) {
+        groups.set(w.category, []);
+      }
+      groups.get(w.category)!.push(w);
+    });
+
+    return {
+      F: Array.from(femmes.entries()).sort(([a], [b]) => { const w = (s: string) => { const m = s.match(/(\d+)/); return m ? parseInt(m[1]) : 0; }; return w(a) - w(b); }),
+      M: Array.from(hommes.entries()).sort(([a], [b]) => { const w = (s: string) => { const m = s.match(/(\d+)/); return m ? parseInt(m[1]) : 0; }; return w(a) - w(b); }),
+    };
+  }, [winners]);
+
   // Grouper par sexe puis catégorie
   const bracketsBySexe = useMemo(() => {
     const femmes = new Map<string, typeof bracketMatches>();
@@ -166,8 +213,8 @@ export default function AffrontementsPage() {
     });
 
     return {
-      F: Array.from(femmes.entries()).sort(([a], [b]) => a.localeCompare(b)),
-      M: Array.from(hommes.entries()).sort(([a], [b]) => a.localeCompare(b)),
+      F: Array.from(femmes.entries()).sort(([a], [b]) => { const w = (s: string) => { const m = s.match(/(\d+)/); return m ? parseInt(m[1]) : 0; }; return w(a) - w(b); }),
+      M: Array.from(hommes.entries()).sort(([a], [b]) => { const w = (s: string) => { const m = s.match(/(\d+)/); return m ? parseInt(m[1]) : 0; }; return w(a) - w(b); }),
     };
   }, [bracketMatches]);
 
@@ -186,8 +233,8 @@ export default function AffrontementsPage() {
     });
 
     return {
-      F: Array.from(femmes.entries()).sort(([a], [b]) => a.localeCompare(b)),
-      M: Array.from(hommes.entries()).sort(([a], [b]) => a.localeCompare(b)),
+      F: Array.from(femmes.entries()).sort(([a], [b]) => { const w = (s: string) => { const m = s.match(/(\d+)/); return m ? parseInt(m[1]) : 0; }; return w(a) - w(b); }),
+      M: Array.from(hommes.entries()).sort(([a], [b]) => { const w = (s: string) => { const m = s.match(/(\d+)/); return m ? parseInt(m[1]) : 0; }; return w(a) - w(b); }),
     };
   }, [poolMatches]);
 
@@ -204,8 +251,8 @@ export default function AffrontementsPage() {
     });
 
     return {
-      F: Array.from(femmes.entries()).sort(([a], [b]) => a.localeCompare(b)),
-      M: Array.from(hommes.entries()).sort(([a], [b]) => a.localeCompare(b)),
+      F: Array.from(femmes.entries()).sort(([a], [b]) => { const w = (s: string) => { const m = s.match(/(\d+)/); return m ? parseInt(m[1]) : 0; }; return w(a) - w(b); }),
+      M: Array.from(hommes.entries()).sort(([a], [b]) => { const w = (s: string) => { const m = s.match(/(\d+)/); return m ? parseInt(m[1]) : 0; }; return w(a) - w(b); }),
     };
   }, [interclubMatches]);
 
@@ -367,6 +414,15 @@ export default function AffrontementsPage() {
                 Interclub ({interclubMatches.length})
               </button>
             )}
+            {winners.length > 0 && (
+              <button
+                className={`tab ${activeTab === "WINNERS" ? "tab-active" : ""}`}
+                onClick={() => setActiveTab("WINNERS")}
+                style={{ color: activeTab === "WINNERS" ? "#d4a337" : undefined }}
+              >
+                Vainqueurs directs ({winners.length})
+              </button>
+            )}
           </div>
 
           {/* Brackets */}
@@ -493,6 +549,100 @@ export default function AffrontementsPage() {
                           category={category}
                           onAddOpponent={handleAddOpponent}
                         />
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Vainqueurs directs */}
+          {activeTab === "WINNERS" && (
+            <div>
+              {winners.length === 0 ? (
+                <div className="card">
+                  <div className="empty-state">
+                    <div className="empty-state-icon">🏆</div>
+                    <p>Aucun vainqueur direct</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Femmes */}
+                  {winnersBySexe.F.length > 0 && (
+                    <div style={{ marginTop: 24 }}>
+                      <h2 style={{ fontSize: 28, marginBottom: 24, color: "#e63946", borderBottom: "3px solid #e63946", paddingBottom: 12 }}>
+                        👩 FEMMES
+                      </h2>
+                      {winnersBySexe.F.map(([category, entries]) => (
+                        <div key={category} style={{ marginBottom: 24 }}>
+                          <h3 className="pool-category">{category}</h3>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                            {entries.map((entry) => (
+                              <div key={entry.boxeur.id} className="card" style={{ padding: 16, display: "flex", alignItems: "center", gap: 16, borderLeft: `4px solid ${entry.source === "interclub" ? "#3B82F6" : "#d4a337"}` }}>
+                                <span style={{ fontSize: 24 }}>🏆</span>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontWeight: 700, fontSize: 16 }}>
+                                    {entry.boxeur.nom.toUpperCase()} {entry.boxeur.prenom}
+                                    <span className="badge" style={{
+                                      marginLeft: 8, fontSize: 10,
+                                      backgroundColor: entry.boxeur.typeCompetition === "INTERCLUB" ? "#22C55E20" : "#3B82F620",
+                                      color: entry.boxeur.typeCompetition === "INTERCLUB" ? "#22C55E" : "#3B82F6",
+                                    }}>
+                                      {entry.boxeur.typeCompetition === "INTERCLUB" ? "Interclub" : "Tournoi"}
+                                    </span>
+                                  </div>
+                                  <div style={{ color: "#888", fontSize: 13, marginTop: 4 }}>
+                                    {entry.boxeur.club.nom} — {entry.boxeur.poids}kg — {entry.boxeur.categoriePoids}
+                                  </div>
+                                </div>
+                                <span style={{ color: entry.source === "interclub" ? "#3B82F6" : "#d4a337", fontWeight: 700, fontSize: 13 }}>
+                                  {entry.source === "interclub" ? "Placé en interclub" : "Seul dans sa catégorie"}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Hommes */}
+                  {winnersBySexe.M.length > 0 && (
+                    <div style={{ marginTop: 48 }}>
+                      <h2 style={{ fontSize: 28, marginBottom: 24, color: "#3498db", borderBottom: "3px solid #3498db", paddingBottom: 12 }}>
+                        👨 HOMMES
+                      </h2>
+                      {winnersBySexe.M.map(([category, entries]) => (
+                        <div key={category} style={{ marginBottom: 24 }}>
+                          <h3 className="pool-category">{category}</h3>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                            {entries.map((entry) => (
+                              <div key={entry.boxeur.id} className="card" style={{ padding: 16, display: "flex", alignItems: "center", gap: 16, borderLeft: `4px solid ${entry.source === "interclub" ? "#3B82F6" : "#d4a337"}` }}>
+                                <span style={{ fontSize: 24 }}>🏆</span>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontWeight: 700, fontSize: 16 }}>
+                                    {entry.boxeur.nom.toUpperCase()} {entry.boxeur.prenom}
+                                    <span className="badge" style={{
+                                      marginLeft: 8, fontSize: 10,
+                                      backgroundColor: entry.boxeur.typeCompetition === "INTERCLUB" ? "#22C55E20" : "#3B82F620",
+                                      color: entry.boxeur.typeCompetition === "INTERCLUB" ? "#22C55E" : "#3B82F6",
+                                    }}>
+                                      {entry.boxeur.typeCompetition === "INTERCLUB" ? "Interclub" : "Tournoi"}
+                                    </span>
+                                  </div>
+                                  <div style={{ color: "#888", fontSize: 13, marginTop: 4 }}>
+                                    {entry.boxeur.club.nom} — {entry.boxeur.poids}kg — {entry.boxeur.categoriePoids}
+                                  </div>
+                                </div>
+                                <span style={{ color: entry.source === "interclub" ? "#3B82F6" : "#d4a337", fontWeight: 700, fontSize: 13 }}>
+                                  {entry.source === "interclub" ? "Placé en interclub" : "Seul dans sa catégorie"}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       ))}
                     </div>
                   )}
@@ -680,7 +830,7 @@ export default function AffrontementsPage() {
                           backgroundColor: b.typeCompetition === "INTERCLUB" ? "#22C55E20" : "#3B82F620",
                           color: b.typeCompetition === "INTERCLUB" ? "#22C55E" : "#3B82F6",
                         }}>
-                          {b.typeCompetition === "INTERCLUB" ? "I" : "T"}
+                          {b.typeCompetition === "INTERCLUB" ? "Interclub" : "Tournoi"}
                         </span>
                         <span style={{ color: "#888", marginLeft: 8, fontSize: 13 }}>
                           {b.club.nom} — {b.categoriePoids} — {b.sexe === "M" ? "H" : "F"}

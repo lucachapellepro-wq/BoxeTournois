@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useMatches } from "@/hooks/useMatches";
 import { calculateAge } from "@/lib/ui-helpers";
@@ -183,11 +183,16 @@ export default function FeuilleTournoiPage() {
     return match.boxeur1?.typeCompetition === "INTERCLUB" || match.boxeur2?.typeCompetition === "INTERCLUB";
   };
 
+  const isManuel = (match: Match): boolean => {
+    return match.poolName === "MANUEL" || !!match.boxeur2Manual;
+  };
+
   const isMixte = (match: Match): boolean => {
-    return match.poolName === "MANUEL" || match.poolName === "MIXTE" || !!match.boxeur2Manual;
+    return match.poolName === "MIXTE";
   };
 
   const getMatchColor = (match: Match): string => {
+    if (isManuel(match)) return "#e67e22"; // Orange - Combat ajouté
     if (isMixte(match)) return "#1abc9c"; // Turquoise - Interclub mixte
     if (isMatchInterclub(match)) return "#f39c12"; // Jaune doré - Interclub
     if (match.bracketRound === "FINAL" || match.poolName === "FINALE") return "#e74c3c"; // Rouge - Finales
@@ -197,6 +202,7 @@ export default function FeuilleTournoiPage() {
   };
 
   const getMatchLabel = (match: Match): string => {
+    if (isManuel(match)) return "Manuel";
     if (isMixte(match)) return "Mixte";
     if (isMatchInterclub(match)) return "Interclub";
     if (match.bracketRound === "FINAL" || match.poolName === "FINALE") return "Finale";
@@ -206,6 +212,7 @@ export default function FeuilleTournoiPage() {
   };
 
   const getMatchLabelFull = (match: Match): string => {
+    if (isManuel(match)) return "Combat ajouté";
     if (isMixte(match)) return "Interclub mixte";
     if (isMatchInterclub(match)) return "Interclub";
     if (match.bracketRound === "FINAL" || match.poolName === "FINALE") return "Finale";
@@ -213,6 +220,36 @@ export default function FeuilleTournoiPage() {
     if (match.matchType === "POOL") return "Poule";
     return "Élimination directe";
   };
+
+  // Vainqueurs directs : boxeurs seuls + tireurs Tournoi dans interclub
+  type WinnerEntry = { boxeur: NonNullable<Match["boxeur1"]>; category: string; sexe: string; source: "solo" | "interclub" };
+
+  const winners = useMemo(() => {
+    const result: WinnerEntry[] = [];
+
+    // 1. Boxeurs seuls (match avec un seul boxeur)
+    initialMatches.forEach((m) => {
+      if (m.boxeur1 && !m.boxeur2) {
+        result.push({ boxeur: m.boxeur1, category: m.categoriePoids, sexe: m.sexe, source: "solo" });
+      } else if (!m.boxeur1 && m.boxeur2) {
+        result.push({ boxeur: m.boxeur2, category: m.categoriePoids, sexe: m.sexe, source: "solo" });
+      }
+    });
+
+    // 2. Tireurs Tournoi dans les rencontres interclub (MIXTE, MANUEL, boxeur2Manual)
+    initialMatches.forEach((m) => {
+      const isInInterclub = isMixte(m) || isMatchInterclub(m) || isManuel(m);
+      if (!isInInterclub) return;
+      if (m.boxeur1?.typeCompetition === "TOURNOI") {
+        result.push({ boxeur: m.boxeur1, category: m.categoriePoids, sexe: m.sexe, source: "interclub" });
+      }
+      if (m.boxeur2?.typeCompetition === "TOURNOI") {
+        result.push({ boxeur: m.boxeur2, category: m.categoriePoids, sexe: m.sexe, source: "interclub" });
+      }
+    });
+
+    return result;
+  }, [initialMatches]);
 
   if (!tournoi) {
     return (
@@ -308,6 +345,46 @@ export default function FeuilleTournoiPage() {
             font-size: 8px !important;
             color: #666 !important;
           }
+          .winners-section {
+            margin-top: 8px !important;
+            page-break-inside: avoid;
+          }
+          .winners-section h2 {
+            font-size: 11px !important;
+            color: #333 !important;
+            margin-bottom: 4px !important;
+            padding-bottom: 3px !important;
+            border-color: #999 !important;
+            border-bottom-width: 1px !important;
+          }
+          .winners-section > div {
+            display: block !important;
+            grid-template-columns: unset !important;
+          }
+          .winners-section .winner-row {
+            display: flex !important;
+            padding: 2px 6px !important;
+            font-size: 9px !important;
+            border-left-width: 3px !important;
+            background: white !important;
+            border-bottom: 0.5px solid #ccc !important;
+            gap: 6px !important;
+          }
+          .winners-section .winner-row span[style*="font-size: 18px"] {
+            font-size: 9px !important;
+          }
+          .winners-section .winner-row span[style*="font-size: 10px"] {
+            font-size: 7px !important;
+          }
+          .winners-section .winner-row span[style*="font-size: 12px"] {
+            font-size: 8px !important;
+          }
+          .winners-section .winner-row span[style*="font-size: 11px"] {
+            font-size: 8px !important;
+          }
+          .winners-section .winner-row div[style*="font-size: 11px"] {
+            font-size: 8px !important;
+          }
           .feuille-title h1 {
             font-size: 18px !important;
             color: #333 !important;
@@ -394,6 +471,7 @@ export default function FeuilleTournoiPage() {
             { color: "#2980b9", label: "Élimination" },
             { color: "#f39c12", label: "Interclub" },
             { color: "#1abc9c", label: "Interclub mixte" },
+            { color: "#e67e22", label: "Combat ajouté" },
           ].map(({ color, label }) => (
             <div key={label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ width: 14, height: 14, borderRadius: 3, backgroundColor: color }} />
@@ -539,7 +617,7 @@ export default function FeuilleTournoiPage() {
                     <>
                       {match.boxeur1.nom.toUpperCase()} {match.boxeur1.prenom}
                       <span className="fighter-tag" style={{ fontSize: 10, marginLeft: 3, color: match.boxeur1.typeCompetition === "INTERCLUB" ? "#22C55E" : "#3B82F6" }}>
-                        ({match.boxeur1.typeCompetition === "INTERCLUB" ? "I" : "T"})
+                        ({match.boxeur1.typeCompetition === "INTERCLUB" ? "Interclub" : "Tournoi"})
                       </span>
                       <span className="fighter-club" style={{ color: "#888", fontSize: 12 }}> ({match.boxeur1.club.nom})</span>
                     </>
@@ -557,7 +635,7 @@ export default function FeuilleTournoiPage() {
                     <>
                       {match.boxeur2.nom.toUpperCase()} {match.boxeur2.prenom}
                       <span className="fighter-tag" style={{ fontSize: 10, marginLeft: 3, color: match.boxeur2.typeCompetition === "INTERCLUB" ? "#22C55E" : "#3B82F6" }}>
-                        ({match.boxeur2.typeCompetition === "INTERCLUB" ? "I" : "T"})
+                        ({match.boxeur2.typeCompetition === "INTERCLUB" ? "Interclub" : "Tournoi"})
                       </span>
                       <span className="fighter-club" style={{ color: "#888", fontSize: 12 }}> ({match.boxeur2.club.nom})</span>
                     </>
@@ -571,6 +649,44 @@ export default function FeuilleTournoiPage() {
             })()
           )}
         </div>
+
+        {/* Vainqueurs directs */}
+        {winners.length > 0 && (
+          <div className="winners-section" style={{ marginTop: 32 }}>
+            <h2 style={{ fontSize: 20, marginBottom: 16, color: "#d4a337", borderBottom: "2px solid #d4a337", paddingBottom: 8 }}>
+              🏆 Vainqueurs directs ({winners.length})
+            </h2>
+            <div>
+              {winners.map((entry) => (
+                <div
+                  key={entry.boxeur.id}
+                  className="winner-row"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "6px 12px",
+                    backgroundColor: "#0a0a0a",
+                    borderLeft: `4px solid ${entry.source === "interclub" ? "#3B82F6" : "#d4a337"}`,
+                    borderBottom: "1px solid #1a1a1a",
+                    fontSize: 14,
+                  }}
+                >
+                  <span style={{ fontWeight: 700 }}>{entry.boxeur.nom.toUpperCase()}</span>
+                  <span>{entry.boxeur.prenom}</span>
+                  <span style={{ color: "#888" }}>—</span>
+                  <span style={{ color: "#d4a337" }}>{entry.category}</span>
+                  <span>{entry.sexe === "F" ? "♀" : "♂"}</span>
+                  <span style={{ color: "#888" }}>—</span>
+                  <span style={{ color: "#888" }}>{entry.boxeur.club.nom}</span>
+                  {entry.source === "interclub" && (
+                    <span style={{ fontSize: 11, color: "#3B82F6", marginLeft: "auto" }}>Placé en interclub</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Footer pour impression */}
         <div style={{ marginTop: 48, paddingTop: 24, borderTop: "2px solid #2a2a2a", textAlign: "center", color: "#666", fontSize: 12 }}>

@@ -13,7 +13,7 @@ const TypeBadge = ({ type }: { type: string }) => (
     backgroundColor: type === "INTERCLUB" ? "#22C55E20" : "#3B82F620",
     color: type === "INTERCLUB" ? "#22C55E" : "#3B82F6",
   }}>
-    {type === "INTERCLUB" ? "I" : "T"}
+    {type === "INTERCLUB" ? "Interclub" : "Tournoi"}
   </span>
 );
 
@@ -75,8 +75,10 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
   }
 
   // Match normal avec 2 boxeurs
-  const isManual = match.poolName === "MANUEL";
-  const isMixte = match.poolName === "MIXTE" || match.poolName === "MANUEL" || !!match.boxeur2Manual;
+  const isManual = match.poolName === "MANUEL" || !!match.boxeur2Manual;
+  const isMixte = match.poolName === "MIXTE";
+  const isInterclub = match.boxeur1?.typeCompetition === "INTERCLUB" || match.boxeur2?.typeCompetition === "INTERCLUB";
+  const isTournoi = !isManual && !isMixte && !isInterclub;
   const isBoxeur1Winner = match.winnerId === match.boxeur1Id;
   const isBoxeur2Winner = match.winnerId === match.boxeur2Id;
 
@@ -86,7 +88,12 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
   ].filter(Boolean).join(" ");
 
   return (
-    <div className={cardClass} style={isMixte ? { borderColor: "#1abc9c", borderWidth: 2, background: "rgba(26, 188, 156, 0.08)" } : undefined}>
+    <div className={cardClass} style={
+      isMixte ? { borderColor: "#1abc9c", borderWidth: 2, background: "rgba(26, 188, 156, 0.08)" }
+      : isManual ? { borderColor: "#e67e22", borderWidth: 2, background: "rgba(230, 126, 34, 0.08)" }
+      : isTournoi ? { borderColor: "#e63946", borderWidth: 2, background: "rgba(230, 57, 70, 0.05)" }
+      : { borderColor: "#f39c12", borderWidth: 2, background: "rgba(243, 156, 18, 0.08)" }
+    }>
       {isMixte && (
         <div style={{ marginBottom: 4 }}>
           <span style={{
@@ -95,6 +102,17 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
             textTransform: "uppercase", letterSpacing: 0.5,
           }}>
             Interclub mixte
+          </span>
+        </div>
+      )}
+      {isManual && (
+        <div style={{ marginBottom: 4 }}>
+          <span style={{
+            fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 4,
+            backgroundColor: "#e67e2220", color: "#e67e22", border: "1px solid #e67e2240",
+            textTransform: "uppercase", letterSpacing: 0.5,
+          }}>
+            Combat ajouté
           </span>
         </div>
       )}
@@ -110,7 +128,11 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
         </div>
       )}
       {/* Boxeur 1 */}
-      <div className={`match-fighter ${isBoxeur1Winner ? "match-winner" : ""}`}>
+      <div className={`match-fighter ${isBoxeur1Winner ? "match-winner" : ""}`} style={
+        (isMixte || isInterclub) && match.boxeur1?.typeCompetition === "TOURNOI"
+          ? { border: "2px solid #3B82F6", borderRadius: 8, padding: 6, background: "rgba(59, 130, 246, 0.06)" }
+          : undefined
+      }>
         <div className="match-fighter-name">
           <strong>{match.boxeur1.nom.toUpperCase()}</strong> {match.boxeur1.prenom}
           <TypeBadge type={match.boxeur1.typeCompetition} />
@@ -140,7 +162,11 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
       <div className="match-vs">VS</div>
 
       {/* Boxeur 2 */}
-      <div className={`match-fighter ${isBoxeur2Winner ? "match-winner" : ""} ${match.boxeur2Manual ? "match-fighter-added" : ""}`}>
+      <div className={`match-fighter ${isBoxeur2Winner ? "match-winner" : ""} ${match.boxeur2Manual ? "match-fighter-added" : ""}`} style={
+        (isMixte || isInterclub) && match.boxeur2?.typeCompetition === "TOURNOI"
+          ? { border: "2px solid #3B82F6", borderRadius: 8, padding: 6, background: "rgba(59, 130, 246, 0.06)" }
+          : undefined
+      }>
         <div className="match-fighter-name">
           <strong>{match.boxeur2.nom.toUpperCase()}</strong> {match.boxeur2.prenom}
           <TypeBadge type={match.boxeur2.typeCompetition} />

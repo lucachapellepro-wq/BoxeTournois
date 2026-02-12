@@ -251,7 +251,7 @@ export function TireursTable({
                     }}
                     title="Cliquer pour changer"
                   >
-                    {b.typeCompetition === "INTERCLUB" ? "I" : "T"}
+                    {b.typeCompetition === "INTERCLUB" ? "Interclub" : "Tournoi"}
                   </span>
                 </td>
                 <td data-label="Année">

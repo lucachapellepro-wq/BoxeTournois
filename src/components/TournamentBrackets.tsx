@@ -19,7 +19,7 @@ export function TournamentBrackets({ matches }: TournamentBracketsProps) {
     });
 
     // Convertir en array et trier par nom de catégorie
-    return Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b));
+    return Array.from(groups.entries()).sort(([a], [b]) => { const w = (s: string) => { const m = s.match(/(\d+)/); return m ? parseInt(m[1]) : 0; }; return w(a) - w(b); });
   }, [matches]);
 
   if (matches.length === 0) {

@@ -5,6 +5,12 @@ import { MatchCreateData, CategoryInfo, BracketRound } from "@/types/match";
 // HELPERS : Création de matchs
 // =============================================
 
+/** Randomise l'ordre des coins (boxeur1/boxeur2) */
+function randomizeCorners(id1: number | null, id2: number | null): [number | null, number | null] {
+  if (id1 === null || id2 === null) return [id1, id2];
+  return Math.random() < 0.5 ? [id1, id2] : [id2, id1];
+}
+
 /** Crée un match de type BRACKET */
 function createBracketMatch(
   tournoiId: number,
@@ -15,10 +21,11 @@ function createBracketMatch(
   position: number,
   order: number
 ): MatchCreateData {
+  const [b1, b2] = randomizeCorners(boxeur1Id, boxeur2Id);
   return {
     tournoiId,
-    boxeur1Id,
-    boxeur2Id,
+    boxeur1Id: b1,
+    boxeur2Id: b2,
     matchType: "BRACKET",
     sexe: category.sexe,
     categorieAge: category.categorieAge,
@@ -40,10 +47,11 @@ function createPoolMatch(
   poolName: string,
   order: number
 ): MatchCreateData {
+  const [b1, b2] = randomizeCorners(boxeur1Id, boxeur2Id);
   return {
     tournoiId,
-    boxeur1Id,
-    boxeur2Id,
+    boxeur1Id: b1,
+    boxeur2Id: b2,
     matchType: "POOL",
     sexe: category.sexe,
     categorieAge: category.categorieAge,

@@ -348,8 +348,8 @@ export default function FeuilleTournoiPage() {
                 value={minSpacing}
                 onChange={(e) => setMinSpacing(parseInt(e.target.value) || 0)}
                 style={{
-                  width: 60,
-                  padding: "6px 12px",
+                  width: 70,
+                  padding: "8px 12px",
                   backgroundColor: "#1a1a1a",
                   border: "1px solid #2a2a2a",
                   borderRadius: 6,

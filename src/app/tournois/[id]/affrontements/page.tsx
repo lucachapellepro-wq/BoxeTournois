@@ -300,7 +300,7 @@ export default function AffrontementsPage() {
       {stats && matches.length > 0 && (
         <div
           className="card"
-          style={{ marginTop: 24, display: "flex", gap: 32, padding: 20 }}
+          style={{ marginTop: 24, display: "flex", gap: 16, padding: 16, flexWrap: "wrap", justifyContent: "center" }}
         >
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 32, fontWeight: "bold", color: "#e63946" }}>
@@ -650,7 +650,7 @@ export default function AffrontementsPage() {
                   ))}
                 </select>
               </div>
-              <div style={{ maxHeight: 400, overflowY: "auto" }}>
+              <div style={{ maxHeight: "60vh", overflowY: "auto" }}>
                 {tournoi?.boxeurs
                   .map((tb) => tb.boxeur)
                   .filter((b) => {

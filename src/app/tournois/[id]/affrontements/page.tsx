@@ -20,12 +20,13 @@ export default function AffrontementsPage() {
   const { toast, showToast } = useToast();
 
   const [tournoi, setTournoi] = useState<TournoiDetail | null>(null);
-  const [activeTab, setActiveTab] = useState<"BRACKET" | "POOL" | "INTERCLUB" | "ADDED">("BRACKET");
+  const [activeTab, setActiveTab] = useState<"BRACKET" | "POOL" | "INTERCLUB">("BRACKET");
   const [showConfirmGenerate, setShowConfirmGenerate] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [matchBuilder, setMatchBuilder] = useState<{ boxeur1: Boxeur | null }>({ boxeur1: null });
   const [showMatchModal, setShowMatchModal] = useState(false);
   const [matchSearch, setMatchSearch] = useState("");
+  const [matchPoidsSearch, setMatchPoidsSearch] = useState("");
   const [addingToMatchId, setAddingToMatchId] = useState<number | null>(null);
   const [creatingMatch, setCreatingMatch] = useState(false);
 
@@ -70,7 +71,7 @@ export default function AffrontementsPage() {
     setMatchBuilder({ boxeur1: boxeur || null });
     setAddingToMatchId(null);
     setShowMatchModal(true);
-    setMatchSearch("");
+    setMatchSearch(""); setMatchPoidsSearch("");
   };
 
   const handleDeleteMatch = async (matchId: number) => {
@@ -86,14 +87,14 @@ export default function AffrontementsPage() {
     setAddingToMatchId(match.id);
     setMatchBuilder({ boxeur1: match.boxeur1 });
     setShowMatchModal(true);
-    setMatchSearch("");
+    setMatchSearch(""); setMatchPoidsSearch("");
   };
 
   const handleSelectBoxeur = async (boxeur: Boxeur) => {
     if (!matchBuilder.boxeur1 && !addingToMatchId) {
       // Étape 1 : sélectionner boxeur 1
       setMatchBuilder({ boxeur1: boxeur });
-      setMatchSearch("");
+      setMatchSearch(""); setMatchPoidsSearch("");
       return;
     }
 
@@ -106,7 +107,7 @@ export default function AffrontementsPage() {
           setShowMatchModal(false);
           setMatchBuilder({ boxeur1: null });
           setAddingToMatchId(null);
-          setMatchSearch("");
+          setMatchSearch(""); setMatchPoidsSearch("");
         } else {
           showToast("Erreur lors de l'ajout", "error");
         }
@@ -116,7 +117,7 @@ export default function AffrontementsPage() {
           showToast("Combat ajouté ✓", "success");
           setShowMatchModal(false);
           setMatchBuilder({ boxeur1: null });
-          setMatchSearch("");
+          setMatchSearch(""); setMatchPoidsSearch("");
         } else {
           showToast("Erreur lors de la création", "error");
         }
@@ -132,23 +133,20 @@ export default function AffrontementsPage() {
   };
 
   // Filtrer les matchs par type — séparer tournoi et interclub
+  const isMixte = (m: Match) => m.poolName === "MANUEL" || m.poolName === "MIXTE" || !!m.boxeur2Manual;
+
   const bracketMatches = useMemo(
-    () => matches.filter((m) => m.matchType === "BRACKET" && !isInterclub(m)),
+    () => matches.filter((m) => m.matchType === "BRACKET" && !isInterclub(m) && !isMixte(m)),
     [matches]
   );
 
   const poolMatches = useMemo(
-    () => matches.filter((m) => m.matchType === "POOL" && m.poolName !== "MANUEL" && !isInterclub(m)),
+    () => matches.filter((m) => m.matchType === "POOL" && !isInterclub(m) && !isMixte(m)),
     [matches]
   );
 
   const interclubMatches = useMemo(
-    () => matches.filter((m) => isInterclub(m) && m.poolName !== "MANUEL"),
-    [matches]
-  );
-
-  const addedMatches = useMemo(
-    () => matches.filter((m) => m.poolName === "MANUEL"),
+    () => matches.filter((m) => isInterclub(m) || isMixte(m)),
     [matches]
   );
 
@@ -369,14 +367,6 @@ export default function AffrontementsPage() {
                 Interclub ({interclubMatches.length})
               </button>
             )}
-            {addedMatches.length > 0 && (
-              <button
-                className={`tab ${activeTab === "ADDED" ? "tab-active" : ""}`}
-                onClick={() => setActiveTab("ADDED")}
-              >
-                Combats ajoutés ({addedMatches.length})
-              </button>
-            )}
           </div>
 
           {/* Brackets */}
@@ -554,6 +544,7 @@ export default function AffrontementsPage() {
                                     key={match.id}
                                     match={match}
                                     onAddOpponent={handleAddOpponent}
+                                    onDelete={match.poolName === "MANUEL" ? handleDeleteMatch : undefined}
                                   />
                                 ))}
                               </div>
@@ -595,6 +586,7 @@ export default function AffrontementsPage() {
                                     key={match.id}
                                     match={match}
                                     onAddOpponent={handleAddOpponent}
+                                    onDelete={match.poolName === "MANUEL" ? handleDeleteMatch : undefined}
                                   />
                                 ))}
                               </div>
@@ -609,33 +601,6 @@ export default function AffrontementsPage() {
             </div>
           )}
 
-          {/* Combats ajoutés */}
-          {activeTab === "ADDED" && (
-            <div style={{ marginTop: 24 }}>
-              <div className="pool-view">
-                <div className="pool-grid">
-                  <div className="pool-card">
-                    <h4 className="pool-title">
-                      Combats ajoutés
-                      <span className="pool-count">
-                        ({addedMatches.length} combat{addedMatches.length > 1 ? "s" : ""})
-                      </span>
-                    </h4>
-                    <div className="pool-matches">
-                      {addedMatches.map((match) => (
-                        <MatchCardEditable
-                          key={match.id}
-                          match={match}
-                          onAddOpponent={handleAddOpponent}
-                          onDelete={handleDeleteMatch}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -646,7 +611,7 @@ export default function AffrontementsPage() {
 
       {/* Modal sélection adversaire */}
       {showMatchModal && (
-        <div className="modal-overlay" onClick={() => { setShowMatchModal(false); setMatchBuilder({ boxeur1: null }); setAddingToMatchId(null); setMatchSearch(""); }}>
+        <div className="modal-overlay" onClick={() => { setShowMatchModal(false); setMatchBuilder({ boxeur1: null }); setAddingToMatchId(null); setMatchSearch(""); setMatchPoidsSearch(""); }}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="modal-title">
@@ -656,25 +621,41 @@ export default function AffrontementsPage() {
               </h2>
               <button
                 className="modal-close"
-                onClick={() => { setShowMatchModal(false); setMatchBuilder({ boxeur1: null }); setAddingToMatchId(null); setMatchSearch(""); }}
+                onClick={() => { setShowMatchModal(false); setMatchBuilder({ boxeur1: null }); setAddingToMatchId(null); setMatchSearch(""); setMatchPoidsSearch(""); }}
               >
                 ×
               </button>
             </div>
             <div style={{ padding: "0 24px 24px" }}>
-              <input
-                type="text"
-                placeholder="Rechercher par nom, prénom ou club..."
-                value={matchSearch}
-                onChange={(e) => setMatchSearch(e.target.value)}
-                autoFocus
-                style={{ width: "100%", marginBottom: 16 }}
-              />
+              <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                <input
+                  type="text"
+                  placeholder="Rechercher par nom, prénom ou club..."
+                  value={matchSearch}
+                  onChange={(e) => setMatchSearch(e.target.value)}
+                  autoFocus
+                  style={{ flex: 1 }}
+                />
+                <select
+                  value={matchPoidsSearch}
+                  onChange={(e) => setMatchPoidsSearch(e.target.value)}
+                  style={{ width: 180 }}
+                >
+                  <option value="">Toutes catégories</option>
+                  {[...new Set(tournoi?.boxeurs.map((tb) => tb.boxeur.categoriePoids) ?? [])].sort((a, b) => {
+                    const getMinWeight = (cat: string) => { const m = cat.match(/(\d+)/); return m ? parseInt(m[1]) : 0; };
+                    return getMinWeight(a) - getMinWeight(b);
+                  }).map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
               <div style={{ maxHeight: 400, overflowY: "auto" }}>
                 {tournoi?.boxeurs
                   .map((tb) => tb.boxeur)
                   .filter((b) => {
                     if (matchBuilder.boxeur1 && b.id === matchBuilder.boxeur1.id) return false;
+                    if (matchPoidsSearch && b.categoriePoids !== matchPoidsSearch) return false;
                     if (!matchSearch) return true;
                     const s = matchSearch.toLowerCase();
                     return b.nom.toLowerCase().includes(s) || b.prenom.toLowerCase().includes(s) || b.club.nom.toLowerCase().includes(s);

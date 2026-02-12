@@ -241,7 +241,7 @@ export default function TournoiDetailPage() {
                             cursor: "pointer",
                           }}
                           onClick={() => handleToggleType(b)}
-                          title="Cliquer pour changer"
+                          title={b.typeCompetition === "INTERCLUB" ? "Interclub — Cliquer pour changer" : "Tournoi — Cliquer pour changer"}
                         >
                           {b.typeCompetition === "INTERCLUB" ? "I" : "T"}
                         </span>
@@ -350,7 +350,7 @@ export default function TournoiDetailPage() {
                                 });
                                 fetchBoxeurs();
                               }}
-                              title="Cliquer pour changer"
+                              title={b.typeCompetition === "INTERCLUB" ? "Interclub — Cliquer pour changer" : "Tournoi — Cliquer pour changer"}
                             >
                               {b.typeCompetition === "INTERCLUB" ? "I" : "T"}
                             </span>

@@ -76,6 +76,7 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
 
   // Match normal avec 2 boxeurs
   const isManual = match.poolName === "MANUEL";
+  const isMixte = match.poolName === "MIXTE" || match.poolName === "MANUEL" || !!match.boxeur2Manual;
   const isBoxeur1Winner = match.winnerId === match.boxeur1Id;
   const isBoxeur2Winner = match.winnerId === match.boxeur2Id;
 
@@ -85,7 +86,18 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
   ].filter(Boolean).join(" ");
 
   return (
-    <div className={cardClass}>
+    <div className={cardClass} style={isMixte ? { borderColor: "#1abc9c", borderWidth: 2, background: "rgba(26, 188, 156, 0.08)" } : undefined}>
+      {isMixte && (
+        <div style={{ marginBottom: 4 }}>
+          <span style={{
+            fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 4,
+            backgroundColor: "#1abc9c20", color: "#1abc9c", border: "1px solid #1abc9c40",
+            textTransform: "uppercase", letterSpacing: 0.5,
+          }}>
+            Interclub mixte
+          </span>
+        </div>
+      )}
       {isManual && onDelete && (
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
           <button

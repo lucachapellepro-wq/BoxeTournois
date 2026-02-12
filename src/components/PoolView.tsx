@@ -40,6 +40,7 @@ export function PoolView({ matches, category, onAddOpponent }: PoolViewProps) {
     if (poolName === "FINALE") return "Finale";
     if (poolName.startsWith("DEMI")) return `Demi-finale ${poolName.replace("DEMI ", "")}`;
     if (poolName === "INTERCLUB") return "Interclub";
+    if (poolName === "MIXTE") return "Interclub mixte";
     if (poolName === "MANUEL") return "Combat ajouté";
     return `Poule ${poolName}`;
   };

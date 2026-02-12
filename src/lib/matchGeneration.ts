@@ -99,8 +99,46 @@ export function generateMatches(
     groups.get(key)!.push(b);
   });
 
+  // Détecter les solos Tournoi ↔ Interclub pour les apparier
+  // Clé : sexe|categoriePoids → { TOURNOI: Boxeur[], INTERCLUB: Boxeur[] }
+  const soloKeys = new Map<string, { tournoi: string; interclub: string }>();
+  groups.forEach((groupBoxeurs, key) => {
+    const [sexe, catPoids, typeCompetition] = key.split("|");
+    if (groupBoxeurs.length === 1) {
+      const baseKey = `${sexe}|${catPoids}`;
+      if (!soloKeys.has(baseKey)) soloKeys.set(baseKey, { tournoi: "", interclub: "" });
+      if (typeCompetition === "TOURNOI") soloKeys.get(baseKey)!.tournoi = key;
+      if (typeCompetition === "INTERCLUB") soloKeys.get(baseKey)!.interclub = key;
+    }
+  });
+
+  // Créer les matchs mixtes et retirer les solos appariés
+  const pairedKeys = new Set<string>();
+  soloKeys.forEach(({ tournoi, interclub }) => {
+    if (tournoi && interclub) {
+      const boxeurT = groups.get(tournoi)![0];
+      const boxeurI = groups.get(interclub)![0];
+      const category: CategoryInfo = {
+        sexe: boxeurT.sexe,
+        categorieAge: boxeurT.categorieAge,
+        categoriePoids: boxeurT.categoriePoids,
+        gant: boxeurT.gant,
+        categoryDisplay: boxeurT.categoriePoids,
+      };
+      // Match mixte : Tournoi vs Interclub avec poolName "MIXTE"
+      const mixteMatch = createBracketMatch(tournoiId, category, boxeurT.id, boxeurI.id, BracketRound.FINAL, 0, 0);
+      mixteMatch.poolName = "MIXTE";
+      matches.push(mixteMatch);
+      pairedKeys.add(tournoi);
+      pairedKeys.add(interclub);
+    }
+  });
+
   // Pour chaque groupe, générer selon le nombre
   groups.forEach((groupBoxeurs, key) => {
+    // Skip les solos déjà appariés en mixte
+    if (pairedKeys.has(key)) return;
+
     const [sexe, catPoids, typeCompetition] = key.split("|");
 
     const category: CategoryInfo = {

@@ -183,9 +183,12 @@ export default function FeuilleTournoiPage() {
     return match.boxeur1?.typeCompetition === "INTERCLUB" || match.boxeur2?.typeCompetition === "INTERCLUB";
   };
 
+  const isMixte = (match: Match): boolean => {
+    return match.poolName === "MANUEL" || match.poolName === "MIXTE" || !!match.boxeur2Manual;
+  };
+
   const getMatchColor = (match: Match): string => {
-    if (match.poolName === "MANUEL") return "#e67e22"; // Orange - Combats ajoutés
-    if (match.boxeur2Manual) return "#e91e8c"; // Rose vif - Adversaire ajouté
+    if (isMixte(match)) return "#1abc9c"; // Turquoise - Interclub mixte
     if (isMatchInterclub(match)) return "#f39c12"; // Jaune doré - Interclub
     if (match.bracketRound === "FINAL" || match.poolName === "FINALE") return "#e74c3c"; // Rouge - Finales
     if (match.bracketRound === "DEMI" || match.poolName?.startsWith("DEMI")) return "#8e44ad"; // Violet - Demis
@@ -194,13 +197,21 @@ export default function FeuilleTournoiPage() {
   };
 
   const getMatchLabel = (match: Match): string => {
-    if (match.poolName === "MANUEL") return "Ajouté";
-    if (match.boxeur2Manual) return "Adv. ajouté";
+    if (isMixte(match)) return "Mixte";
     if (isMatchInterclub(match)) return "Interclub";
     if (match.bracketRound === "FINAL" || match.poolName === "FINALE") return "Finale";
     if (match.bracketRound === "DEMI" || match.poolName?.startsWith("DEMI")) return "Demi";
     if (match.matchType === "POOL") return "Poule";
     return "Élim.";
+  };
+
+  const getMatchLabelFull = (match: Match): string => {
+    if (isMixte(match)) return "Interclub mixte";
+    if (isMatchInterclub(match)) return "Interclub";
+    if (match.bracketRound === "FINAL" || match.poolName === "FINALE") return "Finale";
+    if (match.bracketRound === "DEMI" || match.poolName?.startsWith("DEMI")) return "Demi-finale";
+    if (match.matchType === "POOL") return "Poule";
+    return "Élimination directe";
   };
 
   if (!tournoi) {
@@ -382,8 +393,7 @@ export default function FeuilleTournoiPage() {
             { color: "#e74c3c", label: "Finale" },
             { color: "#2980b9", label: "Élimination" },
             { color: "#f39c12", label: "Interclub" },
-            { color: "#e91e8c", label: "Adversaire ajouté" },
-            { color: "#e67e22", label: "Combat ajouté" },
+            { color: "#1abc9c", label: "Interclub mixte" },
           ].map(({ color, label }) => (
             <div key={label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ width: 14, height: 14, borderRadius: 3, backgroundColor: color }} />
@@ -455,6 +465,7 @@ export default function FeuilleTournoiPage() {
 
                 const matchColor = getMatchColor(match);
                 const matchLabel = getMatchLabel(match);
+                const matchLabelFull = getMatchLabelFull(match);
 
                 return (
               <div
@@ -500,7 +511,7 @@ export default function FeuilleTournoiPage() {
 
                 {/* Badge type */}
                 <div className="match-row-type" style={{ minWidth: 60, textAlign: "center" }}>
-                  <span style={{
+                  <span title={matchLabelFull} style={{
                     display: "inline-block",
                     padding: "2px 8px",
                     borderRadius: 4,
@@ -509,6 +520,7 @@ export default function FeuilleTournoiPage() {
                     backgroundColor: `${matchColor}20`,
                     color: matchColor,
                     border: `1px solid ${matchColor}40`,
+                    cursor: "default",
                   }}>
                     {matchLabel}
                   </span>

@@ -150,56 +150,56 @@ export function TireursTable({
           <thead>
             <tr>
               <th
+                className="sortable"
                 onClick={() => handleSort("nom")}
-                style={{ cursor: "pointer" }}
               >
                 Nom{getSortIcon("nom")}
               </th>
               <th
+                className="sortable"
                 onClick={() => handleSort("sexe")}
-                style={{ cursor: "pointer" }}
               >
                 Sexe{getSortIcon("sexe")}
               </th>
               <th
+                className="sortable"
                 onClick={() => handleSort("typeCompetition")}
-                style={{ cursor: "pointer" }}
               >
                 Type{getSortIcon("typeCompetition")}
               </th>
               <th
+                className="sortable"
                 onClick={() => handleSort("annee")}
-                style={{ cursor: "pointer" }}
               >
                 Année{getSortIcon("annee")}
               </th>
               <th
+                className="sortable"
                 onClick={() => handleSort("poids")}
-                style={{ cursor: "pointer" }}
               >
                 Poids{getSortIcon("poids")}
               </th>
               <th
+                className="sortable"
                 onClick={() => handleSort("gant")}
-                style={{ cursor: "pointer" }}
               >
                 Gant{getSortIcon("gant")}
               </th>
               <th
+                className="sortable"
                 onClick={() => handleSort("categoriePoids")}
-                style={{ cursor: "pointer" }}
               >
                 Cat. Poids{getSortIcon("categoriePoids")}
               </th>
               <th
+                className="sortable"
                 onClick={() => handleSort("categorieAge")}
-                style={{ cursor: "pointer" }}
               >
                 Cat. Âge{getSortIcon("categorieAge")}
               </th>
               <th
+                className="sortable"
                 onClick={() => handleSort("club")}
-                style={{ cursor: "pointer" }}
               >
                 Club{getSortIcon("club")}
               </th>
@@ -213,9 +213,7 @@ export function TireursTable({
             {sortedBoxeurs.map((b) => (
               <tr
                 key={b.id}
-                style={{
-                  borderLeft: hasIncompleteInfo(b) ? "5px solid #ffc107" : undefined,
-                }}
+                className={hasIncompleteInfo(b) ? "row-incomplete" : ""}
               >
                 <td data-label="Nom">
                   <EditableCell
@@ -239,12 +237,7 @@ export function TireursTable({
                 </td>
                 <td data-label="Type">
                   <span
-                    className="badge"
-                    style={{
-                      backgroundColor: b.typeCompetition === "INTERCLUB" ? "#22C55E20" : "#3B82F620",
-                      color: b.typeCompetition === "INTERCLUB" ? "#22C55E" : "#3B82F6",
-                      cursor: "pointer",
-                    }}
+                    className={`badge ${b.typeCompetition === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`}
                     onClick={async () => {
                       const newType = b.typeCompetition === "TOURNOI" ? "INTERCLUB" : "TOURNOI";
                       await onUpdate(b.id, "typeCompetition", newType);
@@ -262,7 +255,7 @@ export function TireursTable({
                       await onUpdate(b.id, "anneeNaissance", String(newValue));
                     }}
                   />{" "}
-                  <span style={{ color: "#555", fontSize: 12 }}>
+                  <span style={{ color: "var(--text-muted)", fontSize: 12 }}>
                     (
                     {new Date().getFullYear() -
                       getAnneeFromDate(b.dateNaissance)!}{" "}
@@ -305,20 +298,16 @@ export function TireursTable({
                 <td data-label="Info" className="mobile-hide" style={{ textAlign: "center" }}>
                   {hasIncompleteInfo(b) ? (
                     <span
+                      className="info-toggle info-incomplete"
                       title="Cliquez pour marquer comme complet"
-                      style={{ fontSize: "20px", cursor: "pointer" }}
                       onClick={() => handleToggleInfoIncomplete(b)}
                     >
                       ⚠️
                     </span>
                   ) : (
                     <span
+                      className="info-toggle info-complete"
                       title="Cliquez pour marquer comme incomplet"
-                      style={{
-                        fontSize: "16px",
-                        color: "#28a745",
-                        cursor: "pointer",
-                      }}
                       onClick={() => handleToggleInfoIncomplete(b)}
                     >
                       ✓

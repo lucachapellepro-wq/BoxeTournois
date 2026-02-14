@@ -125,8 +125,8 @@ export default function TournoiPage() {
                 {tournois.map((t) => (
                   <tr key={t.id}>
                     <td data-label="Tournoi">
-                      <Link href={`/tournois/${t.id}`} style={{ textDecoration: "none", color: "inherit" }}>
-                        <strong style={{ cursor: "pointer", color: "#2563eb" }}>{t.nom}</strong>
+                      <Link href={`/tournois/${t.id}`} className="tournoi-link">
+                        <strong>{t.nom}</strong>
                       </Link>
                     </td>
                     <td data-label="Date">{formatDate(t.date)}</td>
@@ -136,7 +136,7 @@ export default function TournoiPage() {
                       </span>
                     </td>
                     <td data-label="">
-                      <div style={{ display: "flex", gap: "8px" }}>
+                      <div className="action-buttons">
                         <button
                           className="btn btn-sm btn-ghost"
                           onClick={() => handleOpenEdit(t)}

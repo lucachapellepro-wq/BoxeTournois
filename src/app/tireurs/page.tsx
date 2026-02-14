@@ -11,6 +11,7 @@ import { ModalTireur } from "@/components/ModalTireur";
 import { ModalClub } from "@/components/ModalClub";
 import { Toast } from "@/components/Toast";
 import { Boxeur } from "@/types";
+import { sortByWeight } from "@/lib/ui-helpers";
 
 export default function TireursPage() {
   const { boxeurs, loading, fetchBoxeurs, deleteBoxeur, updateBoxeur } =
@@ -145,7 +146,7 @@ export default function TireursPage() {
       if (!map[key]) map[key] = [];
       map[key].push(b);
     });
-    return Object.entries(map).sort((a, b) => { const w = (s: string) => { const m = s.match(/(\d+)/); return m ? parseInt(m[1]) : 0; }; return w(a[0]) - w(b[0]); });
+    return Object.entries(map).sort(([a], [b]) => sortByWeight(a, b));
   }, [boxeurs]);
 
   return (
@@ -159,7 +160,7 @@ export default function TireursPage() {
             Liste complète avec édition directe dans le tableau
           </p>
         </div>
-        <div style={{ display: "flex", gap: "8px" }}>
+        <div className="page-header-actions">
           <button
             className="btn btn-ghost btn-sm"
             onClick={() => setShowClubModal(true)}

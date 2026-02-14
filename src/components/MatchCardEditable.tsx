@@ -1,5 +1,6 @@
 import { Match } from "@/types/match";
 import { getGantColor, getGantLabel } from "@/lib/categories";
+import { isManuel, isMixte, isInterclub } from "@/lib/match-helpers";
 
 interface MatchCardEditableProps {
   match: Match;
@@ -8,10 +9,8 @@ interface MatchCardEditableProps {
 }
 
 const TypeBadge = ({ type }: { type: string }) => (
-  <span className="badge" style={{
+  <span className={`badge ${type === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`} style={{
     fontSize: 9, padding: "1px 4px", marginLeft: 4,
-    backgroundColor: type === "INTERCLUB" ? "#22C55E20" : "#3B82F620",
-    color: type === "INTERCLUB" ? "#22C55E" : "#3B82F6",
   }}>
     {type === "INTERCLUB" ? "Interclub" : "Tournoi"}
   </span>
@@ -75,10 +74,10 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
   }
 
   // Match normal avec 2 boxeurs
-  const isManual = match.poolName === "MANUEL" || !!match.boxeur2Manual;
-  const isMixte = match.poolName === "MIXTE";
-  const isInterclub = match.boxeur1?.typeCompetition === "INTERCLUB" || match.boxeur2?.typeCompetition === "INTERCLUB";
-  const isTournoi = !isManual && !isMixte && !isInterclub;
+  const isManualMatch = isManuel(match);
+  const isMixteMatch = isMixte(match);
+  const isInterclubMatch = isInterclub(match);
+  const isTournoi = !isManualMatch && !isMixteMatch && !isInterclubMatch;
   const isBoxeur1Winner = match.winnerId === match.boxeur1Id;
   const isBoxeur2Winner = match.winnerId === match.boxeur2Id;
 
@@ -89,34 +88,26 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
 
   return (
     <div className={cardClass} style={
-      isMixte ? { borderColor: "#1abc9c", borderWidth: 2, background: "rgba(26, 188, 156, 0.08)" }
-      : isManual ? { borderColor: "#e67e22", borderWidth: 2, background: "rgba(230, 126, 34, 0.08)" }
-      : isTournoi ? { borderColor: "#e63946", borderWidth: 2, background: "rgba(230, 57, 70, 0.05)" }
-      : { borderColor: "#f39c12", borderWidth: 2, background: "rgba(243, 156, 18, 0.08)" }
+      isMixteMatch ? { borderColor: "var(--mixte)", borderWidth: 2, background: "rgba(26, 188, 156, 0.08)" }
+      : isManualMatch ? { borderColor: "var(--manual)", borderWidth: 2, background: "rgba(230, 126, 34, 0.08)" }
+      : isTournoi ? { borderColor: "var(--accent)", borderWidth: 2, background: "rgba(230, 57, 70, 0.05)" }
+      : { borderColor: "var(--interclub)", borderWidth: 2, background: "rgba(243, 156, 18, 0.08)" }
     }>
-      {isMixte && (
+      {isMixteMatch && (
         <div style={{ marginBottom: 4 }}>
-          <span style={{
-            fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 4,
-            backgroundColor: "#1abc9c20", color: "#1abc9c", border: "1px solid #1abc9c40",
-            textTransform: "uppercase", letterSpacing: 0.5,
-          }}>
+          <span className="match-type-label match-type-mixte">
             Interclub mixte
           </span>
         </div>
       )}
-      {isManual && (
+      {isManualMatch && (
         <div style={{ marginBottom: 4 }}>
-          <span style={{
-            fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 4,
-            backgroundColor: "#e67e2220", color: "#e67e22", border: "1px solid #e67e2240",
-            textTransform: "uppercase", letterSpacing: 0.5,
-          }}>
+          <span className="match-type-label match-type-manual">
             Combat ajouté
           </span>
         </div>
       )}
-      {isManual && onDelete && (
+      {isManualMatch && onDelete && (
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
           <button
             className="btn-delete-match"
@@ -129,8 +120,8 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
       )}
       {/* Boxeur 1 */}
       <div className={`match-fighter ${isBoxeur1Winner ? "match-winner" : ""}`} style={
-        (isMixte || isInterclub) && match.boxeur1?.typeCompetition === "TOURNOI"
-          ? { border: "2px solid #3B82F6", borderRadius: 8, padding: 6, background: "rgba(59, 130, 246, 0.06)" }
+        (isMixteMatch || isInterclubMatch) && match.boxeur1?.typeCompetition === "TOURNOI"
+          ? { border: "2px solid var(--tournoi-blue)", borderRadius: 8, padding: 6, background: "rgba(59, 130, 246, 0.06)" }
           : undefined
       }>
         <div className="match-fighter-name">
@@ -163,8 +154,8 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
 
       {/* Boxeur 2 */}
       <div className={`match-fighter ${isBoxeur2Winner ? "match-winner" : ""} ${match.boxeur2Manual ? "match-fighter-added" : ""}`} style={
-        (isMixte || isInterclub) && match.boxeur2?.typeCompetition === "TOURNOI"
-          ? { border: "2px solid #3B82F6", borderRadius: 8, padding: 6, background: "rgba(59, 130, 246, 0.06)" }
+        (isMixteMatch || isInterclubMatch) && match.boxeur2?.typeCompetition === "TOURNOI"
+          ? { border: "2px solid var(--tournoi-blue)", borderRadius: 8, padding: 6, background: "rgba(59, 130, 246, 0.06)" }
           : undefined
       }>
         <div className="match-fighter-name">

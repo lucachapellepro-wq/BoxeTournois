@@ -180,8 +180,8 @@ export default function ClubsPage() {
             <>
               <ClubDetail club={selectedClub} onUpdate={handleUpdateClub} />
 
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 24, marginBottom: 16 }}>
-                <h2 style={{ fontSize: 28 }}>
+              <div className="club-tireurs-header">
+                <h2>
                   Tireurs de ce club ({filteredBoxeurs.length})
                 </h2>
                 <button

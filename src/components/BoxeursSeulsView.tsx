@@ -23,166 +23,87 @@ export function BoxeursSeulsView({ boxeurs, onAddMatch }: BoxeursSeulsViewProps)
   const femmes = boxeursBySexe["F"] || {};
   const hommes = boxeursBySexe["M"] || {};
 
+  const renderBoxeurCard = (boxeur: Boxeur) => (
+    <div key={boxeur.id} className="match-card match-tbd boxeur-seul-card">
+      <div className="boxeur-seul-header">
+        {onAddMatch && (
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={() => onAddMatch(boxeur)}
+            title="Ajouter un combat"
+            style={{ padding: "6px 10px", fontSize: 16 }}
+          >
+            +
+          </button>
+        )}
+        {!onAddMatch && <div style={{ fontSize: 24 }}>⏳</div>}
+        <div style={{ flex: 1 }}>
+          <div className="boxeur-seul-name">
+            {boxeur.nom.toUpperCase()} {boxeur.prenom}
+          </div>
+          <div className="boxeur-seul-club">{boxeur.club.nom}</div>
+        </div>
+      </div>
+
+      <div className="boxeur-seul-badges">
+        <span className="badge badge-sexe">{boxeur.sexe}</span>
+        <span className="badge badge-poids">{boxeur.categoriePoids}</span>
+        <span className="badge badge-age">{boxeur.categorieAge}</span>
+        <span
+          className="badge-gant"
+          style={{
+            borderColor: getGantColor(boxeur.gant),
+            backgroundColor: `${getGantColor(boxeur.gant)}20`,
+            color: getGantColor(boxeur.gant),
+          }}
+        >
+          <span
+            className="gant-dot"
+            style={{ backgroundColor: getGantColor(boxeur.gant) }}
+          ></span>
+          {getGantLabel(boxeur.gant)}
+        </span>
+      </div>
+    </div>
+  );
+
+  const renderSection = (
+    categories: Record<string, Boxeur[]>,
+    sexeLabel: string,
+    sectionClass: string,
+    icon: string
+  ) => {
+    if (Object.keys(categories).length === 0) return null;
+    return (
+      <div className="section-gap-lg">
+        <h3 className={`section-header ${sectionClass}`}>
+          {icon} {sexeLabel}
+        </h3>
+        {Object.entries(categories).map(([category, categoryBoxeurs]) => (
+          <div key={category} style={{ marginBottom: 32 }}>
+            <h4 className="subcategory-title">
+              {category} ({categoryBoxeurs.length} tireur{categoryBoxeurs.length > 1 ? "s" : ""})
+            </h4>
+            <div className="boxeurs-seuls-grid">
+              {categoryBoxeurs.map(renderBoxeurCard)}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
-    <div style={{ marginTop: 48, paddingTop: 32, borderTop: "2px solid #2a2a2a" }}>
-      <h3 style={{ fontSize: 24, marginBottom: 24, color: "#f39c12" }}>
-        ⏳ Tireurs en attente d'adversaire
+    <div className="section-gap-lg" style={{ paddingTop: 32, borderTop: "2px solid var(--border)" }}>
+      <h3 style={{ fontSize: 24, marginBottom: 8, color: "var(--interclub)" }}>
+        ⏳ Tireurs en attente d&apos;adversaire
       </h3>
-      <p style={{ color: "#888", marginBottom: 24, fontSize: 14 }}>
-        Ces tireurs n'ont pas d'adversaire dans leur catégorie pour le moment.
+      <p className="empty-hint" style={{ marginBottom: 24 }}>
+        Ces tireurs n&apos;ont pas d&apos;adversaire dans leur catégorie pour le moment.
       </p>
 
-      {/* Femmes */}
-      {Object.keys(femmes).length > 0 && (
-        <div style={{ marginBottom: 48 }}>
-          <h3
-            style={{
-              fontSize: 22,
-              marginBottom: 20,
-              color: "#e63946",
-              borderBottom: "2px solid #e63946",
-              paddingBottom: 8,
-            }}
-          >
-            👩 FEMMES
-          </h3>
-          {Object.entries(femmes).map(([category, categoryBoxeurs]) => (
-            <div key={category} style={{ marginBottom: 32 }}>
-              <h4 style={{ fontSize: 18, marginBottom: 16, color: "#d4a337", paddingLeft: 16 }}>
-                {category} ({categoryBoxeurs.length} tireur{categoryBoxeurs.length > 1 ? "s" : ""})
-              </h4>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 12 }}>
-            {categoryBoxeurs.map((boxeur) => (
-              <div
-                key={boxeur.id}
-                className="match-card match-tbd"
-                style={{ flexDirection: "column", alignItems: "flex-start", gap: 8 }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%" }}>
-                  {onAddMatch && (
-                    <button
-                      className="btn btn-primary btn-sm"
-                      onClick={() => onAddMatch(boxeur)}
-                      title="Ajouter un combat"
-                      style={{ padding: "6px 10px", fontSize: 16 }}
-                    >
-                      +
-                    </button>
-                  )}
-                  {!onAddMatch && <div style={{ fontSize: 24 }}>⏳</div>}
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 16, fontWeight: "bold" }}>
-                      {boxeur.nom.toUpperCase()} {boxeur.prenom}
-                    </div>
-                    <div style={{ fontSize: 13, color: "#888", marginTop: 4 }}>
-                      {boxeur.club.nom}
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <span className="badge badge-sexe">{boxeur.sexe}</span>
-                  <span className="badge badge-poids">{boxeur.categoriePoids}</span>
-                  <span className="badge badge-age">{boxeur.categorieAge}</span>
-                  <span
-                    className="badge-gant"
-                    style={{
-                      borderColor: getGantColor(boxeur.gant),
-                      backgroundColor: `${getGantColor(boxeur.gant)}20`,
-                      color: getGantColor(boxeur.gant),
-                    }}
-                  >
-                    <span
-                      className="gant-dot"
-                      style={{ backgroundColor: getGantColor(boxeur.gant) }}
-                    ></span>
-                    {getGantLabel(boxeur.gant)}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-        </div>
-      )}
-
-      {/* Hommes */}
-      {Object.keys(hommes).length > 0 && (
-        <div>
-          <h3
-            style={{
-              fontSize: 22,
-              marginBottom: 20,
-              color: "#3498db",
-              borderBottom: "2px solid #3498db",
-              paddingBottom: 8,
-            }}
-          >
-            👨 HOMMES
-          </h3>
-          {Object.entries(hommes).map(([category, categoryBoxeurs]) => (
-            <div key={category} style={{ marginBottom: 32 }}>
-              <h4 style={{ fontSize: 18, marginBottom: 16, color: "#d4a337", paddingLeft: 16 }}>
-                {category} ({categoryBoxeurs.length} tireur{categoryBoxeurs.length > 1 ? "s" : ""})
-              </h4>
-
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 12 }}>
-                {categoryBoxeurs.map((boxeur) => (
-                  <div
-                    key={boxeur.id}
-                    className="match-card match-tbd"
-                    style={{ flexDirection: "column", alignItems: "flex-start", gap: 8 }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%" }}>
-                      {onAddMatch && (
-                    <button
-                      className="btn btn-primary btn-sm"
-                      onClick={() => onAddMatch(boxeur)}
-                      title="Ajouter un combat"
-                      style={{ padding: "6px 10px", fontSize: 16 }}
-                    >
-                      +
-                    </button>
-                  )}
-                  {!onAddMatch && <div style={{ fontSize: 24 }}>⏳</div>}
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 16, fontWeight: "bold" }}>
-                          {boxeur.nom.toUpperCase()} {boxeur.prenom}
-                        </div>
-                        <div style={{ fontSize: 13, color: "#888", marginTop: 4 }}>
-                          {boxeur.club.nom}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      <span className="badge badge-sexe">{boxeur.sexe}</span>
-                      <span className="badge badge-poids">{boxeur.categoriePoids}</span>
-                      <span className="badge badge-age">{boxeur.categorieAge}</span>
-                      <span
-                        className="badge-gant"
-                        style={{
-                          borderColor: getGantColor(boxeur.gant),
-                          backgroundColor: `${getGantColor(boxeur.gant)}20`,
-                          color: getGantColor(boxeur.gant),
-                        }}
-                      >
-                        <span
-                          className="gant-dot"
-                          style={{ backgroundColor: getGantColor(boxeur.gant) }}
-                        ></span>
-                        {getGantLabel(boxeur.gant)}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {renderSection(femmes, "FEMMES", "section-header-femmes", "👩")}
+      {renderSection(hommes, "HOMMES", "section-header-hommes", "👨")}
     </div>
   );
 }

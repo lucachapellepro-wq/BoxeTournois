@@ -62,7 +62,7 @@ export function TireursList({ boxeurs, loading, onDelete, onOpenModal }: Tireurs
                 <td>
                   {b.dateNaissance ? getAnneeFromDate(b.dateNaissance) : "—"}{" "}
                   {b.dateNaissance != null && (
-                    <span style={{ color: "#555", fontSize: 12 }}>
+                    <span style={{ color: "var(--text-muted)", fontSize: 12 }}>
                       ({new Date().getFullYear() - getAnneeFromDate(b.dateNaissance)!} ans)
                     </span>
                   )}

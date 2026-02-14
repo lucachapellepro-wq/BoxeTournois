@@ -1,6 +1,7 @@
 import { Match } from "@/types/match";
 import { MatchCard } from "./MatchCard";
 import { useMemo } from "react";
+import { sortByWeight } from "@/lib/ui-helpers";
 
 interface TournamentBracketsProps {
   matches: Match[];
@@ -19,7 +20,7 @@ export function TournamentBrackets({ matches }: TournamentBracketsProps) {
     });
 
     // Convertir en array et trier par nom de catégorie
-    return Array.from(groups.entries()).sort(([a], [b]) => { const w = (s: string) => { const m = s.match(/(\d+)/); return m ? parseInt(m[1]) : 0; }; return w(a) - w(b); });
+    return Array.from(groups.entries()).sort(([a], [b]) => sortByWeight(a, b));
   }, [matches]);
 
   if (matches.length === 0) {
@@ -28,7 +29,7 @@ export function TournamentBrackets({ matches }: TournamentBracketsProps) {
         <div className="empty-state">
           <div className="empty-state-icon">🥊</div>
           <p>Aucun match généré pour le moment</p>
-          <p style={{ fontSize: 14, color: "#666", marginTop: 8 }}>
+          <p className="empty-hint">
             Inscris des tireurs pour générer les tirages
           </p>
         </div>
@@ -42,7 +43,7 @@ export function TournamentBrackets({ matches }: TournamentBracketsProps) {
         <div className="tournament-category" key={category}>
           <h2>
             {category}{" "}
-            <span style={{ color: "#666", fontSize: 16, fontWeight: "normal" }}>
+            <span style={{ color: "var(--text-muted)", fontSize: 16, fontWeight: "normal" }}>
               ({categoryMatches.length} match
               {categoryMatches.length > 1 ? "s" : ""})
             </span>

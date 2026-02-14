@@ -156,7 +156,7 @@ export default function TournoiDetailPage() {
           <h1 className="page-title">🏆 {tournoi.nom}</h1>
           <p className="page-subtitle">{formatDate(tournoi.date)}</p>
         </div>
-        <div className="page-header-actions" style={{ display: "flex", gap: "12px" }}>
+        <div className="page-header-actions">
           <Link href={`/tournois/${params.id}/categories`} className="btn btn-secondary">
             📊 Catégories
           </Link>
@@ -170,23 +170,35 @@ export default function TournoiDetailPage() {
       </div>
 
       {/* Statistiques */}
-      <div className="stats-row" style={{ marginTop: 16 }}>
-        <div className="stat-card">
-          <div className="stat-value" style={{ color: "#3B82F6" }}>
+      <div className="card stats-bar section-gap">
+        <div className="stats-bar-item">
+          <div className="stats-bar-value" style={{ color: "var(--tournoi-blue)" }}>
             {tournoi.boxeurs.length}
           </div>
-          <div className="stat-label">Boxeurs inscrits</div>
+          <div className="stats-bar-label">Boxeurs inscrits</div>
         </div>
-        <div className="stat-card">
-          <div className="stat-value" style={{ color: "#22C55E" }}>
+        <div className="stats-bar-item">
+          <div className="stats-bar-value" style={{ color: "var(--interclub-green)" }}>
             {Object.keys(boxeursByClub || {}).length}
           </div>
-          <div className="stat-label">Clubs participants</div>
+          <div className="stats-bar-label">Clubs participants</div>
+        </div>
+        <div className="stats-bar-item">
+          <div className="stats-bar-value" style={{ color: "var(--accent)" }}>
+            {tournoi.boxeurs.filter(tb => tb.boxeur.sexe === "F").length}
+          </div>
+          <div className="stats-bar-label">Femmes</div>
+        </div>
+        <div className="stats-bar-item">
+          <div className="stats-bar-value" style={{ color: "var(--blue)" }}>
+            {tournoi.boxeurs.filter(tb => tb.boxeur.sexe === "M").length}
+          </div>
+          <div className="stats-bar-label">Hommes</div>
         </div>
       </div>
 
       {/* Liste par club */}
-      <div className="section-header">
+      <div className="section-header section-gap">
         <h2>Participants par club</h2>
       </div>
 
@@ -202,8 +214,8 @@ export default function TournoiDetailPage() {
         </div>
       ) : (
         Object.entries(boxeursByClub || {}).map(([clubNom, boxeurs]) => (
-          <div key={clubNom} className="card" style={{ marginBottom: "16px" }}>
-            <h3 style={{ marginBottom: "16px", color: "#3B82F6" }}>
+          <div key={clubNom} className="card" style={{ marginBottom: 16 }}>
+            <h3 style={{ marginBottom: 16, color: "var(--tournoi-blue)" }}>
               🏢 {clubNom} ({boxeurs.length})
             </h3>
             <div className="table-wrapper">
@@ -234,12 +246,7 @@ export default function TournoiDetailPage() {
                       </td>
                       <td data-label="Type">
                         <span
-                          className="badge"
-                          style={{
-                            backgroundColor: b.typeCompetition === "INTERCLUB" ? "#22C55E20" : "#3B82F620",
-                            color: b.typeCompetition === "INTERCLUB" ? "#22C55E" : "#3B82F6",
-                            cursor: "pointer",
-                          }}
+                          className={`badge ${b.typeCompetition === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`}
                           onClick={() => handleToggleType(b)}
                           title={b.typeCompetition === "INTERCLUB" ? "Interclub — Cliquer pour changer" : "Tournoi — Cliquer pour changer"}
                         >
@@ -279,8 +286,8 @@ export default function TournoiDetailPage() {
         <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Ajouter des boxeurs au tournoi</h2>
-              <button className="btn-close" onClick={() => setShowAddModal(false)}>
+              <h2 className="modal-title">Ajouter des boxeurs au tournoi</h2>
+              <button className="modal-close" onClick={() => setShowAddModal(false)}>
                 ✕
               </button>
             </div>
@@ -296,13 +303,15 @@ export default function TournoiDetailPage() {
                 />
               </div>
 
-              <div style={{ maxHeight: "400px", overflowY: "auto" }}>
+              <div className="modal-body" style={{ maxHeight: "60vh", overflowY: "auto" }}>
                 {filteredBoxeurs.length === 0 ? (
-                  <p style={{ textAlign: "center", color: "#888", padding: "20px" }}>
-                    {searchTerm
-                      ? "Aucun boxeur trouvé"
-                      : "Tous les boxeurs sont déjà inscrits"}
-                  </p>
+                  <div className="empty-state" style={{ padding: 20 }}>
+                    <p>
+                      {searchTerm
+                        ? "Aucun boxeur trouvé"
+                        : "Tous les boxeurs sont déjà inscrits"}
+                    </p>
+                  </div>
                 ) : (
                   <div className="table-wrapper"><table>
                     <thead>
@@ -335,12 +344,7 @@ export default function TournoiDetailPage() {
                           </td>
                           <td data-label="Type">
                             <span
-                              className="badge"
-                              style={{
-                                backgroundColor: b.typeCompetition === "INTERCLUB" ? "#22C55E20" : "#3B82F620",
-                                color: b.typeCompetition === "INTERCLUB" ? "#22C55E" : "#3B82F6",
-                                cursor: "pointer",
-                              }}
+                              className={`badge ${b.typeCompetition === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`}
                               onClick={async () => {
                                 const newType = b.typeCompetition === "TOURNOI" ? "INTERCLUB" : "TOURNOI";
                                 await fetch(`/api/boxeurs/${b.id}`, {

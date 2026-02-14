@@ -2,6 +2,17 @@
  * Helpers UI réutilisables
  */
 
+/** Extrait le premier nombre d'une chaîne (ex: "Mouche (48-52kg)" → 48) */
+export function extractWeight(s: string): number {
+  const m = s.match(/(\d+)/);
+  return m ? parseInt(m[1]) : 0;
+}
+
+/** Comparateur pour trier des catégories par poids */
+export function sortByWeight(a: string, b: string): number {
+  return extractWeight(a) - extractWeight(b);
+}
+
 /** Formate une date ISO en format français lisible */
 export function formatDate(dateStr: string): string {
   const date = new Date(dateStr);

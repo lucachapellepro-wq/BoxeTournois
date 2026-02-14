@@ -3,10 +3,15 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useMatches } from "@/hooks/useMatches";
-import { calculateAge } from "@/lib/ui-helpers";
 import Link from "next/link";
 import { Match } from "@/types/match";
 import { TournoiDetail } from "@/types";
+import {
+  isInterclub, isManuel, isMixte, isDemi, isFinale, isPoule,
+  isInterclubOrMixte,
+  getMatchColor, getMatchLabel, getMatchLabelFull,
+  extractWinners,
+} from "@/lib/match-helpers";
 
 export default function FeuilleTournoiPage() {
   const params = useParams();
@@ -103,11 +108,6 @@ export default function FeuilleTournoiPage() {
     // Pour chaque groupe, organiser par ordre de round
     const allOrganized: Match[] = [];
     byCategorySexe.forEach(matches => {
-      // Séparer par round
-      const isDemi = (m: Match) => m.bracketRound === "DEMI" || (m.poolName?.startsWith("DEMI") ?? false);
-      const isFinale = (m: Match) => m.bracketRound === "FINAL" || m.poolName === "FINALE";
-      const isPoule = (m: Match) => m.matchType === "POOL" && !isDemi(m) && !isFinale(m) && m.poolName !== "MANUEL";
-
       const demis = matches.filter(isDemi);
       const finales = matches.filter(isFinale);
       const poules = matches.filter(isPoule);
@@ -179,77 +179,7 @@ export default function FeuilleTournoiPage() {
     window.print();
   };
 
-  const isMatchInterclub = (match: Match): boolean => {
-    return match.boxeur1?.typeCompetition === "INTERCLUB" || match.boxeur2?.typeCompetition === "INTERCLUB";
-  };
-
-  const isManuel = (match: Match): boolean => {
-    return match.poolName === "MANUEL" || !!match.boxeur2Manual;
-  };
-
-  const isMixte = (match: Match): boolean => {
-    return match.poolName === "MIXTE";
-  };
-
-  const getMatchColor = (match: Match): string => {
-    if (isManuel(match)) return "#e67e22"; // Orange - Combat ajouté
-    if (isMixte(match)) return "#1abc9c"; // Turquoise - Interclub mixte
-    if (isMatchInterclub(match)) return "#f39c12"; // Jaune doré - Interclub
-    if (match.bracketRound === "FINAL" || match.poolName === "FINALE") return "#e74c3c"; // Rouge - Finales
-    if (match.bracketRound === "DEMI" || match.poolName?.startsWith("DEMI")) return "#8e44ad"; // Violet - Demis
-    if (match.matchType === "POOL") return "#27ae60"; // Vert - Poules
-    return "#2980b9"; // Bleu - Élimination
-  };
-
-  const getMatchLabel = (match: Match): string => {
-    if (isManuel(match)) return "Manuel";
-    if (isMixte(match)) return "Mixte";
-    if (isMatchInterclub(match)) return "Interclub";
-    if (match.bracketRound === "FINAL" || match.poolName === "FINALE") return "Finale";
-    if (match.bracketRound === "DEMI" || match.poolName?.startsWith("DEMI")) return "Demi";
-    if (match.matchType === "POOL") return "Poule";
-    return "Élim.";
-  };
-
-  const getMatchLabelFull = (match: Match): string => {
-    if (isManuel(match)) return "Combat ajouté";
-    if (isMixte(match)) return "Interclub mixte";
-    if (isMatchInterclub(match)) return "Interclub";
-    if (match.bracketRound === "FINAL" || match.poolName === "FINALE") return "Finale";
-    if (match.bracketRound === "DEMI" || match.poolName?.startsWith("DEMI")) return "Demi-finale";
-    if (match.matchType === "POOL") return "Poule";
-    return "Élimination directe";
-  };
-
-  // Vainqueurs directs : boxeurs seuls + tireurs Tournoi dans interclub
-  type WinnerEntry = { boxeur: NonNullable<Match["boxeur1"]>; category: string; sexe: string; source: "solo" | "interclub" };
-
-  const winners = useMemo(() => {
-    const result: WinnerEntry[] = [];
-
-    // 1. Boxeurs seuls (match avec un seul boxeur)
-    initialMatches.forEach((m) => {
-      if (m.boxeur1 && !m.boxeur2) {
-        result.push({ boxeur: m.boxeur1, category: m.categoriePoids, sexe: m.sexe, source: "solo" });
-      } else if (!m.boxeur1 && m.boxeur2) {
-        result.push({ boxeur: m.boxeur2, category: m.categoriePoids, sexe: m.sexe, source: "solo" });
-      }
-    });
-
-    // 2. Tireurs Tournoi dans les rencontres interclub (MIXTE, MANUEL, boxeur2Manual)
-    initialMatches.forEach((m) => {
-      const isInInterclub = isMixte(m) || isMatchInterclub(m) || isManuel(m);
-      if (!isInInterclub) return;
-      if (m.boxeur1?.typeCompetition === "TOURNOI") {
-        result.push({ boxeur: m.boxeur1, category: m.categoriePoids, sexe: m.sexe, source: "interclub" });
-      }
-      if (m.boxeur2?.typeCompetition === "TOURNOI") {
-        result.push({ boxeur: m.boxeur2, category: m.categoriePoids, sexe: m.sexe, source: "interclub" });
-      }
-    });
-
-    return result;
-  }, [initialMatches]);
+  const winners = useMemo(() => extractWinners(initialMatches), [initialMatches]);
 
   if (!tournoi) {
     return (
@@ -408,7 +338,7 @@ export default function FeuilleTournoiPage() {
             <h1 style={{ fontSize: 28, marginBottom: 8 }}>
               📋 Feuille de tournoi
             </h1>
-            <p style={{ color: "#888", fontSize: 14 }}>
+            <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
               Glisse-dépose pour réorganiser • Imprime pour la feuille officielle
             </p>
           </div>
@@ -417,22 +347,14 @@ export default function FeuilleTournoiPage() {
               ← Retour
             </Link>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <label style={{ fontSize: 14, color: "#888" }}>Espacement min :</label>
+              <label style={{ fontSize: 14 }}>Espacement min :</label>
               <input
                 type="number"
                 min="0"
                 max="20"
                 value={minSpacing}
                 onChange={(e) => setMinSpacing(parseInt(e.target.value) || 0)}
-                style={{
-                  width: 70,
-                  padding: "8px 12px",
-                  backgroundColor: "#1a1a1a",
-                  border: "1px solid #2a2a2a",
-                  borderRadius: 6,
-                  color: "#fff",
-                  fontSize: 14,
-                }}
+                style={{ width: 70 }}
               />
             </div>
             <button className="btn btn-secondary" onClick={handleRandomize}>
@@ -446,10 +368,10 @@ export default function FeuilleTournoiPage() {
 
         {/* Titre pour impression */}
         <div className="feuille-title" style={{ marginBottom: 32, textAlign: "center" }}>
-          <h1 style={{ fontSize: 32, marginBottom: 8, color: "#e63946" }}>
+          <h1 style={{ fontSize: 32, marginBottom: 8, color: "var(--accent)" }}>
             {tournoi.nom}
           </h1>
-          <p style={{ fontSize: 18, color: "#888" }}>
+          <p style={{ fontSize: 18, color: "var(--text-secondary)" }}>
             {new Date(tournoi.date).toLocaleDateString("fr-FR", {
               weekday: "long",
               year: "numeric",
@@ -457,25 +379,25 @@ export default function FeuilleTournoiPage() {
               day: "numeric",
             })}
           </p>
-          <p style={{ fontSize: 16, color: "#888", marginTop: 8 }}>
+          <p style={{ fontSize: 16, color: "var(--text-secondary)", marginTop: 8 }}>
             {matches.filter(m => !('separator' in m)).length} combat{matches.filter(m => !('separator' in m)).length > 1 ? "s" : ""}
           </p>
         </div>
 
         {/* Légende des couleurs */}
-        <div className="no-print" style={{ display: "flex", gap: 20, marginTop: 24, marginBottom: 16, flexWrap: "wrap" }}>
+        <div className="no-print feuille-legend" style={{ marginTop: 24, marginBottom: 16 }}>
           {[
-            { color: "#27ae60", label: "Poule" },
-            { color: "#8e44ad", label: "Demi-finale" },
-            { color: "#e74c3c", label: "Finale" },
-            { color: "#2980b9", label: "Élimination" },
-            { color: "#f39c12", label: "Interclub" },
-            { color: "#1abc9c", label: "Interclub mixte" },
-            { color: "#e67e22", label: "Combat ajouté" },
+            { color: "var(--pool-green)", label: "Poule" },
+            { color: "var(--demi)", label: "Demi-finale" },
+            { color: "var(--danger)", label: "Finale" },
+            { color: "var(--elim-blue)", label: "Élimination" },
+            { color: "var(--interclub)", label: "Interclub" },
+            { color: "var(--mixte)", label: "Interclub mixte" },
+            { color: "var(--manual)", label: "Combat ajouté" },
           ].map(({ color, label }) => (
-            <div key={label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 14, height: 14, borderRadius: 3, backgroundColor: color }} />
-              <span style={{ fontSize: 13, color: "#aaa" }}>{label}</span>
+            <div key={label} className="feuille-legend-item">
+              <div className="feuille-legend-dot" style={{ backgroundColor: color }} />
+              <span className="feuille-legend-label">{label}</span>
             </div>
           ))}
         </div>
@@ -490,19 +412,19 @@ export default function FeuilleTournoiPage() {
               gridTemplateColumns: "60px 70px 200px 1fr 80px 1fr",
               gap: 16,
               padding: "16px 12px",
-              backgroundColor: "#1a1a1a",
-              borderRadius: "8px 8px 0 0",
+              backgroundColor: "var(--bg-secondary)",
+              borderRadius: "var(--radius) var(--radius) 0 0",
               fontWeight: "bold",
               fontSize: 14,
-              color: "#d4a337",
+              color: "var(--gold)",
             }}
           >
             <div style={{ textAlign: "center" }}>N°</div>
             <div style={{ textAlign: "center" }}>Type</div>
             <div>Catégorie</div>
-            <div style={{ textAlign: "center", color: "#3498db" }}>COIN BLEU</div>
+            <div style={{ textAlign: "center", color: "var(--blue)" }}>COIN BLEU</div>
             <div style={{ textAlign: "center" }}>VS</div>
-            <div style={{ textAlign: "center", color: "#e63946" }}>COIN ROUGE</div>
+            <div style={{ textAlign: "center", color: "var(--accent)" }}>COIN ROUGE</div>
           </div>
 
           {/* Lignes des matchs */}
@@ -511,9 +433,9 @@ export default function FeuilleTournoiPage() {
               style={{
                 padding: 48,
                 textAlign: "center",
-                color: "#888",
-                backgroundColor: "#0a0a0a",
-                borderRadius: "0 0 8px 8px",
+                color: "var(--text-secondary)",
+                backgroundColor: "var(--bg-primary)",
+                borderRadius: "0 0 var(--radius) var(--radius)",
               }}
             >
               Aucun match à afficher
@@ -529,7 +451,7 @@ export default function FeuilleTournoiPage() {
                       key={`separator-${index}`}
                       style={{
                         height: 2,
-                        backgroundColor: "#d4a337",
+                        backgroundColor: "var(--gold)",
                         margin: "16px 0",
                       }}
                     />
@@ -558,19 +480,19 @@ export default function FeuilleTournoiPage() {
                   alignItems: "center",
                   gap: 16,
                   padding: "8px 12px",
-                  backgroundColor: index % 2 === 0 ? "#0a0a0a" : "#000",
-                  borderBottom: "1px solid #1a1a1a",
+                  backgroundColor: index % 2 === 0 ? "var(--bg-row-even)" : "var(--bg-row-odd)",
+                  borderBottom: "1px solid var(--border)",
                   borderLeft: `4px solid ${matchColor}`,
                   cursor: "move",
                   transition: "background-color 0.2s",
                   fontSize: 14,
                 } as React.CSSProperties}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "#1a1a1a";
+                  e.currentTarget.style.backgroundColor = "var(--bg-card-hover)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor =
-                    index % 2 === 0 ? "#0a0a0a" : "#000";
+                    index % 2 === 0 ? "var(--bg-row-even)" : "var(--bg-row-odd)";
                 }}
               >
                 {/* Numéro */}
@@ -581,7 +503,7 @@ export default function FeuilleTournoiPage() {
                     textAlign: "center",
                     fontSize: 20,
                     fontWeight: "bold",
-                    color: "#d4a337",
+                    color: "var(--gold)",
                   }}
                 >
                   {currentMatchNumber}
@@ -605,42 +527,42 @@ export default function FeuilleTournoiPage() {
                 </div>
 
                 {/* Catégorie / Sexe */}
-                <div className="match-row-category" style={{ minWidth: 200, fontWeight: "600", color: "#fff" }}>
+                <div className="match-row-category" style={{ minWidth: 200, fontWeight: "600", color: "var(--text-primary)" }}>
                   {match.categoriePoids} {match.sexe === "F" ? "♀" : "♂"}
                   {match.matchType === "BRACKET" && match.bracketRound && ` - ${match.bracketRound}`}
                   {match.matchType === "POOL" && match.poolName && match.poolName !== "MANUEL" && ` - Poule ${match.poolName}`}
                 </div>
 
                 {/* Boxeur 1 */}
-                <div className="match-row-fighter" style={{ flex: 1, color: "#3498db", fontWeight: "500" }}>
+                <div className="match-row-fighter" style={{ flex: 1, color: "var(--blue)", fontWeight: "500" }}>
                   {match.boxeur1 ? (
                     <>
                       {match.boxeur1.nom.toUpperCase()} {match.boxeur1.prenom}
-                      <span className="fighter-tag" style={{ fontSize: 10, marginLeft: 3, color: match.boxeur1.typeCompetition === "INTERCLUB" ? "#22C55E" : "#3B82F6" }}>
+                      <span className="fighter-tag" style={{ fontSize: 10, marginLeft: 3, color: match.boxeur1.typeCompetition === "INTERCLUB" ? "var(--interclub-green)" : "var(--tournoi-blue)" }}>
                         ({match.boxeur1.typeCompetition === "INTERCLUB" ? "Interclub" : "Tournoi"})
                       </span>
-                      <span className="fighter-club" style={{ color: "#888", fontSize: 12 }}> ({match.boxeur1.club.nom})</span>
+                      <span className="fighter-club" style={{ color: "var(--text-secondary)", fontSize: 12 }}> ({match.boxeur1.club.nom})</span>
                     </>
                   ) : (
-                    <span style={{ color: "#666", fontStyle: "italic" }}>TBD</span>
+                    <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>TBD</span>
                   )}
                 </div>
 
                 {/* VS */}
-                <div className="match-row-vs" style={{ color: "#666", fontWeight: "bold", padding: "0 4px" }}>vs</div>
+                <div className="match-row-vs" style={{ color: "var(--text-muted)", fontWeight: "bold", padding: "0 4px" }}>vs</div>
 
                 {/* Boxeur 2 */}
-                <div className="match-row-fighter" style={{ flex: 1, color: "#e63946", fontWeight: "500" }}>
+                <div className="match-row-fighter" style={{ flex: 1, color: "var(--accent)", fontWeight: "500" }}>
                   {match.boxeur2 ? (
                     <>
                       {match.boxeur2.nom.toUpperCase()} {match.boxeur2.prenom}
-                      <span className="fighter-tag" style={{ fontSize: 10, marginLeft: 3, color: match.boxeur2.typeCompetition === "INTERCLUB" ? "#22C55E" : "#3B82F6" }}>
+                      <span className="fighter-tag" style={{ fontSize: 10, marginLeft: 3, color: match.boxeur2.typeCompetition === "INTERCLUB" ? "var(--interclub-green)" : "var(--tournoi-blue)" }}>
                         ({match.boxeur2.typeCompetition === "INTERCLUB" ? "Interclub" : "Tournoi"})
                       </span>
-                      <span className="fighter-club" style={{ color: "#888", fontSize: 12 }}> ({match.boxeur2.club.nom})</span>
+                      <span className="fighter-club" style={{ color: "var(--text-secondary)", fontSize: 12 }}> ({match.boxeur2.club.nom})</span>
                     </>
                   ) : (
-                    <span style={{ color: "#666", fontStyle: "italic" }}>TBD</span>
+                    <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>TBD</span>
                   )}
                 </div>
               </div>
@@ -653,7 +575,7 @@ export default function FeuilleTournoiPage() {
         {/* Vainqueurs directs */}
         {winners.length > 0 && (
           <div className="winners-section" style={{ marginTop: 32 }}>
-            <h2 style={{ fontSize: 20, marginBottom: 16, color: "#d4a337", borderBottom: "2px solid #d4a337", paddingBottom: 8 }}>
+            <h2 style={{ fontSize: 20, marginBottom: 16, color: "var(--gold)", borderBottom: "2px solid var(--gold)", paddingBottom: 8 }}>
               🏆 Vainqueurs directs ({winners.length})
             </h2>
             <div>
@@ -666,21 +588,21 @@ export default function FeuilleTournoiPage() {
                     alignItems: "center",
                     gap: 8,
                     padding: "6px 12px",
-                    backgroundColor: "#0a0a0a",
-                    borderLeft: `4px solid ${entry.source === "interclub" ? "#3B82F6" : "#d4a337"}`,
-                    borderBottom: "1px solid #1a1a1a",
+                    backgroundColor: "var(--bg-primary)",
+                    borderLeft: `4px solid ${entry.source === "interclub" ? "var(--tournoi-blue)" : "var(--gold)"}`,
+                    borderBottom: "1px solid var(--border)",
                     fontSize: 14,
                   }}
                 >
                   <span style={{ fontWeight: 700 }}>{entry.boxeur.nom.toUpperCase()}</span>
                   <span>{entry.boxeur.prenom}</span>
-                  <span style={{ color: "#888" }}>—</span>
-                  <span style={{ color: "#d4a337" }}>{entry.category}</span>
+                  <span style={{ color: "var(--text-secondary)" }}>—</span>
+                  <span style={{ color: "var(--gold)" }}>{entry.category}</span>
                   <span>{entry.sexe === "F" ? "♀" : "♂"}</span>
-                  <span style={{ color: "#888" }}>—</span>
-                  <span style={{ color: "#888" }}>{entry.boxeur.club.nom}</span>
+                  <span style={{ color: "var(--text-secondary)" }}>—</span>
+                  <span style={{ color: "var(--text-secondary)" }}>{entry.boxeur.club.nom}</span>
                   {entry.source === "interclub" && (
-                    <span style={{ fontSize: 11, color: "#3B82F6", marginLeft: "auto" }}>Placé en interclub</span>
+                    <span style={{ fontSize: 11, color: "var(--tournoi-blue)", marginLeft: "auto" }}>Placé en interclub</span>
                   )}
                 </div>
               ))}
@@ -689,7 +611,7 @@ export default function FeuilleTournoiPage() {
         )}
 
         {/* Footer pour impression */}
-        <div style={{ marginTop: 48, paddingTop: 24, borderTop: "2px solid #2a2a2a", textAlign: "center", color: "#666", fontSize: 12 }}>
+        <div style={{ marginTop: 48, paddingTop: 24, borderTop: "2px solid var(--border)", textAlign: "center", color: "var(--text-muted)", fontSize: 12 }}>
           <p>Document généré le {new Date().toLocaleDateString("fr-FR")} à {new Date().toLocaleTimeString("fr-FR")}</p>
         </div>
       </div>

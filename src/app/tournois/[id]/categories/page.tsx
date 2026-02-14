@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { sortByWeight } from "@/lib/ui-helpers";
 
 interface Boxeur {
   id: number;
@@ -75,8 +76,8 @@ export default function CategoriesPage() {
     });
 
     return {
-      F: Array.from(femmes.entries()).sort(([a], [b]) => { const w = (s: string) => { const m = s.match(/(\d+)/); return m ? parseInt(m[1]) : 0; }; return w(a) - w(b); }),
-      M: Array.from(hommes.entries()).sort(([a], [b]) => { const w = (s: string) => { const m = s.match(/(\d+)/); return m ? parseInt(m[1]) : 0; }; return w(a) - w(b); }),
+      F: Array.from(femmes.entries()).sort(([a], [b]) => sortByWeight(a, b)),
+      M: Array.from(hommes.entries()).sort(([a], [b]) => sortByWeight(a, b)),
     };
   }, [tournoi, typeFilter]);
 
@@ -111,7 +112,7 @@ export default function CategoriesPage() {
             })}
           </p>
         </div>
-        <div style={{ display: "flex", gap: 12 }}>
+        <div className="page-header-actions">
           <Link href={`/tournois/${tournoiId}`} className="btn btn-ghost">
             ← Retour au tournoi
           </Link>
@@ -122,43 +123,27 @@ export default function CategoriesPage() {
       </div>
 
       {/* Stats globales */}
-      <div
-        className="card"
-        style={{
-          marginTop: 24,
-          display: "flex",
-          justifyContent: "space-around",
-          padding: 20,
-        }}
-      >
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 32, fontWeight: "bold", color: "#d4a337" }}>
-            {totalBoxeurs}
-          </div>
-          <div style={{ fontSize: 13, color: "#888" }}>Total tireurs</div>
+      <div className="card stats-bar section-gap">
+        <div className="stats-bar-item">
+          <div className="stats-bar-value" style={{ color: "var(--gold)" }}>{totalBoxeurs}</div>
+          <div className="stats-bar-label">Total tireurs</div>
         </div>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 32, fontWeight: "bold", color: "#e63946" }}>
-            {totalFemmes}
-          </div>
-          <div style={{ fontSize: 13, color: "#888" }}>Femmes</div>
+        <div className="stats-bar-item">
+          <div className="stats-bar-value" style={{ color: "var(--accent)" }}>{totalFemmes}</div>
+          <div className="stats-bar-label">Femmes</div>
         </div>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 32, fontWeight: "bold", color: "#3498db" }}>
-            {totalHommes}
-          </div>
-          <div style={{ fontSize: 13, color: "#888" }}>Hommes</div>
+        <div className="stats-bar-item">
+          <div className="stats-bar-value" style={{ color: "var(--blue)" }}>{totalHommes}</div>
+          <div className="stats-bar-label">Hommes</div>
         </div>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 32, fontWeight: "bold", color: "#888" }}>
-            {categoriesBySexe.F.length + categoriesBySexe.M.length}
-          </div>
-          <div style={{ fontSize: 13, color: "#888" }}>Catégories</div>
+        <div className="stats-bar-item">
+          <div className="stats-bar-value" style={{ color: "var(--text-secondary)" }}>{categoriesBySexe.F.length + categoriesBySexe.M.length}</div>
+          <div className="stats-bar-label">Catégories</div>
         </div>
       </div>
 
       {/* Filtre Tournoi/Interclub */}
-      <div style={{ display: "flex", gap: 8, marginTop: 24 }}>
+      <div className="filter-group section-gap">
         {(["TOUS", "TOURNOI", "INTERCLUB"] as const).map((t) => (
           <button
             key={t}
@@ -172,84 +157,36 @@ export default function CategoriesPage() {
 
       {/* Femmes */}
       {categoriesBySexe.F.length > 0 && (
-        <div style={{ marginTop: 32 }}>
-          <h2
-            style={{
-              fontSize: 28,
-              marginBottom: 24,
-              color: "#e63946",
-              borderBottom: "3px solid #e63946",
-              paddingBottom: 12,
-            }}
-          >
+        <div className="section-gap-lg">
+          <h2 className="section-header section-header-femmes">
             👩 FEMMES ({totalFemmes} tireuses)
           </h2>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 280px), 1fr))", gap: 16 }}>
+          <div className="category-grid">
             {categoriesBySexe.F.map(([category, boxeurs]) => (
-              <div
-                key={category}
-                className="card"
-                style={{
-                  padding: 20,
-                  borderLeft: "4px solid #e63946",
-                }}
-              >
-                <div style={{ fontSize: 20, fontWeight: "bold", marginBottom: 8, color: "#e63946" }}>
+              <div key={category} className="card category-card category-card-femme">
+                <div className="category-card-title" style={{ color: "var(--accent)" }}>
                   {category}
                 </div>
-                <div style={{ fontSize: 32, fontWeight: "bold", color: "#d4a337", marginBottom: 12 }}>
-                  {boxeurs.length}
-                </div>
-                <div style={{ fontSize: 14, color: "#888", marginBottom: 16 }}>
+                <div className="category-card-count">{boxeurs.length}</div>
+                <div className="category-card-label">
                   {boxeurs.length === 1 ? "tireuse" : "tireuses"}
                 </div>
 
-                {/* Liste des boxeurs */}
-                <div style={{ borderTop: "1px solid #2a2a2a", paddingTop: 12 }}>
+                <div className="category-card-list">
                   {boxeurs.map((boxeur) => (
-                    <div
-                      key={boxeur.id}
-                      style={{
-                        fontSize: 13,
-                        marginBottom: 8,
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
+                    <div key={boxeur.id} className="category-card-row">
                       <div>
                         <strong>{boxeur.nom.toUpperCase()}</strong> {boxeur.prenom}
                       </div>
                       <div style={{ display: "flex", gap: 4 }}>
-                        <span
-                          className="badge"
-                          style={{
-                            fontSize: 11,
-                            backgroundColor: boxeur.typeCompetition === "INTERCLUB" ? "#22C55E20" : "#3B82F620",
-                            color: boxeur.typeCompetition === "INTERCLUB" ? "#22C55E" : "#3B82F6",
-                          }}
-                        >
+                        <span className={`badge ${boxeur.typeCompetition === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`} style={{ fontSize: 11 }}>
                           {boxeur.typeCompetition === "INTERCLUB" ? "Interclub" : "Tournoi"}
                         </span>
-                        <span
-                          className="badge"
-                          style={{
-                            fontSize: 11,
-                            backgroundColor: "#88888820",
-                            color: "#888",
-                          }}
-                        >
+                        <span className="badge badge-sexe" style={{ fontSize: 11 }}>
                           {boxeur.poids}kg
                         </span>
-                        <span
-                          className="badge"
-                          style={{
-                            fontSize: 11,
-                            backgroundColor: "#3498db20",
-                            color: "#3498db",
-                          }}
-                        >
+                        <span className="badge badge-category" style={{ fontSize: 11 }}>
                           {boxeur.gant}
                         </span>
                       </div>
@@ -264,84 +201,36 @@ export default function CategoriesPage() {
 
       {/* Hommes */}
       {categoriesBySexe.M.length > 0 && (
-        <div style={{ marginTop: 48 }}>
-          <h2
-            style={{
-              fontSize: 28,
-              marginBottom: 24,
-              color: "#3498db",
-              borderBottom: "3px solid #3498db",
-              paddingBottom: 12,
-            }}
-          >
+        <div className="section-gap-lg">
+          <h2 className="section-header section-header-hommes">
             👨 HOMMES ({totalHommes} tireurs)
           </h2>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 280px), 1fr))", gap: 16 }}>
+          <div className="category-grid">
             {categoriesBySexe.M.map(([category, boxeurs]) => (
-              <div
-                key={category}
-                className="card"
-                style={{
-                  padding: 20,
-                  borderLeft: "4px solid #3498db",
-                }}
-              >
-                <div style={{ fontSize: 20, fontWeight: "bold", marginBottom: 8, color: "#3498db" }}>
+              <div key={category} className="card category-card category-card-homme">
+                <div className="category-card-title" style={{ color: "var(--blue)" }}>
                   {category}
                 </div>
-                <div style={{ fontSize: 32, fontWeight: "bold", color: "#d4a337", marginBottom: 12 }}>
-                  {boxeurs.length}
-                </div>
-                <div style={{ fontSize: 14, color: "#888", marginBottom: 16 }}>
+                <div className="category-card-count">{boxeurs.length}</div>
+                <div className="category-card-label">
                   {boxeurs.length === 1 ? "tireur" : "tireurs"}
                 </div>
 
-                {/* Liste des boxeurs */}
-                <div style={{ borderTop: "1px solid #2a2a2a", paddingTop: 12 }}>
+                <div className="category-card-list">
                   {boxeurs.map((boxeur) => (
-                    <div
-                      key={boxeur.id}
-                      style={{
-                        fontSize: 13,
-                        marginBottom: 8,
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
+                    <div key={boxeur.id} className="category-card-row">
                       <div>
                         <strong>{boxeur.nom.toUpperCase()}</strong> {boxeur.prenom}
                       </div>
                       <div style={{ display: "flex", gap: 4 }}>
-                        <span
-                          className="badge"
-                          style={{
-                            fontSize: 11,
-                            backgroundColor: boxeur.typeCompetition === "INTERCLUB" ? "#22C55E20" : "#3B82F620",
-                            color: boxeur.typeCompetition === "INTERCLUB" ? "#22C55E" : "#3B82F6",
-                          }}
-                        >
+                        <span className={`badge ${boxeur.typeCompetition === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`} style={{ fontSize: 11 }}>
                           {boxeur.typeCompetition === "INTERCLUB" ? "Interclub" : "Tournoi"}
                         </span>
-                        <span
-                          className="badge"
-                          style={{
-                            fontSize: 11,
-                            backgroundColor: "#88888820",
-                            color: "#888",
-                          }}
-                        >
+                        <span className="badge badge-sexe" style={{ fontSize: 11 }}>
                           {boxeur.poids}kg
                         </span>
-                        <span
-                          className="badge"
-                          style={{
-                            fontSize: 11,
-                            backgroundColor: "#3498db20",
-                            color: "#3498db",
-                          }}
-                        >
+                        <span className="badge badge-category" style={{ fontSize: 11 }}>
                           {boxeur.gant}
                         </span>
                       </div>
@@ -356,11 +245,11 @@ export default function CategoriesPage() {
 
       {/* Empty state */}
       {totalBoxeurs === 0 && (
-        <div className="card" style={{ marginTop: 24 }}>
+        <div className="card section-gap">
           <div className="empty-state">
             <div className="empty-state-icon">📊</div>
             <p>Aucun tireur inscrit pour le moment</p>
-            <p style={{ fontSize: 14, color: "#666", marginTop: 8 }}>
+            <p className="empty-hint">
               Ajoute des tireurs au tournoi pour voir les catégories
             </p>
           </div>

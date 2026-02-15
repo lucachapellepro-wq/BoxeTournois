@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/useToast";
 import { Toast } from "@/components/Toast";
 import { Boxeur, TournoiDetail } from "@/types";
 import { formatDate, calculateAge } from "@/lib/ui-helpers";
+import { getGantColor, getGantLabel } from "@/lib/categories";
 import Link from "next/link";
 
 export default function TournoiDetailPage() {
@@ -94,15 +95,12 @@ export default function TournoiDetailPage() {
     }
   };
 
-  // Boxeurs déjà inscrits au tournoi
   const enrolledBoxeursIds = tournoi?.boxeurs.map((tb) => tb.boxeur.id) || [];
 
-  // Boxeurs disponibles pour ajout (non inscrits)
   const availableBoxeurs = allBoxeurs.filter(
     (b) => !enrolledBoxeursIds.includes(b.id)
   );
 
-  // Filtrer par recherche
   const filteredBoxeurs = availableBoxeurs.filter((b) => {
     const searchLower = searchTerm.toLowerCase();
     return (
@@ -112,7 +110,6 @@ export default function TournoiDetailPage() {
     );
   });
 
-  // Grouper les boxeurs par club
   const boxeursByClub = tournoi?.boxeurs.reduce((acc, tb) => {
     const clubNom = tb.boxeur.club.nom;
     if (!acc[clubNom]) acc[clubNom] = [];
@@ -142,18 +139,21 @@ export default function TournoiDetailPage() {
     );
   }
 
+  const clubEntries = Object.entries(boxeursByClub || {}).sort(
+    ([, a], [, b]) => b.length - a.length
+  );
+
   return (
     <>
       <div className="page-header">
         <div>
           <button
-            className="btn btn-ghost btn-sm"
+            className="btn btn-ghost btn-sm section-back-btn"
             onClick={() => router.push("/")}
-            style={{ marginBottom: "8px" }}
           >
             ← Retour aux tournois
           </button>
-          <h1 className="page-title">🏆 {tournoi.nom}</h1>
+          <h1 className="page-title">{tournoi.nom}</h1>
           <p className="page-subtitle">{formatDate(tournoi.date)}</p>
         </div>
         <div className="page-header-actions">
@@ -169,116 +169,117 @@ export default function TournoiDetailPage() {
         </div>
       </div>
 
-      {/* Statistiques */}
-      <div className="card stats-bar section-gap">
-        <div className="stats-bar-item">
-          <div className="stats-bar-value" style={{ color: "var(--tournoi-blue)" }}>
+      {/* Stats dashboard */}
+      <div className="stats-row section-gap">
+        <div className="stat-card">
+          <div className="stat-value" style={{ color: "var(--gold)" }}>
             {tournoi.boxeurs.length}
           </div>
-          <div className="stats-bar-label">Boxeurs inscrits</div>
+          <div className="stat-label">Tireurs inscrits</div>
         </div>
-        <div className="stats-bar-item">
-          <div className="stats-bar-value" style={{ color: "var(--interclub-green)" }}>
+        <div className="stat-card">
+          <div className="stat-value" style={{ color: "var(--interclub-green)" }}>
             {Object.keys(boxeursByClub || {}).length}
           </div>
-          <div className="stats-bar-label">Clubs participants</div>
+          <div className="stat-label">Clubs</div>
         </div>
-        <div className="stats-bar-item">
-          <div className="stats-bar-value" style={{ color: "var(--accent)" }}>
+        <div className="stat-card">
+          <div className="stat-value" style={{ color: "var(--accent)" }}>
             {tournoi.boxeurs.filter(tb => tb.boxeur.sexe === "F").length}
           </div>
-          <div className="stats-bar-label">Femmes</div>
+          <div className="stat-label">Femmes</div>
         </div>
-        <div className="stats-bar-item">
-          <div className="stats-bar-value" style={{ color: "var(--blue)" }}>
+        <div className="stat-card">
+          <div className="stat-value" style={{ color: "var(--blue)" }}>
             {tournoi.boxeurs.filter(tb => tb.boxeur.sexe === "M").length}
           </div>
-          <div className="stats-bar-label">Hommes</div>
+          <div className="stat-label">Hommes</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-value" style={{ color: "var(--tournoi-blue)" }}>
+            {tournoi.boxeurs.filter(tb => tb.boxeur.typeCompetition === "TOURNOI").length}
+          </div>
+          <div className="stat-label">Tournoi</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-value" style={{ color: "var(--interclub-green)" }}>
+            {tournoi.boxeurs.filter(tb => tb.boxeur.typeCompetition === "INTERCLUB").length}
+          </div>
+          <div className="stat-label">Interclub</div>
         </div>
       </div>
 
-      {/* Liste par club */}
-      <div className="section-header section-gap">
-        <h2>Participants par club</h2>
-      </div>
-
+      {/* Participants par club */}
       {tournoi.boxeurs.length === 0 ? (
-        <div className="card">
+        <div className="card section-gap-lg">
           <div className="empty-state">
             <div className="empty-state-icon">👥</div>
             <p>Aucun boxeur inscrit pour le moment</p>
+            <p className="empty-hint">Ajoutez des boxeurs pour commencer à organiser votre tournoi</p>
             <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
               + Ajouter des boxeurs
             </button>
           </div>
         </div>
       ) : (
-        Object.entries(boxeursByClub || {}).map(([clubNom, boxeurs]) => (
-          <div key={clubNom} className="card" style={{ marginBottom: 16 }}>
-            <h3 style={{ marginBottom: 16, color: "var(--tournoi-blue)" }}>
-              🏢 {clubNom} ({boxeurs.length})
-            </h3>
-            <div className="table-wrapper">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Nom</th>
-                    <th>Sexe</th>
-                    <th>Type</th>
-                    <th>Âge</th>
-                    <th>Poids</th>
-                    <th>Gant</th>
-                    <th>Cat. Poids</th>
-                    <th>Cat. Âge</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
+        <div className="section-gap-lg">
+          <h2 className="section-header">
+            Participants par club ({clubEntries.length} clubs)
+          </h2>
+          <div className="club-cards-grid">
+            {clubEntries.map(([clubNom, boxeurs]) => (
+              <div key={clubNom} className="card club-participant-card">
+                <div className="club-participant-header">
+                  <h3 className="club-participant-name">{clubNom}</h3>
+                  <span className="badge badge-count">{boxeurs.length}</span>
+                </div>
+                <div className="club-participant-list">
                   {boxeurs.map((b) => (
-                    <tr key={b.id}>
-                      <td data-label="Nom">
-                        <strong>{b.nom.toUpperCase()}</strong> {b.prenom}
-                      </td>
-                      <td data-label="Sexe">
-                        <span className="badge badge-sexe">
-                          {b.sexe === "M" ? "H" : "F"}
+                    <div key={b.id} className="club-participant-row">
+                      <div className="club-participant-info">
+                        <span className="club-participant-fighter-name">
+                          {b.nom.toUpperCase()} {b.prenom}
                         </span>
-                      </td>
-                      <td data-label="Type">
-                        <span
-                          className={`badge ${b.typeCompetition === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`}
-                          onClick={() => handleToggleType(b)}
-                          title={b.typeCompetition === "INTERCLUB" ? "Interclub — Cliquer pour changer" : "Tournoi — Cliquer pour changer"}
-                        >
-                          {b.typeCompetition === "INTERCLUB" ? "Interclub" : "Tournoi"}
-                        </span>
-                      </td>
-                      <td data-label="Âge">{calculateAge(b.dateNaissance)} ans</td>
-                      <td data-label="Poids">{b.poids} kg</td>
-                      <td data-label="Gant">
-                        <span className="badge">{b.gant}</span>
-                      </td>
-                      <td data-label="Cat. Poids">
-                        <span className="badge badge-category">{b.categoriePoids}</span>
-                      </td>
-                      <td data-label="Cat. Âge" className="mobile-hide">
-                        <span className="badge badge-category">{b.categorieAge}</span>
-                      </td>
-                      <td data-label="">
-                        <button
-                          className="btn btn-sm btn-danger"
-                          onClick={() => handleRemoveBoxeur(b.id)}
-                        >
-                          Retirer
-                        </button>
-                      </td>
-                    </tr>
+                        <div className="club-participant-badges">
+                          <span className="badge badge-sexe">{b.sexe === "M" ? "H" : "F"}</span>
+                          <span className="badge badge-poids">{b.poids}kg</span>
+                          <span
+                            className={`badge ${b.typeCompetition === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`}
+                            onClick={() => handleToggleType(b)}
+                            title="Cliquer pour changer"
+                          >
+                            {b.typeCompetition === "INTERCLUB" ? "IC" : "T"}
+                          </span>
+                          <span
+                            className="badge-gant badge-gant-sm"
+                            style={{
+                              borderColor: getGantColor(b.gant),
+                              backgroundColor: `${getGantColor(b.gant)}15`,
+                              color: getGantColor(b.gant),
+                            }}
+                          >
+                            <span
+                              className="gant-dot gant-dot-sm"
+                              style={{ backgroundColor: getGantColor(b.gant) }}
+                            ></span>
+                            {getGantLabel(b.gant)}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        className="btn-icon btn-danger btn-icon-sm"
+                        onClick={() => handleRemoveBoxeur(b.id)}
+                        title="Retirer"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </div>
+              </div>
+            ))}
           </div>
-        ))
+        </div>
       )}
 
       {/* Modal d'ajout de boxeurs */}
@@ -286,111 +287,61 @@ export default function TournoiDetailPage() {
         <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2 className="modal-title">Ajouter des boxeurs au tournoi</h2>
+              <h2 className="modal-title">Ajouter des boxeurs</h2>
               <button className="modal-close" onClick={() => setShowAddModal(false)}>
                 ✕
               </button>
             </div>
 
-            <div className="modal-body">
-              <div className="form-group">
-                <input
-                  type="text"
-                  placeholder="🔍 Rechercher par nom, prénom ou club..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  autoFocus
-                />
-              </div>
+            <div className="form-group">
+              <input
+                type="text"
+                placeholder="Rechercher par nom, prénom ou club..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                autoFocus
+              />
+            </div>
 
-              <div className="modal-body" style={{ maxHeight: "60vh", overflowY: "auto" }}>
-                {filteredBoxeurs.length === 0 ? (
-                  <div className="empty-state" style={{ padding: 20 }}>
-                    <p>
-                      {searchTerm
-                        ? "Aucun boxeur trouvé"
-                        : "Tous les boxeurs sont déjà inscrits"}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="table-wrapper"><table>
-                    <thead>
-                      <tr>
-                        <th>Nom</th>
-                        <th>Club</th>
-                        <th>Sexe</th>
-                        <th>Type</th>
-                        <th>Âge</th>
-                        <th>Poids</th>
-                        <th>Gant</th>
-                        <th>Cat. Poids</th>
-                        <th>Cat. Âge</th>
-                        <th></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredBoxeurs.map((b) => (
-                        <tr key={b.id}>
-                          <td data-label="Nom">
-                            <strong>{b.nom.toUpperCase()}</strong> {b.prenom}
-                          </td>
-                          <td data-label="Club">
-                            <span className="badge badge-club">{b.club.nom}</span>
-                          </td>
-                          <td data-label="Sexe">
-                            <span className="badge badge-sexe">
-                              {b.sexe === "M" ? "H" : "F"}
-                            </span>
-                          </td>
-                          <td data-label="Type">
-                            <span
-                              className={`badge ${b.typeCompetition === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`}
-                              onClick={async () => {
-                                const newType = b.typeCompetition === "TOURNOI" ? "INTERCLUB" : "TOURNOI";
-                                await fetch(`/api/boxeurs/${b.id}`, {
-                                  method: "PUT",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ typeCompetition: newType }),
-                                });
-                                fetchBoxeurs();
-                              }}
-                              title={b.typeCompetition === "INTERCLUB" ? "Interclub — Cliquer pour changer" : "Tournoi — Cliquer pour changer"}
-                            >
-                              {b.typeCompetition === "INTERCLUB" ? "Interclub" : "Tournoi"}
-                            </span>
-                          </td>
-                          <td data-label="Âge">{calculateAge(b.dateNaissance)} ans</td>
-                          <td data-label="Poids">{b.poids} kg</td>
-                          <td data-label="Gant">
-                            <span className="badge">{b.gant}</span>
-                          </td>
-                          <td data-label="Cat. Poids">
-                            <span className="badge badge-category">
-                              {b.categoriePoids}
-                            </span>
-                          </td>
-                          <td data-label="Cat. Âge" className="mobile-hide">
-                            <span className="badge badge-category">
-                              {b.categorieAge}
-                            </span>
-                          </td>
-                          <td data-label="">
-                            <button
-                              className="btn btn-sm btn-primary"
-                              onClick={() => {
-                                handleAddBoxeur(b.id);
-                                setSearchTerm("");
-                              }}
-                            >
-                              + Ajouter
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table></div>
-                )}
-              </div>
+            <div className="modal-body">
+              {filteredBoxeurs.length === 0 ? (
+                <div className="empty-state">
+                  <p>
+                    {searchTerm
+                      ? "Aucun boxeur trouvé"
+                      : "Tous les boxeurs sont déjà inscrits"}
+                  </p>
+                </div>
+              ) : (
+                <div className="boxeur-add-list">
+                  {filteredBoxeurs.map((b) => (
+                    <div key={b.id} className="boxeur-row">
+                      <div className="boxeur-row-info">
+                        <div className="boxeur-row-name">
+                          {b.nom.toUpperCase()} {b.prenom}
+                        </div>
+                        <div className="club-participant-badges">
+                          <span className="badge badge-club">{b.club.nom}</span>
+                          <span className="badge badge-sexe">{b.sexe}</span>
+                          <span className="badge badge-poids">{b.poids}kg</span>
+                          <span className={`badge ${b.typeCompetition === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`}>
+                            {b.typeCompetition === "INTERCLUB" ? "IC" : "T"}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        className="btn btn-sm btn-primary"
+                        onClick={() => {
+                          handleAddBoxeur(b.id);
+                          setSearchTerm("");
+                        }}
+                      >
+                        + Ajouter
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="modal-footer">

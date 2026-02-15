@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { sortByWeight } from "@/lib/ui-helpers";
+import { getGantColor, getGantLabel } from "@/lib/categories";
 
 interface Boxeur {
   id: number;
@@ -54,7 +55,6 @@ export default function CategoriesPage() {
     }
   };
 
-  // Grouper par sexe puis catégorie de poids
   const categoriesBySexe = useMemo(() => {
     if (!tournoi) return { F: [], M: [] };
 
@@ -85,23 +85,80 @@ export default function CategoriesPage() {
   const totalFemmes = categoriesBySexe.F.reduce((acc, [, boxeurs]) => acc + boxeurs.length, 0);
   const totalHommes = categoriesBySexe.M.reduce((acc, [, boxeurs]) => acc + boxeurs.length, 0);
 
+  const renderSection = (
+    categories: [string, Boxeur[]][],
+    sexeLabel: string,
+    total: number,
+    sectionClass: string,
+    cardClass: string,
+    titleColor: string
+  ) => {
+    if (categories.length === 0) return null;
+    return (
+      <div className="section-gap-lg">
+        <h2 className={`section-header ${sectionClass}`}>
+          {sexeLabel} ({total} {total === 1 ? "tireur" : "tireurs"})
+        </h2>
+        <div className="category-grid">
+          {categories.map(([category, boxeurs]) => (
+            <div key={category} className={`card category-card ${cardClass}`}>
+              <div className="category-card-title" style={{ color: titleColor }}>
+                {category}
+              </div>
+              <div className="category-card-count">{boxeurs.length}</div>
+              <div className="category-card-label">
+                {boxeurs.length === 1 ? "tireur" : "tireurs"}
+              </div>
+              <div className="category-card-list">
+                {boxeurs.map((boxeur) => (
+                  <div key={boxeur.id} className="category-card-row">
+                    <div>
+                      <strong>{boxeur.nom.toUpperCase()}</strong> {boxeur.prenom}
+                    </div>
+                    <div className="category-card-row-badges">
+                      <span className={`badge ${boxeur.typeCompetition === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`}>
+                        {boxeur.typeCompetition === "INTERCLUB" ? "IC" : "T"}
+                      </span>
+                      <span className="badge badge-poids">{boxeur.poids}kg</span>
+                      <span
+                        className="badge-gant badge-gant-sm"
+                        style={{
+                          borderColor: getGantColor(boxeur.gant),
+                          backgroundColor: `${getGantColor(boxeur.gant)}15`,
+                          color: getGantColor(boxeur.gant),
+                        }}
+                      >
+                        <span
+                          className="gant-dot gant-dot-sm"
+                          style={{ backgroundColor: getGantColor(boxeur.gant) }}
+                        ></span>
+                        {getGantLabel(boxeur.gant)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
-      <div className="container" style={{ paddingTop: 40 }}>
-        <div className="card">
-          <div className="loading-state"><div className="spinner" /></div>
-        </div>
+      <div className="card">
+        <div className="loading-state"><div className="spinner" /></div>
       </div>
     );
   }
 
   return (
-    <div className="container" style={{ paddingTop: 40, paddingBottom: 40 }}>
-      {/* Header */}
+    <>
       <div className="page-header">
         <div>
           <h1 className="page-title">
-            📊 Catégories - {tournoi?.nom || "Tournoi"}
+            Catégories — {tournoi?.nom || "Tournoi"}
           </h1>
           <p className="page-subtitle">
             {tournoi && new Date(tournoi.date).toLocaleDateString("fr-FR", {
@@ -122,27 +179,27 @@ export default function CategoriesPage() {
         </div>
       </div>
 
-      {/* Stats globales */}
-      <div className="card stats-bar section-gap">
-        <div className="stats-bar-item">
-          <div className="stats-bar-value" style={{ color: "var(--gold)" }}>{totalBoxeurs}</div>
-          <div className="stats-bar-label">Total tireurs</div>
+      {/* Stats */}
+      <div className="stats-row section-gap">
+        <div className="stat-card">
+          <div className="stat-value" style={{ color: "var(--gold)" }}>{totalBoxeurs}</div>
+          <div className="stat-label">Total tireurs</div>
         </div>
-        <div className="stats-bar-item">
-          <div className="stats-bar-value" style={{ color: "var(--accent)" }}>{totalFemmes}</div>
-          <div className="stats-bar-label">Femmes</div>
+        <div className="stat-card">
+          <div className="stat-value" style={{ color: "var(--accent)" }}>{totalFemmes}</div>
+          <div className="stat-label">Femmes</div>
         </div>
-        <div className="stats-bar-item">
-          <div className="stats-bar-value" style={{ color: "var(--blue)" }}>{totalHommes}</div>
-          <div className="stats-bar-label">Hommes</div>
+        <div className="stat-card">
+          <div className="stat-value" style={{ color: "var(--blue)" }}>{totalHommes}</div>
+          <div className="stat-label">Hommes</div>
         </div>
-        <div className="stats-bar-item">
-          <div className="stats-bar-value" style={{ color: "var(--text-secondary)" }}>{categoriesBySexe.F.length + categoriesBySexe.M.length}</div>
-          <div className="stats-bar-label">Catégories</div>
+        <div className="stat-card">
+          <div className="stat-value">{categoriesBySexe.F.length + categoriesBySexe.M.length}</div>
+          <div className="stat-label">Catégories</div>
         </div>
       </div>
 
-      {/* Filtre Tournoi/Interclub */}
+      {/* Filtre */}
       <div className="filter-group section-gap">
         {(["TOUS", "TOURNOI", "INTERCLUB"] as const).map((t) => (
           <button
@@ -155,106 +212,20 @@ export default function CategoriesPage() {
         ))}
       </div>
 
-      {/* Femmes */}
-      {categoriesBySexe.F.length > 0 && (
-        <div className="section-gap-lg">
-          <h2 className="section-header section-header-femmes">
-            👩 FEMMES ({totalFemmes} tireuses)
-          </h2>
+      {renderSection(categoriesBySexe.F, "FEMMES", totalFemmes, "section-header-femmes", "category-card-femme", "var(--accent)")}
+      {renderSection(categoriesBySexe.M, "HOMMES", totalHommes, "section-header-hommes", "category-card-homme", "var(--blue)")}
 
-          <div className="category-grid">
-            {categoriesBySexe.F.map(([category, boxeurs]) => (
-              <div key={category} className="card category-card category-card-femme">
-                <div className="category-card-title" style={{ color: "var(--accent)" }}>
-                  {category}
-                </div>
-                <div className="category-card-count">{boxeurs.length}</div>
-                <div className="category-card-label">
-                  {boxeurs.length === 1 ? "tireuse" : "tireuses"}
-                </div>
-
-                <div className="category-card-list">
-                  {boxeurs.map((boxeur) => (
-                    <div key={boxeur.id} className="category-card-row">
-                      <div>
-                        <strong>{boxeur.nom.toUpperCase()}</strong> {boxeur.prenom}
-                      </div>
-                      <div style={{ display: "flex", gap: 4 }}>
-                        <span className={`badge ${boxeur.typeCompetition === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`} style={{ fontSize: 11 }}>
-                          {boxeur.typeCompetition === "INTERCLUB" ? "Interclub" : "Tournoi"}
-                        </span>
-                        <span className="badge badge-sexe" style={{ fontSize: 11 }}>
-                          {boxeur.poids}kg
-                        </span>
-                        <span className="badge badge-category" style={{ fontSize: 11 }}>
-                          {boxeur.gant}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Hommes */}
-      {categoriesBySexe.M.length > 0 && (
-        <div className="section-gap-lg">
-          <h2 className="section-header section-header-hommes">
-            👨 HOMMES ({totalHommes} tireurs)
-          </h2>
-
-          <div className="category-grid">
-            {categoriesBySexe.M.map(([category, boxeurs]) => (
-              <div key={category} className="card category-card category-card-homme">
-                <div className="category-card-title" style={{ color: "var(--blue)" }}>
-                  {category}
-                </div>
-                <div className="category-card-count">{boxeurs.length}</div>
-                <div className="category-card-label">
-                  {boxeurs.length === 1 ? "tireur" : "tireurs"}
-                </div>
-
-                <div className="category-card-list">
-                  {boxeurs.map((boxeur) => (
-                    <div key={boxeur.id} className="category-card-row">
-                      <div>
-                        <strong>{boxeur.nom.toUpperCase()}</strong> {boxeur.prenom}
-                      </div>
-                      <div style={{ display: "flex", gap: 4 }}>
-                        <span className={`badge ${boxeur.typeCompetition === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`} style={{ fontSize: 11 }}>
-                          {boxeur.typeCompetition === "INTERCLUB" ? "Interclub" : "Tournoi"}
-                        </span>
-                        <span className="badge badge-sexe" style={{ fontSize: 11 }}>
-                          {boxeur.poids}kg
-                        </span>
-                        <span className="badge badge-category" style={{ fontSize: 11 }}>
-                          {boxeur.gant}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Empty state */}
       {totalBoxeurs === 0 && (
         <div className="card section-gap">
           <div className="empty-state">
             <div className="empty-state-icon">📊</div>
             <p>Aucun tireur inscrit pour le moment</p>
             <p className="empty-hint">
-              Ajoute des tireurs au tournoi pour voir les catégories
+              Ajoutez des tireurs au tournoi pour voir les catégories
             </p>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

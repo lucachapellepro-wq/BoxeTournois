@@ -32,7 +32,9 @@ export default function TournoiPage() {
     setShowModal(true);
   };
 
-  const handleOpenEdit = (tournoi: Tournoi) => {
+  const handleOpenEdit = (e: React.MouseEvent, tournoi: Tournoi) => {
+    e.preventDefault();
+    e.stopPropagation();
     setForm({
       nom: tournoi.nom,
       date: new Date(tournoi.date).toISOString().split("T")[0],
@@ -70,7 +72,9 @@ export default function TournoiPage() {
     setSaving(false);
   };
 
-  const handleDelete = async (id: number, nom: string) => {
+  const handleDelete = async (e: React.MouseEvent, id: number, nom: string) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (!confirm(`Supprimer le tournoi "${nom}" ?`)) return;
 
     const success = await deleteTournoi(id);
@@ -81,11 +85,13 @@ export default function TournoiPage() {
     }
   };
 
+  const isUpcoming = (date: string) => new Date(date) >= new Date();
+
   return (
     <>
       <div className="page-header">
         <div>
-          <h1 className="page-title">🏆 Gestion des Tournois</h1>
+          <h1 className="page-title">Gestion des Tournois</h1>
           <p className="page-subtitle">
             Créez et gérez vos tournois de savate boxe française
           </p>
@@ -104,60 +110,71 @@ export default function TournoiPage() {
           <div className="empty-state">
             <div className="empty-state-icon">🏆</div>
             <p>Aucun tournoi enregistré</p>
+            <p className="empty-hint">Commencez par créer votre premier tournoi</p>
             <button className="btn btn-primary" onClick={handleOpenCreate}>
               + Créer le premier tournoi
             </button>
           </div>
         </div>
       ) : (
-        <div className="card">
-          <div className="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Nom du tournoi</th>
-                  <th>Date</th>
-                  <th>Tireurs inscrits</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tournois.map((t) => (
-                  <tr key={t.id}>
-                    <td data-label="Tournoi">
-                      <Link href={`/tournois/${t.id}`} className="tournoi-link">
-                        <strong>{t.nom}</strong>
-                      </Link>
-                    </td>
-                    <td data-label="Date">{formatDate(t.date)}</td>
-                    <td data-label="Tireurs">
-                      <span className="badge badge-category">
-                        {t._count?.boxeurs || 0} tireurs
-                      </span>
-                    </td>
-                    <td data-label="">
-                      <div className="action-buttons">
-                        <button
-                          className="btn btn-sm btn-ghost"
-                          onClick={() => handleOpenEdit(t)}
-                          title="Modifier"
-                        >
-                          ✏️ Modifier
-                        </button>
-                        <button
-                          className="btn-icon btn-danger"
-                          onClick={() => handleDelete(t.id, t.nom)}
-                          title="Supprimer"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div className="tournoi-grid">
+          {tournois.map((t) => {
+            const upcoming = isUpcoming(t.date);
+            const count = t._count?.boxeurs || 0;
+            return (
+              <Link
+                key={t.id}
+                href={`/tournois/${t.id}`}
+                className={`card card-clickable tournoi-card ${upcoming ? "tournoi-card-upcoming" : ""}`}
+              >
+                <div className="tournoi-card-header">
+                  <div className="tournoi-card-date">
+                    <span className="tournoi-card-day">
+                      {new Date(t.date).getDate()}
+                    </span>
+                    <span className="tournoi-card-month">
+                      {new Date(t.date).toLocaleDateString("fr-FR", { month: "short" }).toUpperCase()}
+                    </span>
+                    <span className="tournoi-card-year">
+                      {new Date(t.date).getFullYear()}
+                    </span>
+                  </div>
+                  <div className="tournoi-card-info">
+                    <h3 className="tournoi-card-name">{t.nom}</h3>
+                    <p className="tournoi-card-meta">
+                      {formatDate(t.date)}
+                      {upcoming && <span className="badge badge-upcoming">A venir</span>}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="tournoi-card-stats">
+                  <div className="tournoi-card-stat">
+                    <span className="tournoi-card-stat-value">{count}</span>
+                    <span className="tournoi-card-stat-label">
+                      {count === 1 ? "tireur" : "tireurs"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="tournoi-card-actions">
+                  <button
+                    className="btn btn-sm btn-ghost"
+                    onClick={(e) => handleOpenEdit(e, t)}
+                  >
+                    ✏️ Modifier
+                  </button>
+                  <button
+                    className="btn-icon btn-danger"
+                    onClick={(e) => handleDelete(e, t.id, t.nom)}
+                    title="Supprimer"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
 

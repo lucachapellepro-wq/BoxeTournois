@@ -19,6 +19,30 @@ import {
   WinnerEntry,
 } from "@/lib/match-helpers";
 
+type SexeGroup<T> = { F: [string, T[]][]; M: [string, T[]][] };
+
+function renderSexeSections<T>(
+  data: SexeGroup<T>,
+  renderContent: (category: string, items: T[]) => React.ReactNode
+) {
+  return (
+    <>
+      {data.F.length > 0 && (
+        <div className="section-gap">
+          <h2 className="section-header section-header-femmes">FEMMES</h2>
+          {data.F.map(([cat, items]) => renderContent(cat, items))}
+        </div>
+      )}
+      {data.M.length > 0 && (
+        <div className="section-gap-lg">
+          <h2 className="section-header section-header-hommes">HOMMES</h2>
+          {data.M.map(([cat, items]) => renderContent(cat, items))}
+        </div>
+      )}
+    </>
+  );
+}
+
 export default function AffrontementsPage() {
   const params = useParams();
   const tournoiId = parseInt(params.id as string);
@@ -58,10 +82,7 @@ export default function AffrontementsPage() {
     try {
       const success = await generateMatches(regenerate);
       if (success) {
-        showToast(
-          regenerate ? "Matchs régénérés ✓" : "Matchs générés ✓",
-          "success"
-        );
+        showToast(regenerate ? "Matchs régénérés ✓" : "Matchs générés ✓", "success");
         setShowConfirmGenerate(false);
       } else {
         showToast("Erreur lors de la génération", "error");
@@ -73,11 +94,20 @@ export default function AffrontementsPage() {
     }
   };
 
+  const closeModal = () => {
+    setShowMatchModal(false);
+    setMatchBuilder({ boxeur1: null });
+    setAddingToMatchId(null);
+    setMatchSearch("");
+    setMatchPoidsSearch("");
+  };
+
   const handleOpenMatchBuilder = (boxeur?: Boxeur) => {
     setMatchBuilder({ boxeur1: boxeur || null });
     setAddingToMatchId(null);
     setShowMatchModal(true);
-    setMatchSearch(""); setMatchPoidsSearch("");
+    setMatchSearch("");
+    setMatchPoidsSearch("");
   };
 
   const handleDeleteMatch = async (matchId: number) => {
@@ -93,14 +123,15 @@ export default function AffrontementsPage() {
     setAddingToMatchId(match.id);
     setMatchBuilder({ boxeur1: match.boxeur1 });
     setShowMatchModal(true);
-    setMatchSearch(""); setMatchPoidsSearch("");
+    setMatchSearch("");
+    setMatchPoidsSearch("");
   };
 
   const handleSelectBoxeur = async (boxeur: Boxeur) => {
     if (!matchBuilder.boxeur1 && !addingToMatchId) {
-      // Étape 1 : sélectionner boxeur 1
       setMatchBuilder({ boxeur1: boxeur });
-      setMatchSearch(""); setMatchPoidsSearch("");
+      setMatchSearch("");
+      setMatchPoidsSearch("");
       return;
     }
 
@@ -110,10 +141,7 @@ export default function AffrontementsPage() {
         const success = await addOpponentToMatch(addingToMatchId, boxeur.id);
         if (success) {
           showToast("Adversaire ajouté ✓", "success");
-          setShowMatchModal(false);
-          setMatchBuilder({ boxeur1: null });
-          setAddingToMatchId(null);
-          setMatchSearch(""); setMatchPoidsSearch("");
+          closeModal();
         } else {
           showToast("Erreur lors de l'ajout", "error");
         }
@@ -121,9 +149,7 @@ export default function AffrontementsPage() {
         const success = await createManualMatch(matchBuilder.boxeur1!.id, boxeur.id);
         if (success) {
           showToast("Combat ajouté ✓", "success");
-          setShowMatchModal(false);
-          setMatchBuilder({ boxeur1: null });
-          setMatchSearch(""); setMatchPoidsSearch("");
+          closeModal();
         } else {
           showToast("Erreur lors de la création", "error");
         }
@@ -138,12 +164,10 @@ export default function AffrontementsPage() {
     () => matches.filter((m) => m.matchType === "BRACKET" && !isInterclub(m) && !isMixteOrManuel(m)),
     [matches]
   );
-
   const poolMatches = useMemo(
     () => matches.filter((m) => m.matchType === "POOL" && !isInterclub(m) && !isMixteOrManuel(m)),
     [matches]
   );
-
   const interclubMatches = useMemo(
     () => matches.filter((m) => isInterclubOrMixte(m)),
     [matches]
@@ -155,22 +179,13 @@ export default function AffrontementsPage() {
   const poolsBySexe = useMemo(() => groupMatchesBySexe(poolMatches), [poolMatches]);
   const interclubBySexe = useMemo(() => groupMatchesBySexe(interclubMatches), [interclubMatches]);
 
-  // Boxeurs sans adversaire (pas dans les matchs)
   const boxeursSeuls = useMemo(() => {
     if (!tournoi) return [];
-
-    // IDs de tous les boxeurs qui ont au moins un match
     const boxeursWithMatchIds = new Set<number>();
     matches.forEach((m) => {
-      if (m.boxeur1Id) {
-        boxeursWithMatchIds.add(m.boxeur1Id);
-      }
-      if (m.boxeur2Id) {
-        boxeursWithMatchIds.add(m.boxeur2Id);
-      }
+      if (m.boxeur1Id) boxeursWithMatchIds.add(m.boxeur1Id);
+      if (m.boxeur2Id) boxeursWithMatchIds.add(m.boxeur2Id);
     });
-
-    // Retourner les boxeurs inscrits au tournoi mais sans match
     return tournoi.boxeurs
       .map((tb) => tb.boxeur)
       .filter((b) => !boxeursWithMatchIds.has(b.id));
@@ -178,21 +193,19 @@ export default function AffrontementsPage() {
 
   if (!tournoi || (loading && matches.length === 0)) {
     return (
-      <div className="container" style={{ paddingTop: 40 }}>
-        <div className="card">
-          <div className="loading-state"><div className="spinner" /></div>
-        </div>
+      <div className="card">
+        <div className="loading-state"><div className="spinner" /></div>
       </div>
     );
   }
 
   return (
-    <div className="container" style={{ paddingTop: 40, paddingBottom: 40 }}>
+    <>
       {/* Header */}
       <div className="page-header">
         <div>
           <h1 className="page-title">
-            🥊 Affrontements - {tournoi?.nom || "Tournoi"}
+            Affrontements — {tournoi?.nom || "Tournoi"}
           </h1>
           <p className="page-subtitle">
             {tournoi && new Date(tournoi.date).toLocaleDateString("fr-FR", {
@@ -215,10 +228,7 @@ export default function AffrontementsPage() {
               📋 Feuille
             </Link>
           )}
-          <button
-            className="btn btn-primary"
-            onClick={() => handleOpenMatchBuilder()}
-          >
+          <button className="btn btn-primary" onClick={() => handleOpenMatchBuilder()}>
             + Combat manuel
           </button>
           {matches.length === 0 ? (
@@ -226,16 +236,12 @@ export default function AffrontementsPage() {
               className="btn btn-primary"
               onClick={() => handleGenerateMatches(false)}
               disabled={generating}
-              style={{ display: "flex", alignItems: "center", gap: 8 }}
             >
               {generating && <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />}
               {generating ? "Génération..." : "Générer le tirage"}
             </button>
           ) : (
-            <button
-              className="btn btn-danger"
-              onClick={() => setShowConfirmGenerate(true)}
-            >
+            <button className="btn btn-danger" onClick={() => setShowConfirmGenerate(true)}>
               Régénérer
             </button>
           )}
@@ -244,22 +250,22 @@ export default function AffrontementsPage() {
 
       {/* Stats */}
       {stats && matches.length > 0 && (
-        <div className="card stats-bar section-gap">
-          <div className="stats-bar-item">
-            <div className="stats-bar-value" style={{ color: "var(--accent)" }}>{stats.total}</div>
-            <div className="stats-bar-label">Matchs total</div>
+        <div className="stats-row section-gap">
+          <div className="stat-card">
+            <div className="stat-value" style={{ color: "var(--accent)" }}>{stats.total}</div>
+            <div className="stat-label">Matchs total</div>
           </div>
-          <div className="stats-bar-item">
-            <div className="stats-bar-value" style={{ color: "var(--gold)" }}>{stats.byType.BRACKET}</div>
-            <div className="stats-bar-label">Tableaux</div>
+          <div className="stat-card">
+            <div className="stat-value" style={{ color: "var(--gold)" }}>{stats.byType.BRACKET}</div>
+            <div className="stat-label">Tableaux</div>
           </div>
-          <div className="stats-bar-item">
-            <div className="stats-bar-value" style={{ color: "var(--success)" }}>{stats.byType.POOL}</div>
-            <div className="stats-bar-label">Poules</div>
+          <div className="stat-card">
+            <div className="stat-value" style={{ color: "var(--success)" }}>{stats.byType.POOL}</div>
+            <div className="stat-label">Poules</div>
           </div>
-          <div className="stats-bar-item">
-            <div className="stats-bar-value" style={{ color: "var(--text-secondary)" }}>{stats.categories.length}</div>
-            <div className="stats-bar-label">Catégories</div>
+          <div className="stat-card">
+            <div className="stat-value">{stats.categories.length}</div>
+            <div className="stat-label">Catégories</div>
           </div>
         </div>
       )}
@@ -271,7 +277,7 @@ export default function AffrontementsPage() {
             <div className="empty-state-icon">🥊</div>
             <p>Aucun match généré pour le moment</p>
             <p className="empty-hint">
-              Clique sur &quot;Générer le tirage&quot; pour créer les affrontements
+              Cliquez sur &quot;Générer le tirage&quot; pour créer les affrontements
             </p>
           </div>
         </div>
@@ -297,7 +303,6 @@ export default function AffrontementsPage() {
               <button
                 className={`tab ${activeTab === "INTERCLUB" ? "tab-active" : ""}`}
                 onClick={() => setActiveTab("INTERCLUB")}
-                style={{ color: activeTab === "INTERCLUB" ? "var(--interclub-green)" : undefined }}
               >
                 Interclub ({interclubMatches.length})
               </button>
@@ -306,7 +311,6 @@ export default function AffrontementsPage() {
               <button
                 className={`tab ${activeTab === "WINNERS" ? "tab-active" : ""}`}
                 onClick={() => setActiveTab("WINNERS")}
-                style={{ color: activeTab === "WINNERS" ? "var(--gold)" : undefined }}
               >
                 Vainqueurs directs ({winners.length})
               </button>
@@ -315,274 +319,114 @@ export default function AffrontementsPage() {
 
           {/* Brackets */}
           {activeTab === "BRACKET" && (
-            <div>
-              {bracketMatches.length === 0 ? (
-                <div className="card">
-                  <div className="empty-state">
-                    <div className="empty-state-icon">🏆</div>
-                    <p>Aucun tableau d'élimination</p>
-                  </div>
+            bracketMatches.length === 0 ? (
+              <div className="card">
+                <div className="empty-state">
+                  <div className="empty-state-icon">🏆</div>
+                  <p>Aucun tableau d&apos;élimination</p>
                 </div>
-              ) : (
-                <>
-                  {/* Femmes */}
-                  {bracketsBySexe.F.length > 0 && (
-                    <div className="section-gap">
-                      <h2 className="section-header section-header-femmes">
-                        👩 FEMMES
-                      </h2>
-                      {bracketsBySexe.F.map(([category, categoryMatches]) => (
-                        <BracketView
-                          key={category}
-                          matches={categoryMatches}
-                          category={category}
-                          onAddOpponent={handleAddOpponent}
-                        />
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Hommes */}
-                  {bracketsBySexe.M.length > 0 && (
-                    <div className="section-gap-lg">
-                      <h2 className="section-header section-header-hommes">
-                        👨 HOMMES
-                      </h2>
-                      {bracketsBySexe.M.map(([category, categoryMatches]) => (
-                        <BracketView
-                          key={category}
-                          matches={categoryMatches}
-                          category={category}
-                          onAddOpponent={handleAddOpponent}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+              </div>
+            ) : renderSexeSections(bracketsBySexe, (category, categoryMatches) => (
+              <BracketView
+                key={category}
+                matches={categoryMatches}
+                category={category}
+                onAddOpponent={handleAddOpponent}
+              />
+            ))
           )}
 
           {/* Pools */}
           {activeTab === "POOL" && (
-            <div>
-              {poolMatches.length === 0 ? (
-                <div className="card">
-                  <div className="empty-state">
-                    <div className="empty-state-icon">🔄</div>
-                    <p>Aucune poule</p>
-                  </div>
+            poolMatches.length === 0 ? (
+              <div className="card">
+                <div className="empty-state">
+                  <div className="empty-state-icon">🔄</div>
+                  <p>Aucune poule</p>
                 </div>
-              ) : (
-                <>
-                  {/* Femmes */}
-                  {poolsBySexe.F.length > 0 && (
-                    <div className="section-gap">
-                      <h2 className="section-header section-header-femmes">
-                        👩 FEMMES
-                      </h2>
-                      {poolsBySexe.F.map(([category, categoryMatches]) => (
-                        <PoolView
-                          key={category}
-                          matches={categoryMatches}
-                          category={category}
-                          onAddOpponent={handleAddOpponent}
-                        />
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Hommes */}
-                  {poolsBySexe.M.length > 0 && (
-                    <div className="section-gap-lg">
-                      <h2 className="section-header section-header-hommes">
-                        👨 HOMMES
-                      </h2>
-                      {poolsBySexe.M.map(([category, categoryMatches]) => (
-                        <PoolView
-                          key={category}
-                          matches={categoryMatches}
-                          category={category}
-                          onAddOpponent={handleAddOpponent}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+              </div>
+            ) : renderSexeSections(poolsBySexe, (category, categoryMatches) => (
+              <PoolView
+                key={category}
+                matches={categoryMatches}
+                category={category}
+                onAddOpponent={handleAddOpponent}
+              />
+            ))
           )}
 
-          {/* Vainqueurs directs */}
+          {/* Winners */}
           {activeTab === "WINNERS" && (
-            <div>
-              {winners.length === 0 ? (
-                <div className="card">
-                  <div className="empty-state">
-                    <div className="empty-state-icon">🏆</div>
-                    <p>Aucun vainqueur direct</p>
-                  </div>
+            winners.length === 0 ? (
+              <div className="card">
+                <div className="empty-state">
+                  <div className="empty-state-icon">🏆</div>
+                  <p>Aucun vainqueur direct</p>
                 </div>
-              ) : (
-                <>
-                  {/* Femmes */}
-                  {winnersBySexe.F.length > 0 && (
-                    <div className="section-gap">
-                      <h2 className="section-header section-header-femmes">
-                        👩 FEMMES
-                      </h2>
-                      {winnersBySexe.F.map(([category, entries]) => (
-                        <div key={category} style={{ marginBottom: 24 }}>
-                          <h3 className="pool-category">{category}</h3>
-                          <div className="winners-list">
-                            {entries.map((entry) => (
-                              <div key={entry.boxeur.id} className={`card winner-card ${entry.source === "interclub" ? "winner-card-interclub" : "winner-card-solo"}`}>
-                                <span className="winner-card-icon">🏆</span>
-                                <div className="winner-card-info">
-                                  <div className="winner-card-name">
-                                    {entry.boxeur.nom.toUpperCase()} {entry.boxeur.prenom}
-                                    <span className={`badge ${entry.boxeur.typeCompetition === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`} style={{ marginLeft: 8, fontSize: 10 }}>
-                                      {entry.boxeur.typeCompetition === "INTERCLUB" ? "Interclub" : "Tournoi"}
-                                    </span>
-                                  </div>
-                                  <div className="winner-card-details">
-                                    {entry.boxeur.club.nom} — {entry.boxeur.poids}kg — {entry.boxeur.categoriePoids}
-                                  </div>
-                                </div>
-                                <span className="winner-card-status" style={{ color: entry.source === "interclub" ? "var(--tournoi-blue)" : "var(--gold)" }}>
-                                  {entry.source === "interclub" ? "Placé en interclub" : "Seul dans sa catégorie"}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
+              </div>
+            ) : renderSexeSections(winnersBySexe, (category, entries: WinnerEntry[]) => (
+              <div key={category} className="section-gap">
+                <h3 className="pool-category">{category}</h3>
+                <div className="winners-list">
+                  {entries.map((entry) => (
+                    <div key={entry.boxeur.id} className={`card winner-card ${entry.source === "interclub" ? "winner-card-interclub" : "winner-card-solo"}`}>
+                      <span className="winner-card-icon">🏆</span>
+                      <div className="winner-card-info">
+                        <div className="winner-card-name">
+                          {entry.boxeur.nom.toUpperCase()} {entry.boxeur.prenom}
+                          <span className={`badge ${entry.boxeur.typeCompetition === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`}>
+                            {entry.boxeur.typeCompetition === "INTERCLUB" ? "IC" : "T"}
+                          </span>
                         </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Hommes */}
-                  {winnersBySexe.M.length > 0 && (
-                    <div className="section-gap-lg">
-                      <h2 className="section-header section-header-hommes">
-                        👨 HOMMES
-                      </h2>
-                      {winnersBySexe.M.map(([category, entries]) => (
-                        <div key={category} style={{ marginBottom: 24 }}>
-                          <h3 className="pool-category">{category}</h3>
-                          <div className="winners-list">
-                            {entries.map((entry) => (
-                              <div key={entry.boxeur.id} className={`card winner-card ${entry.source === "interclub" ? "winner-card-interclub" : "winner-card-solo"}`}>
-                                <span className="winner-card-icon">🏆</span>
-                                <div className="winner-card-info">
-                                  <div className="winner-card-name">
-                                    {entry.boxeur.nom.toUpperCase()} {entry.boxeur.prenom}
-                                    <span className={`badge ${entry.boxeur.typeCompetition === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`} style={{ marginLeft: 8, fontSize: 10 }}>
-                                      {entry.boxeur.typeCompetition === "INTERCLUB" ? "Interclub" : "Tournoi"}
-                                    </span>
-                                  </div>
-                                  <div className="winner-card-details">
-                                    {entry.boxeur.club.nom} — {entry.boxeur.poids}kg — {entry.boxeur.categoriePoids}
-                                  </div>
-                                </div>
-                                <span className="winner-card-status" style={{ color: entry.source === "interclub" ? "var(--tournoi-blue)" : "var(--gold)" }}>
-                                  {entry.source === "interclub" ? "Placé en interclub" : "Seul dans sa catégorie"}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
+                        <div className="winner-card-details">
+                          {entry.boxeur.club.nom} — {entry.boxeur.poids}kg — {entry.boxeur.categoriePoids}
                         </div>
-                      ))}
+                      </div>
+                      <span className="winner-card-status" style={{ color: entry.source === "interclub" ? "var(--tournoi-blue)" : "var(--gold)" }}>
+                        {entry.source === "interclub" ? "Interclub" : "Seul en catégorie"}
+                      </span>
                     </div>
-                  )}
-                </>
-              )}
-            </div>
+                  ))}
+                </div>
+              </div>
+            ))
           )}
 
           {/* Interclub */}
           {activeTab === "INTERCLUB" && (
-            <div>
-              {interclubMatches.length === 0 ? (
-                <div className="card">
-                  <div className="empty-state">
-                    <div className="empty-state-icon">🤝</div>
-                    <p>Aucune rencontre interclub</p>
+            interclubMatches.length === 0 ? (
+              <div className="card">
+                <div className="empty-state">
+                  <div className="empty-state-icon">🤝</div>
+                  <p>Aucune rencontre interclub</p>
+                </div>
+              </div>
+            ) : renderSexeSections(interclubBySexe, (category, categoryMatches) => (
+              <div key={category} className="pool-view">
+                <h3 className="pool-category">{category}</h3>
+                <div className="pool-grid">
+                  <div className="pool-card">
+                    <h4 className="pool-title">
+                      Rencontres interclub
+                      <span className="pool-count">
+                        ({categoryMatches.length} combat{categoryMatches.length > 1 ? "s" : ""})
+                      </span>
+                    </h4>
+                    <div className="pool-matches">
+                      {categoryMatches.map((match) => (
+                        <MatchCardEditable
+                          key={match.id}
+                          match={match}
+                          onAddOpponent={handleAddOpponent}
+                          onDelete={match.poolName === "MANUEL" ? handleDeleteMatch : undefined}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
-              ) : (
-                <>
-                  {/* Femmes */}
-                  {interclubBySexe.F.length > 0 && (
-                    <div className="section-gap">
-                      <h2 className="section-header section-header-femmes">
-                        👩 FEMMES
-                      </h2>
-                      {interclubBySexe.F.map(([category, categoryMatches]) => (
-                        <div key={category} className="pool-view">
-                          <h3 className="pool-category">{category}</h3>
-                          <div className="pool-grid">
-                            <div className="pool-card">
-                              <h4 className="pool-title">
-                                Rencontres interclub
-                                <span className="pool-count">
-                                  ({categoryMatches.length} combat{categoryMatches.length > 1 ? "s" : ""})
-                                </span>
-                              </h4>
-                              <div className="pool-matches">
-                                {categoryMatches.map((match) => (
-                                  <MatchCardEditable
-                                    key={match.id}
-                                    match={match}
-                                    onAddOpponent={handleAddOpponent}
-                                    onDelete={match.poolName === "MANUEL" ? handleDeleteMatch : undefined}
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Hommes */}
-                  {interclubBySexe.M.length > 0 && (
-                    <div className="section-gap-lg">
-                      <h2 className="section-header section-header-hommes">
-                        👨 HOMMES
-                      </h2>
-                      {interclubBySexe.M.map(([category, categoryMatches]) => (
-                        <div key={category} className="pool-view">
-                          <h3 className="pool-category">{category}</h3>
-                          <div className="pool-grid">
-                            <div className="pool-card">
-                              <h4 className="pool-title">
-                                Rencontres interclub
-                                <span className="pool-count">
-                                  ({categoryMatches.length} combat{categoryMatches.length > 1 ? "s" : ""})
-                                </span>
-                              </h4>
-                              <div className="pool-matches">
-                                {categoryMatches.map((match) => (
-                                  <MatchCardEditable
-                                    key={match.id}
-                                    match={match}
-                                    onAddOpponent={handleAddOpponent}
-                                    onDelete={match.poolName === "MANUEL" ? handleDeleteMatch : undefined}
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+              </div>
+            ))
           )}
-
         </div>
       )}
 
@@ -593,7 +437,7 @@ export default function AffrontementsPage() {
 
       {/* Modal sélection adversaire */}
       {showMatchModal && (
-        <div className="modal-overlay" onClick={() => { setShowMatchModal(false); setMatchBuilder({ boxeur1: null }); setAddingToMatchId(null); setMatchSearch(""); setMatchPoidsSearch(""); }}>
+        <div className="modal-overlay" onClick={closeModal}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="modal-title">
@@ -601,67 +445,65 @@ export default function AffrontementsPage() {
                   ? `Adversaire de ${matchBuilder.boxeur1.nom.toUpperCase()} ${matchBuilder.boxeur1.prenom}`
                   : "Sélectionner le 1er boxeur"}
               </h2>
-              <button
-                className="modal-close"
-                onClick={() => { setShowMatchModal(false); setMatchBuilder({ boxeur1: null }); setAddingToMatchId(null); setMatchSearch(""); setMatchPoidsSearch(""); }}
-              >
-                ×
-              </button>
+              <button className="modal-close" onClick={closeModal}>×</button>
             </div>
-            <div style={{ padding: "0 24px 24px" }}>
-              <div className="filter-group" style={{ marginBottom: 16 }}>
-                <input
-                  type="text"
-                  placeholder="Rechercher par nom, prénom ou club..."
-                  value={matchSearch}
-                  onChange={(e) => setMatchSearch(e.target.value)}
-                  autoFocus
-                  style={{ flex: 1 }}
-                />
-                <select
-                  value={matchPoidsSearch}
-                  onChange={(e) => setMatchPoidsSearch(e.target.value)}
-                  style={{ width: "auto", minWidth: 140, maxWidth: "100%" }}
-                >
-                  <option value="">Toutes catégories</option>
-                  {[...new Set(tournoi?.boxeurs.map((tb) => tb.boxeur.categoriePoids) ?? [])].sort(sortByWeight).map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-              <div style={{ maxHeight: "60vh", overflowY: "auto" }}>
-                {tournoi?.boxeurs
-                  .map((tb) => tb.boxeur)
-                  .filter((b) => {
-                    if (matchBuilder.boxeur1 && b.id === matchBuilder.boxeur1.id) return false;
-                    if (matchPoidsSearch && b.categoriePoids !== matchPoidsSearch) return false;
-                    if (!matchSearch) return true;
-                    const s = matchSearch.toLowerCase();
-                    return b.nom.toLowerCase().includes(s) || b.prenom.toLowerCase().includes(s) || b.club.nom.toLowerCase().includes(s);
-                  })
-                  .map((b) => (
-                    <div key={b.id} className="boxeur-row">
-                      <div>
-                        <strong>{b.nom.toUpperCase()}</strong> {b.prenom}
-                        <span className={`badge ${b.typeCompetition === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`} style={{ marginLeft: 6, fontSize: 10 }}>
-                          {b.typeCompetition === "INTERCLUB" ? "Interclub" : "Tournoi"}
-                        </span>
-                        <span style={{ color: "var(--text-secondary)", marginLeft: 8, fontSize: 13 }}>
-                          {b.club.nom} — {b.categoriePoids} — {b.sexe === "M" ? "H" : "F"}
-                        </span>
+
+            <div className="filter-group">
+              <input
+                type="text"
+                placeholder="Rechercher par nom, prénom ou club..."
+                value={matchSearch}
+                onChange={(e) => setMatchSearch(e.target.value)}
+                autoFocus
+                className="filter-input-flex"
+              />
+              <select
+                value={matchPoidsSearch}
+                onChange={(e) => setMatchPoidsSearch(e.target.value)}
+                className="filter-select-auto"
+              >
+                <option value="">Toutes catégories</option>
+                {[...new Set(tournoi?.boxeurs.map((tb) => tb.boxeur.categoriePoids) ?? [])].sort(sortByWeight).map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="modal-body">
+              {tournoi?.boxeurs
+                .map((tb) => tb.boxeur)
+                .filter((b) => {
+                  if (matchBuilder.boxeur1 && b.id === matchBuilder.boxeur1.id) return false;
+                  if (matchPoidsSearch && b.categoriePoids !== matchPoidsSearch) return false;
+                  if (!matchSearch) return true;
+                  const s = matchSearch.toLowerCase();
+                  return b.nom.toLowerCase().includes(s) || b.prenom.toLowerCase().includes(s) || b.club.nom.toLowerCase().includes(s);
+                })
+                .map((b) => (
+                  <div key={b.id} className="boxeur-row">
+                    <div className="boxeur-row-info">
+                      <div className="boxeur-row-name">
+                        {b.nom.toUpperCase()} {b.prenom}
                       </div>
-                      <button
-                        className="btn btn-primary btn-sm"
-                        onClick={() => handleSelectBoxeur(b)}
-                        disabled={creatingMatch}
-                        style={{ display: "flex", alignItems: "center", gap: 6 }}
-                      >
-                        {creatingMatch && matchBuilder.boxeur1 && <div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />}
-                        {matchBuilder.boxeur1 ? "Sélectionner" : "Choisir"}
-                      </button>
+                      <div className="club-participant-badges">
+                        <span className="badge badge-club">{b.club.nom}</span>
+                        <span className={`badge ${b.typeCompetition === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`}>
+                          {b.typeCompetition === "INTERCLUB" ? "IC" : "T"}
+                        </span>
+                        <span className="badge badge-poids">{b.categoriePoids}</span>
+                        <span className="badge badge-sexe">{b.sexe === "M" ? "H" : "F"}</span>
+                      </div>
                     </div>
-                  ))}
-              </div>
+                    <button
+                      className="btn btn-primary btn-sm"
+                      onClick={() => handleSelectBoxeur(b)}
+                      disabled={creatingMatch}
+                    >
+                      {creatingMatch && matchBuilder.boxeur1 && <div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />}
+                      {matchBuilder.boxeur1 ? "Sélectionner" : "Choisir"}
+                    </button>
+                  </div>
+                ))}
             </div>
           </div>
         </div>
@@ -670,34 +512,19 @@ export default function AffrontementsPage() {
       {/* Modal confirmation régénération */}
       {showConfirmGenerate && (
         <div className="modal-overlay" onClick={() => setShowConfirmGenerate(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal modal-sm" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="modal-title">Régénérer les matchs ?</h2>
-              <button
-                className="modal-close"
-                onClick={() => setShowConfirmGenerate(false)}
-              >
-                ×
-              </button>
+              <button className="modal-close" onClick={() => setShowConfirmGenerate(false)}>×</button>
             </div>
-            <p style={{ color: "var(--text-secondary)", marginBottom: 24 }}>
-              ⚠️ Cela supprimera tous les matchs existants et tous les résultats
-              enregistrés. Cette action est irréversible.
+            <p className="modal-description">
+              Cela supprimera tous les matchs existants et tous les résultats enregistrés. Cette action est irréversible.
             </p>
             <div className="modal-actions">
-              <button
-                className="btn btn-ghost"
-                onClick={() => setShowConfirmGenerate(false)}
-                disabled={generating}
-              >
+              <button className="btn btn-ghost" onClick={() => setShowConfirmGenerate(false)} disabled={generating}>
                 Annuler
               </button>
-              <button
-                className="btn btn-danger"
-                onClick={() => handleGenerateMatches(true)}
-                disabled={generating}
-                style={{ display: "flex", alignItems: "center", gap: 8 }}
-              >
+              <button className="btn btn-danger" onClick={() => handleGenerateMatches(true)} disabled={generating}>
                 {generating && <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />}
                 {generating ? "Régénération..." : "Régénérer"}
               </button>
@@ -707,6 +534,6 @@ export default function AffrontementsPage() {
       )}
 
       {toast.visible && <Toast message={toast.message} type={toast.type} />}
-    </div>
+    </>
   );
 }

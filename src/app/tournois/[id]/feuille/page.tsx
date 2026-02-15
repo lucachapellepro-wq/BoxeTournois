@@ -183,7 +183,7 @@ export default function FeuilleTournoiPage() {
 
   if (!tournoi) {
     return (
-      <div className="container" style={{ paddingTop: 40 }}>
+      <div className="feuille-container">
         <div className="card">
           <div className="loading-state"><div className="spinner" /></div>
         </div>
@@ -251,7 +251,7 @@ export default function FeuilleTournoiPage() {
             text-overflow: ellipsis !important;
             flex: unset !important;
           }
-          .match-row-type span {
+          .match-type-badge {
             background-color: transparent !important;
             border: none !important;
             padding: 0 !important;
@@ -300,20 +300,11 @@ export default function FeuilleTournoiPage() {
             border-bottom: 0.5px solid #ccc !important;
             gap: 6px !important;
           }
-          .winners-section .winner-row span[style*="font-size: 18px"] {
+          .winner-row-name {
             font-size: 9px !important;
           }
-          .winners-section .winner-row span[style*="font-size: 10px"] {
+          .winner-row-label {
             font-size: 7px !important;
-          }
-          .winners-section .winner-row span[style*="font-size: 12px"] {
-            font-size: 8px !important;
-          }
-          .winners-section .winner-row span[style*="font-size: 11px"] {
-            font-size: 8px !important;
-          }
-          .winners-section .winner-row div[style*="font-size: 11px"] {
-            font-size: 8px !important;
           }
           .feuille-title h1 {
             font-size: 18px !important;
@@ -331,30 +322,30 @@ export default function FeuilleTournoiPage() {
         }
       `}</style>
 
-      <div className="feuille-container" style={{ padding: "40px 20px", maxWidth: 1200, margin: "0 auto" }}>
+      <div className="feuille-container">
         {/* Header - No print */}
-        <div className="no-print feuille-header" style={{ marginBottom: 32, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div className="no-print feuille-header">
           <div>
-            <h1 style={{ fontSize: 28, marginBottom: 8 }}>
+            <h1 className="feuille-header-title">
               📋 Feuille de tournoi
             </h1>
-            <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
+            <p className="feuille-header-subtitle">
               Glisse-dépose pour réorganiser • Imprime pour la feuille officielle
             </p>
           </div>
-          <div className="feuille-controls" style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <div className="feuille-controls">
             <Link href={`/tournois/${tournoiId}/affrontements`} className="btn btn-ghost">
               ← Retour
             </Link>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <label style={{ fontSize: 14 }}>Espacement min :</label>
+            <div className="feuille-spacing-control">
+              <label>Espacement min :</label>
               <input
                 type="number"
                 min="0"
                 max="20"
                 value={minSpacing}
                 onChange={(e) => setMinSpacing(parseInt(e.target.value) || 0)}
-                style={{ width: 70 }}
+                className="feuille-spacing-input"
               />
             </div>
             <button className="btn btn-secondary" onClick={handleRandomize}>
@@ -367,11 +358,9 @@ export default function FeuilleTournoiPage() {
         </div>
 
         {/* Titre pour impression */}
-        <div className="feuille-title" style={{ marginBottom: 32, textAlign: "center" }}>
-          <h1 style={{ fontSize: 32, marginBottom: 8, color: "var(--accent)" }}>
-            {tournoi.nom}
-          </h1>
-          <p style={{ fontSize: 18, color: "var(--text-secondary)" }}>
+        <div className="feuille-title">
+          <h1>{tournoi.nom}</h1>
+          <p className="feuille-title-date">
             {new Date(tournoi.date).toLocaleDateString("fr-FR", {
               weekday: "long",
               year: "numeric",
@@ -379,13 +368,13 @@ export default function FeuilleTournoiPage() {
               day: "numeric",
             })}
           </p>
-          <p style={{ fontSize: 16, color: "var(--text-secondary)", marginTop: 8 }}>
+          <p className="feuille-title-count">
             {matches.filter(m => !('separator' in m)).length} combat{matches.filter(m => !('separator' in m)).length > 1 ? "s" : ""}
           </p>
         </div>
 
         {/* Légende des couleurs */}
-        <div className="no-print feuille-legend" style={{ marginTop: 24, marginBottom: 16 }}>
+        <div className="no-print feuille-legend">
           {[
             { color: "var(--pool-green)", label: "Poule" },
             { color: "var(--demi)", label: "Demi-finale" },
@@ -403,41 +392,20 @@ export default function FeuilleTournoiPage() {
         </div>
 
         {/* Tableau des matchs */}
-        <div style={{ marginTop: 8 }}>
+        <div className="feuille-table">
           {/* Header du tableau */}
-          <div
-            className="feuille-table-header"
-            style={{
-              display: "grid",
-              gridTemplateColumns: "60px 70px 200px 1fr 80px 1fr",
-              gap: 16,
-              padding: "16px 12px",
-              backgroundColor: "var(--bg-secondary)",
-              borderRadius: "var(--radius) var(--radius) 0 0",
-              fontWeight: "bold",
-              fontSize: 14,
-              color: "var(--gold)",
-            }}
-          >
-            <div style={{ textAlign: "center" }}>N°</div>
-            <div style={{ textAlign: "center" }}>Type</div>
+          <div className="feuille-table-header">
+            <div className="text-center">N°</div>
+            <div className="text-center">Type</div>
             <div>Catégorie</div>
-            <div style={{ textAlign: "center", color: "var(--blue)" }}>COIN BLEU</div>
-            <div style={{ textAlign: "center" }}>VS</div>
-            <div style={{ textAlign: "center", color: "var(--accent)" }}>COIN ROUGE</div>
+            <div className="text-center text-blue">COIN BLEU</div>
+            <div className="text-center">VS</div>
+            <div className="text-center text-red">COIN ROUGE</div>
           </div>
 
           {/* Lignes des matchs */}
           {matches.length === 0 ? (
-            <div
-              style={{
-                padding: 48,
-                textAlign: "center",
-                color: "var(--text-secondary)",
-                backgroundColor: "var(--bg-primary)",
-                borderRadius: "0 0 var(--radius) var(--radius)",
-              }}
-            >
+            <div className="feuille-empty">
               Aucun match à afficher
             </div>
           ) : (
@@ -447,14 +415,7 @@ export default function FeuilleTournoiPage() {
                 // Si c'est un séparateur
                 if ('separator' in item) {
                   return (
-                    <div
-                      key={`separator-${index}`}
-                      style={{
-                        height: 2,
-                        backgroundColor: "var(--gold)",
-                        margin: "16px 0",
-                      }}
-                    />
+                    <div key={`separator-${index}`} className="feuille-separator" />
                   );
                 }
 
@@ -470,99 +431,66 @@ export default function FeuilleTournoiPage() {
                 return (
               <div
                 key={match.id}
-                className="match-row"
+                className={`match-row ${index % 2 === 0 ? "match-row-even" : "match-row-odd"}`}
                 draggable
                 onDragStart={() => handleDragStart(index)}
                 onDragOver={(e) => handleDragOver(e, index)}
                 onDrop={(e) => handleDrop(e, index)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 16,
-                  padding: "8px 12px",
-                  backgroundColor: index % 2 === 0 ? "var(--bg-row-even)" : "var(--bg-row-odd)",
-                  borderBottom: "1px solid var(--border)",
-                  borderLeft: `4px solid ${matchColor}`,
-                  cursor: "move",
-                  transition: "background-color 0.2s",
-                  fontSize: 14,
-                } as React.CSSProperties}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "var(--bg-card-hover)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor =
-                    index % 2 === 0 ? "var(--bg-row-even)" : "var(--bg-row-odd)";
-                }}
+                style={{ borderLeftColor: matchColor }}
               >
                 {/* Numéro */}
-                <div
-                  className="match-row-number"
-                  style={{
-                    minWidth: 40,
-                    textAlign: "center",
-                    fontSize: 20,
-                    fontWeight: "bold",
-                    color: "var(--gold)",
-                  }}
-                >
+                <div className="match-row-number">
                   {currentMatchNumber}
                 </div>
 
                 {/* Badge type */}
-                <div className="match-row-type" style={{ minWidth: 60, textAlign: "center" }}>
-                  <span title={matchLabelFull} style={{
-                    display: "inline-block",
-                    padding: "2px 8px",
-                    borderRadius: 4,
-                    fontSize: 11,
-                    fontWeight: 700,
+                <div className="match-row-type">
+                  <span title={matchLabelFull} className="match-type-badge" style={{
                     backgroundColor: `${matchColor}20`,
                     color: matchColor,
-                    border: `1px solid ${matchColor}40`,
-                    cursor: "default",
+                    borderColor: `${matchColor}40`,
                   }}>
                     {matchLabel}
                   </span>
                 </div>
 
                 {/* Catégorie / Sexe */}
-                <div className="match-row-category" style={{ minWidth: 200, fontWeight: "600", color: "var(--text-primary)" }}>
+                <div className="match-row-category">
                   {match.categoriePoids} {match.sexe === "F" ? "♀" : "♂"}
                   {match.matchType === "BRACKET" && match.bracketRound && ` - ${match.bracketRound}`}
                   {match.matchType === "POOL" && match.poolName && match.poolName !== "MANUEL" && ` - Poule ${match.poolName}`}
                 </div>
 
                 {/* Boxeur 1 */}
-                <div className="match-row-fighter" style={{ flex: 1, color: "var(--blue)", fontWeight: "500" }}>
+                <div className="match-row-fighter match-row-fighter-blue">
                   {match.boxeur1 ? (
                     <>
                       {match.boxeur1.nom.toUpperCase()} {match.boxeur1.prenom}
-                      <span className="fighter-tag" style={{ fontSize: 10, marginLeft: 3, color: match.boxeur1.typeCompetition === "INTERCLUB" ? "var(--interclub-green)" : "var(--tournoi-blue)" }}>
-                        ({match.boxeur1.typeCompetition === "INTERCLUB" ? "Interclub" : "Tournoi"})
+                      <span className={`fighter-tag ${match.boxeur1.typeCompetition === "INTERCLUB" ? "fighter-tag-ic" : "fighter-tag-t"}`}>
+                        ({match.boxeur1.typeCompetition === "INTERCLUB" ? "IC" : "T"})
                       </span>
-                      <span className="fighter-club" style={{ color: "var(--text-secondary)", fontSize: 12 }}> ({match.boxeur1.club.nom})</span>
+                      <span className="fighter-club"> ({match.boxeur1.club.nom})</span>
                     </>
                   ) : (
-                    <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>TBD</span>
+                    <span className="fighter-tbd">TBD</span>
                   )}
                 </div>
 
                 {/* VS */}
-                <div className="match-row-vs" style={{ color: "var(--text-muted)", fontWeight: "bold", padding: "0 4px" }}>vs</div>
+                <div className="match-row-vs">vs</div>
 
                 {/* Boxeur 2 */}
-                <div className="match-row-fighter" style={{ flex: 1, color: "var(--accent)", fontWeight: "500" }}>
+                <div className="match-row-fighter match-row-fighter-red">
                   {match.boxeur2 ? (
                     <>
                       {match.boxeur2.nom.toUpperCase()} {match.boxeur2.prenom}
-                      <span className="fighter-tag" style={{ fontSize: 10, marginLeft: 3, color: match.boxeur2.typeCompetition === "INTERCLUB" ? "var(--interclub-green)" : "var(--tournoi-blue)" }}>
-                        ({match.boxeur2.typeCompetition === "INTERCLUB" ? "Interclub" : "Tournoi"})
+                      <span className={`fighter-tag ${match.boxeur2.typeCompetition === "INTERCLUB" ? "fighter-tag-ic" : "fighter-tag-t"}`}>
+                        ({match.boxeur2.typeCompetition === "INTERCLUB" ? "IC" : "T"})
                       </span>
-                      <span className="fighter-club" style={{ color: "var(--text-secondary)", fontSize: 12 }}> ({match.boxeur2.club.nom})</span>
+                      <span className="fighter-club"> ({match.boxeur2.club.nom})</span>
                     </>
                   ) : (
-                    <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>TBD</span>
+                    <span className="fighter-tbd">TBD</span>
                   )}
                 </div>
               </div>
@@ -574,35 +502,25 @@ export default function FeuilleTournoiPage() {
 
         {/* Vainqueurs directs */}
         {winners.length > 0 && (
-          <div className="winners-section" style={{ marginTop: 32 }}>
-            <h2 style={{ fontSize: 20, marginBottom: 16, color: "var(--gold)", borderBottom: "2px solid var(--gold)", paddingBottom: 8 }}>
+          <div className="winners-section">
+            <h2>
               🏆 Vainqueurs directs ({winners.length})
             </h2>
             <div>
               {winners.map((entry) => (
                 <div
                   key={entry.boxeur.id}
-                  className="winner-row"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    padding: "6px 12px",
-                    backgroundColor: "var(--bg-primary)",
-                    borderLeft: `4px solid ${entry.source === "interclub" ? "var(--tournoi-blue)" : "var(--gold)"}`,
-                    borderBottom: "1px solid var(--border)",
-                    fontSize: 14,
-                  }}
+                  className={`winner-row ${entry.source === "interclub" ? "winner-row-ic" : "winner-row-solo"}`}
                 >
-                  <span style={{ fontWeight: 700 }}>{entry.boxeur.nom.toUpperCase()}</span>
+                  <span className="winner-row-name">{entry.boxeur.nom.toUpperCase()}</span>
                   <span>{entry.boxeur.prenom}</span>
-                  <span style={{ color: "var(--text-secondary)" }}>—</span>
-                  <span style={{ color: "var(--gold)" }}>{entry.category}</span>
+                  <span className="text-muted">—</span>
+                  <span className="text-gold">{entry.category}</span>
                   <span>{entry.sexe === "F" ? "♀" : "♂"}</span>
-                  <span style={{ color: "var(--text-secondary)" }}>—</span>
-                  <span style={{ color: "var(--text-secondary)" }}>{entry.boxeur.club.nom}</span>
+                  <span className="text-muted">—</span>
+                  <span className="text-muted">{entry.boxeur.club.nom}</span>
                   {entry.source === "interclub" && (
-                    <span style={{ fontSize: 11, color: "var(--tournoi-blue)", marginLeft: "auto" }}>Placé en interclub</span>
+                    <span className="winner-row-label">Placé en interclub</span>
                   )}
                 </div>
               ))}
@@ -611,7 +529,7 @@ export default function FeuilleTournoiPage() {
         )}
 
         {/* Footer pour impression */}
-        <div style={{ marginTop: 48, paddingTop: 24, borderTop: "2px solid var(--border)", textAlign: "center", color: "var(--text-muted)", fontSize: 12 }}>
+        <div className="feuille-footer">
           <p>Document généré le {new Date().toLocaleDateString("fr-FR")} à {new Date().toLocaleTimeString("fr-FR")}</p>
         </div>
       </div>

@@ -26,8 +26,8 @@ export function ModalTournoi({
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>{isEditing ? "Modifier le tournoi" : "Nouveau tournoi"}</h2>
-          <button className="btn-close" onClick={onClose}>
+          <h2 className="modal-title">{isEditing ? "Modifier le tournoi" : "Nouveau tournoi"}</h2>
+          <button className="modal-close" onClick={onClose}>
             ✕
           </button>
         </div>

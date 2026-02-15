@@ -1,5 +1,6 @@
 import { Match } from "@/types/match";
 import { getGantColor, getGantLabel } from "@/lib/categories";
+import { clubColorStyle } from "@/lib/ui-helpers";
 import { isManuel, isMixte, isInterclub } from "@/lib/match-helpers";
 
 interface MatchCardEditableProps {
@@ -49,7 +50,7 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
               <TypeBadge type={match.boxeur1.typeCompetition} />
             </div>
             <div className="match-fighter-info">
-              <span className="badge badge-club">{match.boxeur1.club.nom}</span>
+              <span className="badge badge-club" style={clubColorStyle(match.boxeur1.club.couleur)}>{match.boxeur1.club.nom}</span>
               <span className="badge badge-sexe">{match.boxeur1.sexe}</span>
               <span className="badge">{match.boxeur1.poids}kg</span>
               <span
@@ -130,7 +131,7 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
           {isBoxeur1Winner && <span className="winner-badge">🏆</span>}
         </div>
         <div className="match-fighter-info">
-          <span className="badge badge-club">{match.boxeur1.club.nom}</span>
+          <span className="badge badge-club" style={clubColorStyle(match.boxeur1.club.couleur)}>{match.boxeur1.club.nom}</span>
           <span className="badge badge-sexe">{match.boxeur1.sexe}</span>
           <span className="badge">{match.boxeur1.poids}kg</span>
           <span
@@ -164,7 +165,7 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
           {isBoxeur2Winner && <span className="winner-badge">🏆</span>}
         </div>
         <div className="match-fighter-info">
-          <span className="badge badge-club">{match.boxeur2.club.nom}</span>
+          <span className="badge badge-club" style={clubColorStyle(match.boxeur2.club.couleur)}>{match.boxeur2.club.nom}</span>
           <span className="badge badge-sexe">{match.boxeur2.sexe}</span>
           <span className="badge">{match.boxeur2.poids}kg</span>
           <span

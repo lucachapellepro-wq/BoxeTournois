@@ -25,6 +25,7 @@ export default function ClubsPage() {
     nom: "",
     ville: "",
     coach: "",
+    couleur: "",
   });
 
   const [tireurForm, setTireurForm] = useState({
@@ -55,7 +56,7 @@ export default function ClubsPage() {
     });
     if (res.ok) {
       showToast("Club ajouté ✓", "success");
-      setClubForm({ nom: "", ville: "", coach: "" });
+      setClubForm({ nom: "", ville: "", coach: "", couleur: "" });
       setShowClubModal(false);
       fetchClubs();
     }
@@ -87,10 +88,43 @@ export default function ClubsPage() {
   };
 
   const handleDeleteBoxeur = async (id: number) => {
-    if (!confirm("Supprimer ce tireur ?")) return;
+    const boxeur = boxeurs.find((b) => b.id === id);
+    if (!boxeur) return;
+
     const success = await deleteBoxeur(id);
     if (success) {
-      showToast("Tireur supprimé", "success");
+      showToast(`${boxeur.nom.toUpperCase()} ${boxeur.prenom} supprimé`, "success", {
+        action: {
+          label: "Annuler",
+          onClick: async () => {
+            try {
+              const year = boxeur.dateNaissance
+                ? new Date(boxeur.dateNaissance).getFullYear()
+                : 2000;
+              const res = await fetch("/api/boxeurs", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  nom: boxeur.nom,
+                  prenom: boxeur.prenom,
+                  anneeNaissance: String(year),
+                  sexe: boxeur.sexe,
+                  poids: String(boxeur.poids),
+                  gant: boxeur.gant,
+                  clubId: String(boxeur.club.id),
+                  typeCompetition: boxeur.typeCompetition,
+                }),
+              });
+              if (res.ok) {
+                showToast("Tireur restauré ✓", "success");
+                fetchBoxeurs();
+              }
+            } catch {
+              showToast("Erreur lors de la restauration", "error");
+            }
+          },
+        },
+      });
     } else {
       showToast("Erreur suppression", "error");
     }
@@ -111,6 +145,21 @@ export default function ClubsPage() {
       showToast("Remplis tous les champs !", "error");
       return;
     }
+
+    // Détection doublons côté client
+    const duplicate = boxeurs.find(
+      (b) =>
+        b.nom.toLowerCase() === tireurForm.nom.toLowerCase() &&
+        b.prenom.toLowerCase() === tireurForm.prenom.toLowerCase()
+    );
+    if (duplicate) {
+      showToast(
+        `Ce tireur existe déjà : ${duplicate.nom.toUpperCase()} ${duplicate.prenom} (${duplicate.club.nom})`,
+        "error"
+      );
+      return;
+    }
+
     setSavingTireur(true);
     try {
       const res = await fetch("/api/boxeurs", {
@@ -123,7 +172,8 @@ export default function ClubsPage() {
         setShowTireurModal(false);
         fetchBoxeurs();
       } else {
-        showToast("Erreur lors de l'ajout", "error");
+        const err = await res.json();
+        showToast(err.error || "Erreur lors de l'ajout", "error");
       }
     } catch {
       showToast("Erreur réseau", "error");
@@ -235,7 +285,7 @@ export default function ClubsPage() {
         onOpenClubModal={() => { setShowTireurModal(false); setShowClubModal(true); }}
       />
 
-      {toast.visible && <Toast message={toast.message} type={toast.type} />}
+      {toast.visible && <Toast message={toast.message} type={toast.type} action={toast.action} />}
     </>
   );
 }

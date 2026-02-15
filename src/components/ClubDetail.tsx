@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Club } from "@/types";
 
 interface ClubDetailProps {
@@ -12,8 +12,20 @@ export function ClubDetail({ club, onUpdate }: ClubDetailProps) {
     nom: club.nom,
     ville: club.ville,
     coach: club.coach || "",
+    couleur: club.couleur || "",
   });
   const [saving, setSaving] = useState(false);
+
+  // Réinitialiser le formulaire quand le club change
+  useEffect(() => {
+    setFormData({
+      nom: club.nom,
+      ville: club.ville,
+      coach: club.coach || "",
+      couleur: club.couleur || "",
+    });
+    setIsEditing(false);
+  }, [club.id, club.nom, club.ville, club.coach, club.couleur]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -32,6 +44,7 @@ export function ClubDetail({ club, onUpdate }: ClubDetailProps) {
       nom: club.nom,
       ville: club.ville,
       coach: club.coach || "",
+      couleur: club.couleur || "",
     });
     setIsEditing(false);
   };
@@ -89,6 +102,29 @@ export function ClubDetail({ club, onUpdate }: ClubDetailProps) {
               />
             </div>
 
+            <div className="form-group">
+              <label>Couleur</label>
+              <div className="color-picker-row">
+                <input
+                  type="color"
+                  value={formData.couleur || "#22c55e"}
+                  onChange={(e) =>
+                    setFormData({ ...formData, couleur: e.target.value })
+                  }
+                  className="color-input"
+                />
+                {formData.couleur && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => setFormData({ ...formData, couleur: "" })}
+                  >
+                    Supprimer
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="club-detail-actions">
               <button
                 className="btn btn-secondary"
@@ -121,6 +157,18 @@ export function ClubDetail({ club, onUpdate }: ClubDetailProps) {
             <div className="club-detail-row">
               <span className="club-detail-label">Coach :</span>
               <span className="club-detail-value">{club.coach || "—"}</span>
+            </div>
+
+            <div className="club-detail-row">
+              <span className="club-detail-label">Couleur :</span>
+              <span className="club-detail-value">
+                {club.couleur ? (
+                  <span
+                    className="color-preview"
+                    style={{ backgroundColor: club.couleur }}
+                  />
+                ) : "—"}
+              </span>
             </div>
           </>
         )}

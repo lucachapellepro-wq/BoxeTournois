@@ -1,5 +1,6 @@
 import { Boxeur, getAnneeFromDate } from "@/types";
 import { GANTS_COULEUR, getGantStyle, getGantLabel } from "@/lib/categories";
+import { clubColorStyle } from "@/lib/ui-helpers";
 
 interface TireursListProps {
   boxeurs: Boxeur[];
@@ -88,7 +89,7 @@ export function TireursList({ boxeurs, loading, onDelete, onOpenModal }: Tireurs
                   <span className="badge badge-age">{b.categorieAge}</span>
                 </td>
                 <td>
-                  <span className="badge badge-club">{b.club.nom}</span>
+                  <span className="badge badge-club" style={clubColorStyle(b.club.couleur)}>{b.club.nom}</span>
                 </td>
                 <td>
                   <button

@@ -25,6 +25,7 @@ export function useClubs() {
         nom?: string;
         ville?: string;
         coach?: string | null;
+        couleur?: string | null;
       }
     ) => {
       try {

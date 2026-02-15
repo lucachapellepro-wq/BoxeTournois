@@ -18,6 +18,7 @@ model Club {
   nom       String
   ville     String
   coach     String?
+  couleur   String?            // Couleur hex du club (ex: "#e63946")
   boxeurs   Boxeur[]
   createdAt DateTime @default(now())
 }

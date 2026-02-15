@@ -24,6 +24,12 @@ export default function TireursPage() {
   const [activeTab, setActiveTab] = useState<"liste" | "recap">("liste");
   const [saving, setSaving] = useState(false);
 
+  // Filtres
+  const [searchText, setSearchText] = useState("");
+  const [filterClub, setFilterClub] = useState("");
+  const [filterSexe, setFilterSexe] = useState("");
+  const [filterType, setFilterType] = useState("");
+
   const [form, setForm] = useState({
     nom: "",
     prenom: "",
@@ -39,12 +45,52 @@ export default function TireursPage() {
     nom: "",
     ville: "",
     coach: "",
+    couleur: "",
   });
 
   useEffect(() => {
     fetchBoxeurs();
     fetchClubs();
   }, [fetchBoxeurs, fetchClubs]);
+
+  // Filtrage des boxeurs
+  const filteredBoxeurs = useMemo(() => {
+    return boxeurs
+      .filter((b) => {
+        if (searchText) {
+          const s = searchText.toLowerCase();
+          if (
+            !b.nom.toLowerCase().includes(s) &&
+            !b.prenom.toLowerCase().includes(s) &&
+            !b.club.nom.toLowerCase().includes(s)
+          ) return false;
+        }
+        if (filterClub && b.club.id !== parseInt(filterClub)) return false;
+        if (filterSexe && b.sexe !== filterSexe) return false;
+        if (filterType && b.typeCompetition !== filterType) return false;
+        return true;
+      })
+      .sort((a, b) => {
+        // Sort by club name, then by category, then by name
+        const clubCmp = a.club.nom.localeCompare(b.club.nom);
+        if (clubCmp !== 0) return clubCmp;
+        const catCmp = sortByWeight(
+          `${a.categorieAge} — ${a.categoriePoids}`,
+          `${b.categorieAge} — ${b.categoriePoids}`
+        );
+        if (catCmp !== 0) return catCmp;
+        return a.nom.localeCompare(b.nom);
+      });
+  }, [boxeurs, searchText, filterClub, filterSexe, filterType]);
+
+  const hasFilters = searchText || filterClub || filterSexe || filterType;
+
+  const resetFilters = () => {
+    setSearchText("");
+    setFilterClub("");
+    setFilterSexe("");
+    setFilterType("");
+  };
 
   const handleSubmit = async () => {
     if (
@@ -57,6 +103,21 @@ export default function TireursPage() {
       showToast("Remplis tous les champs !", "error");
       return;
     }
+
+    // Détection doublons côté client
+    const duplicate = boxeurs.find(
+      (b) =>
+        b.nom.toLowerCase() === form.nom.toLowerCase() &&
+        b.prenom.toLowerCase() === form.prenom.toLowerCase()
+    );
+    if (duplicate) {
+      showToast(
+        `Ce tireur existe déjà : ${duplicate.nom.toUpperCase()} ${duplicate.prenom} (${duplicate.club.nom})`,
+        "error"
+      );
+      return;
+    }
+
     setSaving(true);
     try {
       const res = await fetch("/api/boxeurs", {
@@ -100,17 +161,52 @@ export default function TireursPage() {
     });
     if (res.ok) {
       showToast("Club ajouté ✓", "success");
-      setClubForm({ nom: "", ville: "", coach: "" });
+      setClubForm({ nom: "", ville: "", coach: "", couleur: "" });
       setShowClubModal(false);
       fetchClubs();
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Supprimer ce tireur ?")) return;
+    // Sauvegarder les données du tireur pour undo
+    const boxeur = boxeurs.find((b) => b.id === id);
+    if (!boxeur) return;
+
     const success = await deleteBoxeur(id);
     if (success) {
-      showToast("Tireur supprimé", "success");
+      showToast(`${boxeur.nom.toUpperCase()} ${boxeur.prenom} supprimé`, "success", {
+        action: {
+          label: "Annuler",
+          onClick: async () => {
+            // Recréer le tireur
+            try {
+              const year = boxeur.dateNaissance
+                ? new Date(boxeur.dateNaissance).getFullYear()
+                : 2000;
+              const res = await fetch("/api/boxeurs", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  nom: boxeur.nom,
+                  prenom: boxeur.prenom,
+                  anneeNaissance: String(year),
+                  sexe: boxeur.sexe,
+                  poids: String(boxeur.poids),
+                  gant: boxeur.gant,
+                  clubId: String(boxeur.club.id),
+                  typeCompetition: boxeur.typeCompetition,
+                }),
+              });
+              if (res.ok) {
+                showToast("Tireur restauré ✓", "success");
+                fetchBoxeurs();
+              }
+            } catch {
+              showToast("Erreur lors de la restauration", "error");
+            }
+          },
+        },
+      });
     } else {
       showToast("Erreur suppression", "error");
     }
@@ -138,16 +234,16 @@ export default function TireursPage() {
     return Object.entries(map).sort((a, b) => b[1] - a[1]);
   }, [boxeurs]);
 
-  // Groupement par catégorie pour le récap
+  // Groupement par catégorie pour le récap (utilise filteredBoxeurs)
   const groupedByCategory = useMemo(() => {
     const map: Record<string, Boxeur[]> = {};
-    boxeurs.forEach((b) => {
+    filteredBoxeurs.forEach((b) => {
       const key = `${b.categorieAge} — ${b.categoriePoids}`;
       if (!map[key]) map[key] = [];
       map[key].push(b);
     });
     return Object.entries(map).sort(([a], [b]) => sortByWeight(a, b));
-  }, [boxeurs]);
+  }, [filteredBoxeurs]);
 
   return (
     <>
@@ -173,6 +269,51 @@ export default function TireursPage() {
         </div>
       </div>
 
+      {/* Barre de filtres */}
+      <div className="filter-bar">
+        <input
+          type="text"
+          placeholder="Rechercher par nom, prénom ou club..."
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+        />
+        <select
+          value={filterClub}
+          onChange={(e) => setFilterClub(e.target.value)}
+        >
+          <option value="">Tous les clubs</option>
+          {clubs.map((c) => (
+            <option key={c.id} value={c.id}>{c.nom}</option>
+          ))}
+        </select>
+        <select
+          value={filterSexe}
+          onChange={(e) => setFilterSexe(e.target.value)}
+        >
+          <option value="">H / F</option>
+          <option value="M">Hommes</option>
+          <option value="F">Femmes</option>
+        </select>
+        <select
+          value={filterType}
+          onChange={(e) => setFilterType(e.target.value)}
+        >
+          <option value="">Tous types</option>
+          <option value="TOURNOI">Tournoi</option>
+          <option value="INTERCLUB">Interclub</option>
+        </select>
+        {hasFilters && (
+          <>
+            <button className="btn btn-ghost btn-sm" onClick={resetFilters}>
+              Réinitialiser
+            </button>
+            <span className="filter-count">
+              {filteredBoxeurs.length} / {boxeurs.length}
+            </span>
+          </>
+        )}
+      </div>
+
       <div className="tabs">
         <button
           className={`tab ${activeTab === "liste" ? "active" : ""}`}
@@ -190,7 +331,7 @@ export default function TireursPage() {
 
       {activeTab === "liste" && (
         <TireursTable
-          boxeurs={boxeurs}
+          boxeurs={filteredBoxeurs}
           loading={loading}
           onDelete={handleDelete}
           onUpdate={handleUpdate}
@@ -224,7 +365,7 @@ export default function TireursPage() {
         onChange={setClubForm}
       />
 
-      {toast.visible && <Toast message={toast.message} type={toast.type} />}
+      {toast.visible && <Toast message={toast.message} type={toast.type} action={toast.action} />}
     </>
   );
 }

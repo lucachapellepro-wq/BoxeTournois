@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Boxeur, SortValue, getAnneeFromDate } from "@/types";
 import { GANTS_COULEUR, getGantStyle } from "@/lib/categories";
+import { clubColorStyle } from "@/lib/ui-helpers";
 import { EditableCell } from "./EditableCell";
 
 type SortColumn =
@@ -293,7 +294,7 @@ export function TireursTable({
                   <span className="badge badge-category">{b.categorieAge}</span>
                 </td>
                 <td data-label="Club">
-                  <span className="badge badge-club">{b.club.nom}</span>
+                  <span className="badge badge-club" style={clubColorStyle(b.club.couleur)}>{b.club.nom}</span>
                 </td>
                 <td data-label="Info" className="mobile-hide" style={{ textAlign: "center" }}>
                   {hasIncompleteInfo(b) ? (

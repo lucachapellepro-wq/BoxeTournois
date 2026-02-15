@@ -6,7 +6,7 @@ import { useBoxeurs } from "@/hooks/useBoxeurs";
 import { useToast } from "@/hooks/useToast";
 import { Toast } from "@/components/Toast";
 import { Boxeur, TournoiDetail } from "@/types";
-import { formatDate, calculateAge } from "@/lib/ui-helpers";
+import { formatDate, calculateAge, clubColorStyle } from "@/lib/ui-helpers";
 import { getGantColor, getGantLabel } from "@/lib/categories";
 import Link from "next/link";
 
@@ -228,9 +228,9 @@ export default function TournoiDetailPage() {
           </h2>
           <div className="club-cards-grid">
             {clubEntries.map(([clubNom, boxeurs]) => (
-              <div key={clubNom} className="card club-participant-card">
+              <div key={clubNom} className="card club-participant-card" style={boxeurs[0]?.club.couleur ? { borderLeftColor: boxeurs[0].club.couleur, borderLeftWidth: 4, borderLeftStyle: "solid" } : undefined}>
                 <div className="club-participant-header">
-                  <h3 className="club-participant-name">{clubNom}</h3>
+                  <h3 className="club-participant-name" style={boxeurs[0]?.club.couleur ? { color: boxeurs[0].club.couleur } : undefined}>{clubNom}</h3>
                   <span className="badge badge-count">{boxeurs.length}</span>
                 </div>
                 <div className="club-participant-list">
@@ -303,6 +303,21 @@ export default function TournoiDetailPage() {
               />
             </div>
 
+            {filteredBoxeurs.length > 0 && (
+              <div style={{ display: "flex", justifyContent: "flex-end", padding: "0 0 8px" }}>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={async () => {
+                    for (const b of filteredBoxeurs) {
+                      await handleAddBoxeur(b.id);
+                    }
+                  }}
+                >
+                  + Tout ajouter ({filteredBoxeurs.length})
+                </button>
+              </div>
+            )}
+
             <div className="modal-body">
               {filteredBoxeurs.length === 0 ? (
                 <div className="empty-state">
@@ -321,7 +336,7 @@ export default function TournoiDetailPage() {
                           {b.nom.toUpperCase()} {b.prenom}
                         </div>
                         <div className="club-participant-badges">
-                          <span className="badge badge-club">{b.club.nom}</span>
+                          <span className="badge badge-club" style={clubColorStyle(b.club.couleur)}>{b.club.nom}</span>
                           <span className="badge badge-sexe">{b.sexe}</span>
                           <span className="badge badge-poids">{b.poids}kg</span>
                           <span className={`badge ${b.typeCompetition === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`}>
@@ -359,7 +374,7 @@ export default function TournoiDetailPage() {
         </div>
       )}
 
-      {toast.visible && <Toast message={toast.message} type={toast.type} />}
+      {toast.visible && <Toast message={toast.message} type={toast.type} action={toast.action} />}
     </>
   );
 }

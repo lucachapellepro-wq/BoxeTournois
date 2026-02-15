@@ -1,5 +1,6 @@
 import { Match } from "@/types/match";
 import { getGantColor, getGantLabel } from "@/lib/categories";
+import { clubColorStyle } from "@/lib/ui-helpers";
 
 interface MatchCardProps {
   match: Match;
@@ -16,7 +17,7 @@ export function MatchCard({ match }: MatchCardProps) {
               {match.boxeur1.prenom}
             </div>
             <div className="match-fighter-info">
-              <span className="badge badge-club">{match.boxeur1.club.nom}</span>
+              <span className="badge badge-club" style={clubColorStyle(match.boxeur1.club.couleur)}>{match.boxeur1.club.nom}</span>
               <span
                 className="badge-gant"
                 style={{
@@ -42,7 +43,7 @@ export function MatchCard({ match }: MatchCardProps) {
               {match.boxeur2.prenom}
             </div>
             <div className="match-fighter-info">
-              <span className="badge badge-club">{match.boxeur2.club.nom}</span>
+              <span className="badge badge-club" style={clubColorStyle(match.boxeur2.club.couleur)}>{match.boxeur2.club.nom}</span>
               <span
                 className="badge-gant"
                 style={{
@@ -68,7 +69,7 @@ export function MatchCard({ match }: MatchCardProps) {
               {match.boxeur1.prenom}
             </div>
             <div className="match-fighter-info">
-              <span className="badge badge-club">{match.boxeur1.club.nom}</span>
+              <span className="badge badge-club" style={clubColorStyle(match.boxeur1.club.couleur)}>{match.boxeur1.club.nom}</span>
               <span
                 className="badge-gant"
                 style={{

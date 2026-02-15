@@ -2,7 +2,13 @@ interface ClubFormData {
   nom: string;
   ville: string;
   coach: string;
+  couleur: string;
 }
+
+const PRESET_COLORS = [
+  "#e63946", "#f59e0b", "#22c55e", "#3b82f6", "#8b5cf6",
+  "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#84cc16",
+];
 
 interface ModalClubProps {
   show: boolean;
@@ -54,6 +60,35 @@ export function ModalClub({
               value={form.coach}
               onChange={(e) => onChange({ ...form, coach: e.target.value })}
             />
+          </div>
+          <div className="form-group full-width">
+            <label>Couleur du club</label>
+            <div className="color-picker-row">
+              {PRESET_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  className={`color-swatch${form.couleur === c ? " color-swatch-active" : ""}`}
+                  style={{ backgroundColor: c }}
+                  onClick={() => onChange({ ...form, couleur: c })}
+                />
+              ))}
+              <input
+                type="color"
+                value={form.couleur || "#22c55e"}
+                onChange={(e) => onChange({ ...form, couleur: e.target.value })}
+                className="color-input"
+              />
+              {form.couleur && (
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => onChange({ ...form, couleur: "" })}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
         </div>
         <div className="modal-actions">

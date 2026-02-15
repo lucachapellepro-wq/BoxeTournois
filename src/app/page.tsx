@@ -192,7 +192,7 @@ export default function TournoiPage() {
         onChange={setForm}
       />
 
-      {toast.visible && <Toast message={toast.message} type={toast.type} />}
+      {toast.visible && <Toast message={toast.message} type={toast.type} action={toast.action} />}
     </>
   );
 }

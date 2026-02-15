@@ -3,6 +3,7 @@ export interface Club {
   nom: string;
   coach: string | null;
   ville: string;
+  couleur: string | null;
 }
 
 export interface Boxeur {

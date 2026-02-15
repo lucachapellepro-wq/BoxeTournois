@@ -21,6 +21,7 @@ export default function FeuilleTournoiPage() {
   const [tournoi, setTournoi] = useState<TournoiDetail | null>(null);
   const [matches, setMatches] = useState<(Match | { separator: true })[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [minSpacing, setMinSpacing] = useState<number>(2);
 
   useEffect(() => {
@@ -139,6 +140,12 @@ export default function FeuilleTournoiPage() {
 
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
+    setDragOverIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   const handleDrop = (e: React.DragEvent, dropIndex: number) => {
@@ -151,6 +158,7 @@ export default function FeuilleTournoiPage() {
 
     setMatches(newMatches);
     setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   const handleRandomize = () => {
@@ -276,35 +284,45 @@ export default function FeuilleTournoiPage() {
             color: #666 !important;
           }
           .winners-section {
-            margin-top: 8px !important;
+            margin-top: 6px !important;
             page-break-inside: avoid;
           }
           .winners-section h2 {
-            font-size: 11px !important;
+            font-size: 10px !important;
             color: #333 !important;
-            margin-bottom: 4px !important;
-            padding-bottom: 3px !important;
+            margin-bottom: 2px !important;
+            padding-bottom: 2px !important;
             border-color: #999 !important;
             border-bottom-width: 1px !important;
           }
           .winners-section > div {
             display: block !important;
-            grid-template-columns: unset !important;
           }
           .winners-section .winner-row {
-            display: flex !important;
-            padding: 2px 6px !important;
-            font-size: 9px !important;
-            border-left-width: 3px !important;
-            background: white !important;
-            border-bottom: 0.5px solid #ccc !important;
-            gap: 6px !important;
+            display: inline !important;
+            padding: 0 !important;
+            font-size: 8px !important;
+            border-left: none !important;
+            border-bottom: none !important;
+            background: transparent !important;
+            gap: 0 !important;
+          }
+          .winners-section .winner-row::after {
+            content: "  •  ";
+            color: #999;
+          }
+          .winners-section .winner-row:last-child::after {
+            content: "";
           }
           .winner-row-name {
-            font-size: 9px !important;
+            font-size: 8px !important;
+            font-weight: 600 !important;
           }
           .winner-row-label {
             font-size: 7px !important;
+          }
+          .text-muted, .text-gold {
+            font-size: 8px !important;
           }
           .feuille-title h1 {
             font-size: 18px !important;
@@ -431,10 +449,11 @@ export default function FeuilleTournoiPage() {
                 return (
               <div
                 key={match.id}
-                className={`match-row ${index % 2 === 0 ? "match-row-even" : "match-row-odd"}`}
+                className={`match-row ${index % 2 === 0 ? "match-row-even" : "match-row-odd"}${draggedIndex === index ? " match-row-dragging" : ""}${dragOverIndex === index && draggedIndex !== index ? " match-row-drag-over" : ""}`}
                 draggable
                 onDragStart={() => handleDragStart(index)}
                 onDragOver={(e) => handleDragOver(e, index)}
+                onDragEnd={handleDragEnd}
                 onDrop={(e) => handleDrop(e, index)}
                 style={{ borderLeftColor: matchColor }}
               >
@@ -469,7 +488,7 @@ export default function FeuilleTournoiPage() {
                       <span className={`fighter-tag ${match.boxeur1.typeCompetition === "INTERCLUB" ? "fighter-tag-ic" : "fighter-tag-t"}`}>
                         ({match.boxeur1.typeCompetition === "INTERCLUB" ? "IC" : "T"})
                       </span>
-                      <span className="fighter-club"> ({match.boxeur1.club.nom})</span>
+                      <span className="fighter-club" style={match.boxeur1.club.couleur ? { color: match.boxeur1.club.couleur } : undefined}> ({match.boxeur1.club.nom})</span>
                     </>
                   ) : (
                     <span className="fighter-tbd">TBD</span>
@@ -487,7 +506,7 @@ export default function FeuilleTournoiPage() {
                       <span className={`fighter-tag ${match.boxeur2.typeCompetition === "INTERCLUB" ? "fighter-tag-ic" : "fighter-tag-t"}`}>
                         ({match.boxeur2.typeCompetition === "INTERCLUB" ? "IC" : "T"})
                       </span>
-                      <span className="fighter-club"> ({match.boxeur2.club.nom})</span>
+                      <span className="fighter-club" style={match.boxeur2.club.couleur ? { color: match.boxeur2.club.couleur } : undefined}> ({match.boxeur2.club.nom})</span>
                     </>
                   ) : (
                     <span className="fighter-tbd">TBD</span>

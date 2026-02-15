@@ -1005,6 +1005,75 @@ th.sortable:hover { color: var(--text-secondary); }
   text-align: center; color: var(--text-muted); font-size: 12px;
 }
 
+/* Filter bar */
+.filter-bar {
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+  margin-bottom: 16px; padding: 12px 16px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.filter-bar input {
+  flex: 1; min-width: 200px;
+  background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 8px 12px;
+  color: var(--text-primary); font-size: 13px;
+}
+.filter-bar input:focus { border-color: var(--border-focus); outline: none; }
+.filter-bar select {
+  min-width: 120px;
+  background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 8px 12px;
+  color: var(--text-primary); font-size: 13px;
+}
+.filter-bar select:focus { border-color: var(--border-focus); outline: none; }
+.filter-count { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+
+/* Toast action button */
+.toast-with-action { padding-right: 8px; }
+.toast-action {
+  background: transparent; border: 1px solid currentColor;
+  color: inherit; padding: 4px 12px; border-radius: var(--radius);
+  font-size: 12px; font-weight: 600; cursor: pointer; margin-left: 12px;
+  white-space: nowrap; transition: background var(--transition);
+}
+.toast-action:hover { background: rgba(255,255,255,0.15); }
+
+/* Color picker */
+.color-picker-row {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.color-swatch {
+  width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent;
+  cursor: pointer; transition: transform var(--transition), border-color var(--transition);
+}
+.color-swatch:hover { transform: scale(1.15); }
+.color-swatch-active { border-color: white; transform: scale(1.15); }
+.color-input {
+  width: 36px; height: 28px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg-input); cursor: pointer; padding: 0;
+}
+.color-input::-webkit-color-swatch-wrapper { padding: 2px; }
+.color-input::-webkit-color-swatch { border: none; border-radius: 4px; }
+.color-preview {
+  display: inline-block; width: 20px; height: 20px; border-radius: 50%;
+  vertical-align: middle;
+}
+
+/* Print-only elements */
+.print-only { display: none !important; }
+.print-section { /* visible on screen only if tab active, but print shows all */ }
+
+/* Drag and drop visual feedback */
+.match-row-dragging {
+  opacity: 0.5; background: var(--accent-subtle) !important;
+  border: 1px dashed var(--accent) !important;
+}
+.match-row-drag-over {
+  border-top: 3px solid var(--accent) !important;
+}
+.match-row[draggable="true"] { cursor: grab; }
+.match-row[draggable="true"]:active { cursor: grabbing; }
+
 /* ═══════════════════════════════════════════
    ANIMATIONS
    ═══════════════════════════════════════════ */
@@ -1377,6 +1446,11 @@ th.sortable:hover { color: var(--text-secondary); }
   .editable-cell { padding: 6px 8px; min-height: 36px; display: flex; align-items: center; }
   .editable-cell-input { min-height: 40px; font-size: 14px; padding: 8px 10px; }
 
+  /* === FILTER BAR === */
+  .filter-bar { flex-direction: column; padding: 10px 12px; gap: 6px; }
+  .filter-bar input { min-width: 100%; }
+  .filter-bar select { min-width: 100%; }
+
   /* === MISC === */
   .info-toggle { padding: 4px; min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
   .row-incomplete { border-left-width: 3px !important; }
@@ -1384,7 +1458,52 @@ th.sortable:hover { color: var(--text-secondary); }
 
 /* PRINT */
 @media print {
-  .header { display: none !important; }
+  .header, .nav-toggle, .page-header-actions, .tabs,
+  .no-print, .toast, .modal-overlay, .filter-bar,
+  .boxeurs-seuls-section, .stats-row { display: none !important; }
+  .print-only { display: block !important; }
+  .print-section { display: block !important; }
+  body { background: white !important; color: black !important; }
+  .container { max-width: 100% !important; padding: 0 !important; }
+  .page { padding: 0 !important; }
+  .page-header { margin-bottom: 8px; }
+  .page-title { font-size: 20px !important; color: #111 !important; }
+  .page-subtitle { font-size: 12px !important; color: #666 !important; }
+  .card { border: none !important; box-shadow: none !important; background: white !important; }
+  /* Show all tab sections in print */
+  .section-gap, .section-gap-lg { margin-top: 16px; }
+  .section-header { color: #333 !important; font-size: 16px !important; border-color: #ccc !important; }
+  /* Bracket views */
+  .bracket-view { page-break-inside: avoid; }
+  .bracket-category { color: #333 !important; font-size: 16px !important; }
+  .bracket-round-title { color: #555 !important; }
+  .match-card { border: 1px solid #ccc !important; background: white !important; box-shadow: none !important; page-break-inside: avoid; }
+  .match-fighter { background: #f5f5f5 !important; }
+  .match-fighter-name { color: #111 !important; }
+  .match-fighter-info .badge { border: 1px solid #ccc !important; background: #f0f0f0 !important; color: #333 !important; }
+  /* Pool views */
+  .pool-view { page-break-inside: avoid; }
+  .pool-category { color: #333 !important; }
+  .pool-card { border: 1px solid #ccc !important; background: white !important; box-shadow: none !important; }
+  /* Winner cards — inline text, no design */
+  .winners-list {
+    display: block !important;
+  }
+  .winner-card {
+    display: inline !important; border: none !important; background: transparent !important;
+    box-shadow: none !important; padding: 0 !important; gap: 0 !important;
+    font-size: 9px !important;
+  }
+  .winner-card::after {
+    content: "  •  "; color: #999;
+  }
+  .winner-card:last-child::after { content: ""; }
+  .winner-card-icon { display: none !important; }
+  .winner-card-name { color: #111 !important; font-size: 9px !important; font-weight: 600 !important; }
+  .winner-card-name::after { content: " — "; font-weight: 400; color: #666; }
+  .winner-card-details { color: #555 !important; font-size: 9px !important; display: inline !important; }
+  .winner-card-status { display: none !important; }
+  .winner-card-info { display: inline !important; gap: 0 !important; }
 }
 
 /* ═══════════════════════════════════════════

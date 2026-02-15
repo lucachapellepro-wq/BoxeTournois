@@ -39,17 +39,19 @@ export async function PUT(
   const { id } = await params;
   try {
     const body = await request.json();
-    const { nom, ville, coach } = body;
+    const { nom, ville, coach, couleur } = body;
 
     const updateData: {
       nom?: string;
       ville?: string;
       coach?: string | null;
+      couleur?: string | null;
     } = {};
 
     if (nom) updateData.nom = nom;
     if (ville) updateData.ville = ville;
     if (coach !== undefined) updateData.coach = coach || null;
+    if (couleur !== undefined) updateData.couleur = couleur || null;
 
     const club = await prisma.club.update({
       where: { id: parseInt(id) },

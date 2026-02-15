@@ -1,3 +1,5 @@
+import type React from "react";
+
 /**
  * Helpers UI réutilisables
  */
@@ -22,6 +24,16 @@ export function formatDate(dateStr: string): string {
     month: "long",
     day: "numeric",
   });
+}
+
+/** Style inline pour un badge coloré par la couleur du club */
+export function clubColorStyle(couleur: string | null | undefined): React.CSSProperties | undefined {
+  if (!couleur) return undefined;
+  return {
+    backgroundColor: `${couleur}20`,
+    color: couleur,
+    borderColor: `${couleur}40`,
+  };
 }
 
 /** Calcule l'âge à partir d'une date de naissance ISO */

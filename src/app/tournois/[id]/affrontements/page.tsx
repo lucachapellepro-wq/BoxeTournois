@@ -12,7 +12,7 @@ import { MatchCardEditable } from "@/components/MatchCardEditable";
 import Link from "next/link";
 import { Boxeur, TournoiDetail } from "@/types";
 import { Match } from "@/types/match";
-import { sortByWeight } from "@/lib/ui-helpers";
+import { sortByWeight, clubColorStyle } from "@/lib/ui-helpers";
 import {
   isInterclub, isMixteOrManuel, isInterclubOrMixte,
   extractWinners, groupMatchesBySexe, groupWinnersBySexe,
@@ -111,9 +111,24 @@ export default function AffrontementsPage() {
   };
 
   const handleDeleteMatch = async (matchId: number) => {
+    const match = matches.find((m) => m.id === matchId);
     const success = await deleteMatch(matchId);
     if (success) {
-      showToast("Combat supprimé ✓", "success");
+      showToast("Combat supprimé ✓", "success", {
+        action: {
+          label: "Annuler",
+          onClick: async () => {
+            if (match?.boxeur1Id && match?.boxeur2Id) {
+              const restored = await createManualMatch(match.boxeur1Id, match.boxeur2Id);
+              if (restored) {
+                showToast("Combat restauré ✓", "success");
+              } else {
+                showToast("Erreur restauration", "error");
+              }
+            }
+          },
+        },
+      });
     } else {
       showToast("Erreur lors de la suppression", "error");
     }
@@ -224,9 +239,14 @@ export default function AffrontementsPage() {
             📊 Catégories
           </Link>
           {matches.length > 0 && (
-            <Link href={`/tournois/${tournoiId}/feuille`} className="btn btn-secondary">
-              📋 Feuille
-            </Link>
+            <>
+              <Link href={`/tournois/${tournoiId}/feuille`} className="btn btn-secondary">
+                📋 Feuille
+              </Link>
+              <button className="btn btn-ghost" onClick={() => window.print()}>
+                🖨️ Imprimer
+              </button>
+            </>
           )}
           <button className="btn btn-primary" onClick={() => handleOpenMatchBuilder()}>
             + Combat manuel
@@ -430,6 +450,70 @@ export default function AffrontementsPage() {
         </div>
       )}
 
+      {/* Print-only: all sections visible */}
+      {matches.length > 0 && (
+        <div className="print-only">
+          <div className="print-section">
+            <h2 className="section-header">Élimination directe ({bracketMatches.length})</h2>
+            {renderSexeSections(bracketsBySexe, (category, categoryMatches) => (
+              <BracketView key={category} matches={categoryMatches} category={category} onAddOpponent={handleAddOpponent} />
+            ))}
+          </div>
+          {poolMatches.length > 0 && (
+            <div className="print-section">
+              <h2 className="section-header">Poules ({poolMatches.length})</h2>
+              {renderSexeSections(poolsBySexe, (category, categoryMatches) => (
+                <PoolView key={category} matches={categoryMatches} category={category} onAddOpponent={handleAddOpponent} />
+              ))}
+            </div>
+          )}
+          {interclubMatches.length > 0 && (
+            <div className="print-section">
+              <h2 className="section-header">Interclub ({interclubMatches.length})</h2>
+              {renderSexeSections(interclubBySexe, (category, categoryMatches) => (
+                <div key={category} className="pool-view">
+                  <h3 className="pool-category">{category}</h3>
+                  <div className="pool-grid">
+                    <div className="pool-card">
+                      <div className="pool-matches">
+                        {categoryMatches.map((match) => (
+                          <MatchCardEditable key={match.id} match={match} onAddOpponent={handleAddOpponent} />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {winners.length > 0 && (
+            <div className="print-section">
+              <h2 className="section-header">Vainqueurs directs ({winners.length})</h2>
+              {renderSexeSections(winnersBySexe, (category, entries: WinnerEntry[]) => (
+                <div key={category} className="section-gap">
+                  <h3 className="pool-category">{category}</h3>
+                  <div className="winners-list">
+                    {entries.map((entry) => (
+                      <div key={entry.boxeur.id} className={`card winner-card ${entry.source === "interclub" ? "winner-card-interclub" : "winner-card-solo"}`}>
+                        <span className="winner-card-icon">🏆</span>
+                        <div className="winner-card-info">
+                          <div className="winner-card-name">
+                            {entry.boxeur.nom.toUpperCase()} {entry.boxeur.prenom}
+                          </div>
+                          <div className="winner-card-details">
+                            {entry.boxeur.club.nom} — {entry.boxeur.poids}kg — {entry.boxeur.categoriePoids}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Boxeurs sans adversaire */}
       {boxeursSeuls.length > 0 && (
         <BoxeursSeulsView boxeurs={boxeursSeuls} onAddMatch={handleOpenMatchBuilder} />
@@ -486,7 +570,7 @@ export default function AffrontementsPage() {
                         {b.nom.toUpperCase()} {b.prenom}
                       </div>
                       <div className="club-participant-badges">
-                        <span className="badge badge-club">{b.club.nom}</span>
+                        <span className="badge badge-club" style={clubColorStyle(b.club.couleur)}>{b.club.nom}</span>
                         <span className={`badge ${b.typeCompetition === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`}>
                           {b.typeCompetition === "INTERCLUB" ? "IC" : "T"}
                         </span>
@@ -533,7 +617,7 @@ export default function AffrontementsPage() {
         </div>
       )}
 
-      {toast.visible && <Toast message={toast.message} type={toast.type} />}
+      {toast.visible && <Toast message={toast.message} type={toast.type} action={toast.action} />}
     </>
   );
 }

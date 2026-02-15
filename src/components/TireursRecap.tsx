@@ -1,5 +1,6 @@
 import { Boxeur, getAnneeFromDate } from "@/types";
 import { GANTS_COULEUR, getGantStyle, getGantLabel } from "@/lib/categories";
+import { clubColorStyle } from "@/lib/ui-helpers";
 
 interface TireursRecapProps {
   groupedByCategory: [string, Boxeur[]][];
@@ -65,7 +66,7 @@ export function TireursRecap({ groupedByCategory }: TireursRecapProps) {
                   </div>
                   <div className="recap-row">
                     <span className="recap-row-label">Club</span>
-                    <span className="badge badge-club">{b.club.nom}</span>
+                    <span className="badge badge-club" style={clubColorStyle(b.club.couleur)}>{b.club.nom}</span>
                   </div>
                 </div>
               </div>

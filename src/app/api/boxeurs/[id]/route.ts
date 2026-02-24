@@ -1,6 +1,20 @@
 import { prisma } from "@/lib/prisma";
 import { getCategorieAge, getCategoriePoids } from "@/lib/categories";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { z } from "zod";
+import { apiSuccess, apiBadRequest, apiNotFound, apiConflict, apiError, parseId, safeJson, logApiError } from "@/lib/api-response";
+
+/** Schéma de validation Zod pour la mise à jour d'un boxeur */
+const boxeurUpdateSchema = z.object({
+  nom: z.string().min(1).max(100).optional(),
+  prenom: z.string().min(1).max(100).optional(),
+  anneeNaissance: z.string().regex(/^\d{4}$/, "Année invalide").optional(),
+  sexe: z.enum(["M", "F"]).optional(),
+  poids: z.string().regex(/^\d+(\.\d+)?$/, "Poids invalide").optional(),
+  gant: z.string().min(1).optional(),
+  infoIncomplete: z.boolean().optional(),
+  typeCompetition: z.enum(["TOURNOI", "INTERCLUB"]).optional(),
+});
 
 // DELETE /api/boxeurs/[id]
 export async function DELETE(
@@ -8,11 +22,28 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const boxeurId = parseId(id);
+  if (!boxeurId) return apiBadRequest("ID invalide");
   try {
-    await prisma.boxeur.delete({ where: { id: parseInt(id) } });
-    return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ error: "Boxeur non trouvé" }, { status: 404 });
+    // Vérifier si le boxeur a des matchs en attente (PENDING uniquement)
+    const matchCount = await prisma.match.count({
+      where: {
+        OR: [{ boxeur1Id: boxeurId }, { boxeur2Id: boxeurId }],
+        status: "PENDING",
+      },
+    });
+    if (matchCount > 0) {
+      return apiConflict(`Ce tireur a ${matchCount} combat(s) en attente. Retirez-le des tournois d'abord.`);
+    }
+
+    await prisma.boxeur.delete({ where: { id: boxeurId } });
+    return apiSuccess({ success: true });
+  } catch (error: unknown) {
+    if (error instanceof Error && "code" in error && (error as { code: string }).code === "P2025") {
+      return apiNotFound("Boxeur non trouvé");
+    }
+    logApiError("Erreur suppression boxeur:", error);
+    return apiError("Erreur lors de la suppression");
   }
 }
 
@@ -22,9 +53,16 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const boxeurId = parseId(id);
+  if (!boxeurId) return apiBadRequest("ID invalide");
   try {
-    const body = await request.json();
-    const { nom, prenom, anneeNaissance, poids, gant, sexe, infoIncomplete, typeCompetition } = body;
+    const body = await safeJson(request);
+    if (!body) return apiBadRequest("JSON invalide");
+    const parsed = boxeurUpdateSchema.safeParse(body);
+    if (!parsed.success) {
+      return apiBadRequest(parsed.error.issues[0]?.message || "Données invalides");
+    }
+    const { nom, prenom, anneeNaissance, poids, gant, sexe, infoIncomplete, typeCompetition } = parsed.data;
 
     // Préparer les données à mettre à jour
     const updateData: {
@@ -40,60 +78,56 @@ export async function PUT(
       typeCompetition?: string;
     } = {};
 
-    if (nom) updateData.nom = nom;
-    if (prenom) updateData.prenom = prenom;
-    if (sexe) updateData.sexe = sexe;
-    if (gant) updateData.gant = gant;
-    if (typeCompetition) updateData.typeCompetition = typeCompetition;
+    if (nom !== undefined) updateData.nom = nom;
+    if (prenom !== undefined) updateData.prenom = prenom;
+    if (sexe !== undefined) updateData.sexe = sexe;
+    if (gant !== undefined) updateData.gant = gant;
+    if (typeCompetition !== undefined) updateData.typeCompetition = typeCompetition;
     if (typeof infoIncomplete === "boolean") updateData.infoIncomplete = infoIncomplete;
 
     // Si année de naissance modifiée, convertir en Date
     if (anneeNaissance) {
       const annee: number = parseInt(anneeNaissance);
-      updateData.dateNaissance = new Date(annee, 0, 1);
+      updateData.dateNaissance = new Date(Date.UTC(annee, 0, 1));
       updateData.categorieAge = getCategorieAge(annee);
     }
 
-    // Si poids modifié, recalculer catégorie poids
     if (poids) {
       updateData.poids = parseFloat(poids);
+    }
 
-      // Récupérer le boxeur actuel pour avoir sexe et année si non fournis
+    // Recalculer categoriePoids si poids, sexe ou anneeNaissance change
+    if (poids || sexe || anneeNaissance) {
       const currentBoxeur = await prisma.boxeur.findUnique({
-        where: { id: parseInt(id) },
+        where: { id: boxeurId },
       });
 
       if (!currentBoxeur) {
-        return NextResponse.json(
-          { error: "Boxeur non trouvé" },
-          { status: 404 }
-        );
+        return apiNotFound("Boxeur non trouvé");
       }
 
+      const poidsToUse = poids ? parseFloat(poids) : currentBoxeur.poids;
       const sexeToUse = sexe || currentBoxeur.sexe;
       const anneeToUse = anneeNaissance
         ? parseInt(anneeNaissance)
-        : currentBoxeur.dateNaissance.getFullYear();
+        : currentBoxeur.dateNaissance.getUTCFullYear();
 
       updateData.categoriePoids = getCategoriePoids(
-        parseFloat(poids),
+        poidsToUse,
         sexeToUse,
         anneeToUse
       );
     }
 
     const boxeur = await prisma.boxeur.update({
-      where: { id: parseInt(id) },
+      where: { id: boxeurId },
       data: updateData,
       include: { club: true },
     });
 
-    return NextResponse.json(boxeur);
+    return apiSuccess(boxeur);
   } catch (error) {
-    console.error("Erreur mise à jour boxeur:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la mise à jour" },
-      { status: 500 }
-    );
+    logApiError("Erreur mise à jour boxeur:", error);
+    return apiError("Erreur lors de la mise à jour");
   }
 }

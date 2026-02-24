@@ -3,7 +3,9 @@ import { Boxeur, SortValue, getAnneeFromDate } from "@/types";
 import { GANTS_COULEUR, getGantStyle } from "@/lib/categories";
 import { clubColorStyle } from "@/lib/ui-helpers";
 import { EditableCell } from "./EditableCell";
+import { useSwipeRow } from "./SwipeRow";
 
+/** Colonnes triables du tableau */
 type SortColumn =
   | "nom"
   | "sexe"
@@ -16,6 +18,7 @@ type SortColumn =
   | "typeCompetition";
 type SortDirection = "asc" | "desc";
 
+/** Props du tableau de tireurs */
 interface TireursTableProps {
   boxeurs: Boxeur[];
   loading: boolean;
@@ -28,6 +31,7 @@ interface TireursTableProps {
   onOpenModal: () => void;
 }
 
+/** Tableau interactif des tireurs avec tri par colonne, édition inline et détection info incomplète */
 export function TireursTable({
   boxeurs,
   loading,
@@ -66,8 +70,8 @@ export function TireursTable({
           bVal = b.sexe;
           break;
         case "annee":
-          aVal = getAnneeFromDate(a.dateNaissance) || 0;
-          bVal = getAnneeFromDate(b.dateNaissance) || 0;
+          aVal = getAnneeFromDate(a.dateNaissance) ?? 0;
+          bVal = getAnneeFromDate(b.dateNaissance) ?? 0;
           break;
         case "poids":
           aVal = a.poids;
@@ -212,123 +216,177 @@ export function TireursTable({
           </thead>
           <tbody>
             {sortedBoxeurs.map((b) => (
-              <tr
+              <TireurRow
                 key={b.id}
-                className={hasIncompleteInfo(b) ? "row-incomplete" : ""}
-              >
-                <td data-label="Nom">
-                  <EditableCell
-                    value={`${b.nom.toUpperCase()} ${b.prenom}`}
-                    type="text"
-                    onSave={async (newValue) => {
-                      const parts = String(newValue).split(" ");
-                      if (parts.length >= 2) {
-                        const nom = parts[0];
-                        const prenom = parts.slice(1).join(" ");
-                        await onUpdate(b.id, "nom", nom);
-                        await onUpdate(b.id, "prenom", prenom);
-                      }
-                    }}
-                  />
-                </td>
-                <td data-label="Sexe">
-                  <span className="badge badge-sexe">
-                    {b.sexe === "M" ? "H" : "F"}
-                  </span>
-                </td>
-                <td data-label="Type">
-                  <span
-                    className={`badge ${b.typeCompetition === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`}
-                    onClick={async () => {
-                      const newType = b.typeCompetition === "TOURNOI" ? "INTERCLUB" : "TOURNOI";
-                      await onUpdate(b.id, "typeCompetition", newType);
-                    }}
-                    title="Cliquer pour changer"
-                  >
-                    {b.typeCompetition === "INTERCLUB" ? "Interclub" : "Tournoi"}
-                  </span>
-                </td>
-                <td data-label="Année">
-                  <EditableCell
-                    value={getAnneeFromDate(b.dateNaissance)}
-                    type="number"
-                    onSave={async (newValue) => {
-                      await onUpdate(b.id, "anneeNaissance", String(newValue));
-                    }}
-                  />{" "}
-                  <span style={{ color: "var(--text-muted)", fontSize: 12 }}>
-                    (
-                    {new Date().getFullYear() -
-                      getAnneeFromDate(b.dateNaissance)!}{" "}
-                    ans)
-                  </span>
-                </td>
-                <td data-label="Poids">
-                  <EditableCell
-                    value={b.poids}
-                    type="number"
-                    onSave={async (newValue) => {
-                      await onUpdate(b.id, "poids", String(newValue));
-                    }}
-                  />{" "}
-                  kg
-                </td>
-                <td data-label="Gant">
-                  <span className="badge-gant" style={getGantStyle(b.gant)}>
-                    <EditableCell
-                      value={b.gant}
-                      type="select"
-                      options={GANTS_COULEUR}
-                      onSave={async (newValue) => {
-                        await onUpdate(b.id, "gant", String(newValue));
-                      }}
-                    />
-                  </span>
-                </td>
-                <td data-label="Cat. Poids">
-                  <span className="badge badge-category">
-                    {b.categoriePoids}
-                  </span>
-                </td>
-                <td data-label="Cat. Âge" className="mobile-hide">
-                  <span className="badge badge-category">{b.categorieAge}</span>
-                </td>
-                <td data-label="Club">
-                  <span className="badge badge-club" style={clubColorStyle(b.club.couleur)}>{b.club.nom}</span>
-                </td>
-                <td data-label="Info" className="mobile-hide" style={{ textAlign: "center" }}>
-                  {hasIncompleteInfo(b) ? (
-                    <span
-                      className="info-toggle info-incomplete"
-                      title="Cliquez pour marquer comme complet"
-                      onClick={() => handleToggleInfoIncomplete(b)}
-                    >
-                      ⚠️
-                    </span>
-                  ) : (
-                    <span
-                      className="info-toggle info-complete"
-                      title="Cliquez pour marquer comme incomplet"
-                      onClick={() => handleToggleInfoIncomplete(b)}
-                    >
-                      ✓
-                    </span>
-                  )}
-                </td>
-                <td data-label="">
-                  <button
-                    className="btn-icon btn-danger"
-                    onClick={() => onDelete(b.id)}
-                    title="Supprimer"
-                  >
-                    🗑️
-                  </button>
-                </td>
-              </tr>
+                b={b}
+                incomplete={hasIncompleteInfo(b)}
+                onDelete={() => onDelete(b.id)}
+                onUpdate={onUpdate}
+                onToggleInfo={() => handleToggleInfoIncomplete(b)}
+              />
             ))}
           </tbody>
         </table>
       </div>
     </div>
+  );
+}
+
+/** Ligne tireur individuelle avec swipe-to-delete sur mobile */
+function TireurRow({
+  b,
+  incomplete,
+  onDelete,
+  onUpdate,
+  onToggleInfo,
+}: {
+  b: Boxeur;
+  incomplete: boolean;
+  onDelete: () => void;
+  onUpdate: (id: number, field: string, value: string | number | boolean) => Promise<void>;
+  onToggleInfo: () => void;
+}) {
+  const { rowRef, revealed, touchHandlers, handleDelete, reset } = useSwipeRow(onDelete);
+
+  return (
+    <tr
+      ref={rowRef}
+      className={`${incomplete ? "row-incomplete" : ""} swipe-tr`}
+      {...touchHandlers}
+    >
+      <td data-label="Nom">
+        <EditableCell
+          value={`${b.nom.toUpperCase()} ${b.prenom}`}
+          type="text"
+          onSave={async (newValue) => {
+            const parts = String(newValue).trim().split(/\s+/);
+            if (parts.length >= 2) {
+              const nom = parts[0];
+              const prenom = parts.slice(1).join(" ");
+              await onUpdate(b.id, "nom", `${nom}|${prenom}`);
+            }
+          }}
+        />
+      </td>
+      <td data-label="Sexe">
+        <span className="badge badge-sexe">
+          {b.sexe === "M" ? "H" : "F"}
+        </span>
+      </td>
+      <td data-label="Type">
+        <span
+          className={`badge ${b.typeCompetition === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`}
+          role="button"
+          tabIndex={0}
+          aria-label="Changer le type de compétition"
+          onClick={async () => {
+            const newType = b.typeCompetition === "TOURNOI" ? "INTERCLUB" : "TOURNOI";
+            await onUpdate(b.id, "typeCompetition", newType);
+          }}
+          onKeyDown={async (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              const newType = b.typeCompetition === "TOURNOI" ? "INTERCLUB" : "TOURNOI";
+              await onUpdate(b.id, "typeCompetition", newType);
+            }
+          }}
+          title="Cliquer pour changer"
+        >
+          {b.typeCompetition === "INTERCLUB" ? "Interclub" : "Tournoi"}
+        </span>
+      </td>
+      <td data-label="Année">
+        {(() => {
+          const annee = getAnneeFromDate(b.dateNaissance);
+          return (
+            <>
+              <EditableCell
+                value={annee}
+                type="number"
+                onSave={async (newValue) => {
+                  await onUpdate(b.id, "anneeNaissance", String(newValue));
+                }}
+              />{" "}
+              {annee != null && (
+                <span style={{ color: "var(--text-muted)", fontSize: 12 }}>
+                  ({new Date().getUTCFullYear() - annee} ans)
+                </span>
+              )}
+            </>
+          );
+        })()}
+      </td>
+      <td data-label="Poids">
+        <EditableCell
+          value={b.poids}
+          type="number"
+          onSave={async (newValue) => {
+            await onUpdate(b.id, "poids", String(newValue));
+          }}
+        />{" "}
+        kg
+      </td>
+      <td data-label="Gant">
+        <span className="badge-gant" style={getGantStyle(b.gant)}>
+          <EditableCell
+            value={b.gant}
+            type="select"
+            options={GANTS_COULEUR}
+            onSave={async (newValue) => {
+              await onUpdate(b.id, "gant", String(newValue));
+            }}
+          />
+        </span>
+      </td>
+      <td data-label="Cat. Poids">
+        <span className="badge badge-category">
+          {b.categoriePoids}
+        </span>
+      </td>
+      <td data-label="Cat. Âge" className="mobile-hide">
+        <span className="badge badge-category">{b.categorieAge}</span>
+      </td>
+      <td data-label="Club">
+        <span className="badge badge-club" style={clubColorStyle(b.club.couleur)}>{b.club.nom}</span>
+      </td>
+      <td data-label="Info" className="mobile-hide" style={{ textAlign: "center" }}>
+        {incomplete ? (
+          <span
+            className="info-toggle info-incomplete"
+            title="Cliquez pour marquer comme complet"
+            onClick={onToggleInfo}
+          >
+            ⚠️
+          </span>
+        ) : (
+          <span
+            className="info-toggle info-complete"
+            title="Cliquez pour marquer comme incomplet"
+            onClick={onToggleInfo}
+          >
+            ✓
+          </span>
+        )}
+      </td>
+      <td data-label="">
+        <button
+          className="btn-icon btn-danger"
+          onClick={onDelete}
+          title="Supprimer"
+        >
+          🗑️
+        </button>
+      </td>
+      {revealed && (
+        <td className="swipe-delete-action" data-label="">
+          <button onClick={handleDelete} aria-label="Supprimer">
+            🗑️ Supprimer
+          </button>
+          <button onClick={reset} className="swipe-cancel" aria-label="Annuler">
+            ✕
+          </button>
+        </td>
+      )}
+    </tr>
   );
 }

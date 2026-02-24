@@ -3,18 +3,18 @@
 import { useEffect, useState } from "react";
 import { useBoxeurs } from "@/hooks/useBoxeurs";
 import { useClubs } from "@/hooks/useClubs";
-import { useToast } from "@/hooks/useToast";
+import { useGlobalToast } from "@/contexts/ToastContext";
 import { ClubSelector } from "@/components/ClubSelector";
 import { ClubDetail } from "@/components/ClubDetail";
 import { TireursTable } from "@/components/TireursTable";
 import { ModalClub } from "@/components/ModalClub";
 import { ModalTireur } from "@/components/ModalTireur";
-import { Toast } from "@/components/Toast";
 
+/** Page clubs : sélection d'un club, détail, édition et gestion de ses tireurs */
 export default function ClubsPage() {
   const { boxeurs, fetchBoxeurs, updateBoxeur, deleteBoxeur } = useBoxeurs();
   const { clubs, fetchClubs, updateClub } = useClubs();
-  const { toast, showToast } = useToast();
+  const { showToast } = useGlobalToast();
 
   const [selectedClubId, setSelectedClubId] = useState<number | null>(null);
   const [showClubModal, setShowClubModal] = useState(false);
@@ -59,6 +59,9 @@ export default function ClubsPage() {
       setClubForm({ nom: "", ville: "", coach: "", couleur: "" });
       setShowClubModal(false);
       fetchClubs();
+    } else {
+      const err = await res.json().catch(() => null);
+      showToast(err?.error || "Erreur création club", "error");
     }
   };
 
@@ -99,7 +102,7 @@ export default function ClubsPage() {
           onClick: async () => {
             try {
               const year = boxeur.dateNaissance
-                ? new Date(boxeur.dateNaissance).getFullYear()
+                ? new Date(boxeur.dateNaissance).getUTCFullYear()
                 : 2000;
               const res = await fetch("/api/boxeurs", {
                 method: "POST",
@@ -284,8 +287,6 @@ export default function ClubsPage() {
         onChange={setTireurForm}
         onOpenClubModal={() => { setShowTireurModal(false); setShowClubModal(true); }}
       />
-
-      {toast.visible && <Toast message={toast.message} type={toast.type} action={toast.action} />}
     </>
   );
 }

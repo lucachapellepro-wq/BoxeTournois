@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import Link from "next/link";
 import { NavBar } from "@/components/NavBar";
+import { ToastProvider } from "@/contexts/ToastContext";
 
 export const metadata: Metadata = {
   title: "Tournoi Savate BF — Gestion des tireurs",
   description: "Application de gestion de tournoi de savate boxe française",
 };
 
+/** Layout racine : header avec navigation, toast global et contenu principal */
 export default function RootLayout({
   children,
 }: {
@@ -15,15 +18,18 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body>
+        <a href="#main-content" className="skip-link">Aller au contenu</a>
         <header className="header">
           <div className="header-inner">
-            <a href="/" className="logo">
+            <Link href="/" className="logo">
               🥊 SAVATE<span>BF</span>
-            </a>
+            </Link>
             <NavBar />
           </div>
         </header>
-        <main className="container page">{children}</main>
+        <ToastProvider>
+          <main id="main-content" className="container page">{children}</main>
+        </ToastProvider>
       </body>
     </html>
   );

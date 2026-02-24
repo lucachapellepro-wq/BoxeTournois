@@ -25,8 +25,8 @@ export interface Match {
   tournoiId: number;
 
   // Participants
-  boxeur1Id: number;
-  boxeur1: Boxeur;
+  boxeur1Id: number | null;
+  boxeur1: Boxeur | null;
   boxeur2Id: number | null;
   boxeur2: Boxeur | null;
 

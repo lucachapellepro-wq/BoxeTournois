@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { sortByWeight } from "@/lib/ui-helpers";
@@ -32,16 +32,12 @@ interface TournoiDetail {
 
 export default function CategoriesPage() {
   const params = useParams();
-  const tournoiId = parseInt(params.id as string);
+  const tournoiId = Number(params.id) || 0;
   const [tournoi, setTournoi] = useState<TournoiDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState<"TOUS" | "TOURNOI" | "INTERCLUB">("TOUS");
 
-  useEffect(() => {
-    fetchTournoi();
-  }, [tournoiId]);
-
-  const fetchTournoi = async () => {
+  const fetchTournoi = useCallback(async () => {
     try {
       const res = await fetch(`/api/tournois/${tournoiId}`);
       if (res.ok) {
@@ -53,7 +49,11 @@ export default function CategoriesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [tournoiId]);
+
+  useEffect(() => {
+    fetchTournoi();
+  }, [fetchTournoi]);
 
   const categoriesBySexe = useMemo(() => {
     if (!tournoi) return { F: [], M: [] };

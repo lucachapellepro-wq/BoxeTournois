@@ -1,3 +1,6 @@
+import { useBottomSheetDrag } from "@/hooks/useBottomSheetDrag";
+
+/** Props de la modale tournoi (création ou édition) */
 interface ModalTournoiProps {
   show: boolean;
   form: {
@@ -11,6 +14,7 @@ interface ModalTournoiProps {
   onChange: (form: { nom: string; date: string }) => void;
 }
 
+/** Modale de création/édition d'un tournoi (nom + date) */
 export function ModalTournoi({
   show,
   form,
@@ -20,14 +24,24 @@ export function ModalTournoi({
   onSubmit,
   onChange,
 }: ModalTournoiProps) {
+  const { modalRef, onTouchStart, onTouchMove, onTouchEnd } = useBottomSheetDrag(onClose);
+
   if (!show) return null;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal"
+        ref={modalRef}
+        onClick={(e) => e.stopPropagation()}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        <div className="modal-handle" />
         <div className="modal-header">
           <h2 className="modal-title">{isEditing ? "Modifier le tournoi" : "Nouveau tournoi"}</h2>
-          <button className="modal-close" onClick={onClose}>
+          <button className="modal-close" onClick={onClose} aria-label="Fermer">
             ✕
           </button>
         </div>

@@ -1,16 +1,30 @@
 import { prisma } from "@/lib/prisma";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { z } from "zod";
+import { apiSuccess, apiBadRequest, apiNotFound, apiError, parseId, safeJson, logApiError } from "@/lib/api-response";
+
+const patchMatchSchema = z.object({
+  boxeur2Id: z.number().int().positive("boxeur2Id invalide"),
+});
+
+const putMatchSchema = z.object({
+  winnerId: z.number().int().positive("winnerId invalide").optional(),
+  status: z.enum(["PENDING", "COMPLETED", "FORFEIT"]).optional(),
+});
 
 // GET /api/tournois/[id]/matches/[matchId] - Récupérer un match
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; matchId: string }> }
 ) {
-  const { matchId } = await params;
+  const { id, matchId } = await params;
+  const tournoiId = parseId(id);
+  const matchIdNum = parseId(matchId);
+  if (!tournoiId || !matchIdNum) return apiBadRequest("ID invalide");
 
   try {
     const match = await prisma.match.findUnique({
-      where: { id: parseInt(matchId) },
+      where: { id: matchIdNum },
       include: {
         boxeur1: { include: { club: true } },
         boxeur2: { include: { club: true } },
@@ -19,20 +33,14 @@ export async function GET(
       },
     });
 
-    if (!match) {
-      return NextResponse.json(
-        { error: "Match non trouvé" },
-        { status: 404 }
-      );
+    if (!match || match.tournoiId !== tournoiId) {
+      return apiNotFound("Match non trouvé");
     }
 
-    return NextResponse.json(match);
+    return apiSuccess(match);
   } catch (error) {
-    console.error("Erreur récupération match:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la récupération" },
-      { status: 500 }
-    );
+    logApiError("Erreur récupération match:", error);
+    return apiError("Erreur lors de la récupération");
   }
 }
 
@@ -42,60 +50,49 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string; matchId: string }> }
 ) {
   const { id, matchId } = await params;
+  const tournoiId = parseId(id);
+  const matchIdNum = parseId(matchId);
+  if (!tournoiId || !matchIdNum) return apiBadRequest("ID invalide");
 
   try {
-    const body = await request.json();
-    const { boxeur2Id } = body;
-
-    if (!boxeur2Id) {
-      return NextResponse.json(
-        { error: "boxeur2Id est requis" },
-        { status: 400 }
-      );
+    const body = await safeJson(request);
+    if (!body) return apiBadRequest("JSON invalide");
+    const parsed = patchMatchSchema.safeParse(body);
+    if (!parsed.success) {
+      return apiBadRequest(parsed.error.issues[0]?.message || "boxeur2Id invalide");
     }
+    const { boxeur2Id } = parsed.data;
 
     const match = await prisma.match.findUnique({
-      where: { id: parseInt(matchId) },
+      where: { id: matchIdNum },
     });
 
-    if (!match) {
-      return NextResponse.json(
-        { error: "Match non trouvé" },
-        { status: 404 }
-      );
+    if (!match || match.tournoiId !== tournoiId) {
+      return apiNotFound("Match non trouvé");
     }
 
     if (match.boxeur2Id) {
-      return NextResponse.json(
-        { error: "Ce match a déjà un boxeur2" },
-        { status: 400 }
-      );
+      return apiBadRequest("Ce match a déjà un boxeur2");
     }
 
     if (match.boxeur1Id === boxeur2Id) {
-      return NextResponse.json(
-        { error: "Un boxeur ne peut pas s'affronter lui-même" },
-        { status: 400 }
-      );
+      return apiBadRequest("Un boxeur ne peut pas s'affronter lui-même");
     }
 
     // Vérifier que le boxeur existe et est dans le tournoi
     const boxeur2 = await prisma.boxeur.findFirst({
       where: {
         id: boxeur2Id,
-        tournois: { some: { tournoiId: parseInt(id) } },
+        tournois: { some: { tournoiId } },
       },
     });
 
     if (!boxeur2) {
-      return NextResponse.json(
-        { error: "Boxeur non trouvé dans ce tournoi" },
-        { status: 404 }
-      );
+      return apiNotFound("Boxeur non trouvé dans ce tournoi");
     }
 
     const updatedMatch = await prisma.match.update({
-      where: { id: parseInt(matchId) },
+      where: { id: matchIdNum },
       data: {
         boxeur2Id,
         boxeur2Manual: true,
@@ -106,13 +103,10 @@ export async function PATCH(
       },
     });
 
-    return NextResponse.json(updatedMatch);
+    return apiSuccess(updatedMatch);
   } catch (error) {
-    console.error("Erreur ajout boxeur2:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de l'ajout du boxeur2" },
-      { status: 500 }
-    );
+    logApiError("Erreur ajout boxeur2:", error);
+    return apiError("Erreur lors de l'ajout du boxeur2");
   }
 }
 
@@ -121,22 +115,27 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; matchId: string }> }
 ) {
-  const { matchId } = await params;
+  const { id, matchId } = await params;
+  const tournoiId = parseId(id);
+  const matchIdNum = parseId(matchId);
+  if (!tournoiId || !matchIdNum) return apiBadRequest("ID invalide");
 
   try {
-    const body = await request.json();
-    const { winnerId, status } = body;
+    const body = await safeJson(request);
+    if (!body) return apiBadRequest("JSON invalide");
+    const parsed = putMatchSchema.safeParse(body);
+    if (!parsed.success) {
+      return apiBadRequest(parsed.error.issues[0]?.message || "Données invalides");
+    }
+    const { winnerId, status } = parsed.data;
 
     // Récupérer le match actuel
     const currentMatch = await prisma.match.findUnique({
-      where: { id: parseInt(matchId) },
+      where: { id: matchIdNum },
     });
 
-    if (!currentMatch) {
-      return NextResponse.json(
-        { error: "Match non trouvé" },
-        { status: 404 }
-      );
+    if (!currentMatch || currentMatch.tournoiId !== tournoiId) {
+      return apiNotFound("Match non trouvé");
     }
 
     // Valider que winnerId est bien l'un des participants
@@ -145,17 +144,14 @@ export async function PUT(
       winnerId !== currentMatch.boxeur1Id &&
       winnerId !== currentMatch.boxeur2Id
     ) {
-      return NextResponse.json(
-        { error: "Le gagnant doit être l'un des participants" },
-        { status: 400 }
-      );
+      return apiBadRequest("Le gagnant doit être l'un des participants");
     }
 
     // Mettre à jour le match en transaction
     const updatedMatch = await prisma.$transaction(async (tx) => {
       // Mettre à jour le match
       const match = await tx.match.update({
-        where: { id: parseInt(matchId) },
+        where: { id: matchIdNum },
         data: {
           winnerId,
           status: status || "COMPLETED",
@@ -171,7 +167,8 @@ export async function PUT(
       if (
         match.matchType === "BRACKET" &&
         match.nextMatchId &&
-        winnerId
+        winnerId &&
+        match.bracketPosition !== null
       ) {
         const nextMatch = await tx.match.findUnique({
           where: { id: match.nextMatchId },
@@ -179,8 +176,7 @@ export async function PUT(
 
         if (nextMatch) {
           // Déterminer si le gagnant va en boxeur1 ou boxeur2 du prochain match
-          // Basé sur la position dans le bracket
-          const isFirstSlot = (match.bracketPosition || 0) % 2 === 0;
+          const isFirstSlot = match.bracketPosition % 2 === 0;
 
           await tx.match.update({
             where: { id: match.nextMatchId },
@@ -194,13 +190,10 @@ export async function PUT(
       return match;
     });
 
-    return NextResponse.json(updatedMatch);
+    return apiSuccess(updatedMatch);
   } catch (error) {
-    console.error("Erreur mise à jour match:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la mise à jour" },
-      { status: 500 }
-    );
+    logApiError("Erreur mise à jour match:", error);
+    return apiError("Erreur lors de la mise à jour");
   }
 }
 
@@ -209,30 +202,27 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; matchId: string }> }
 ) {
-  const { matchId } = await params;
+  const { id, matchId } = await params;
+  const tournoiId = parseId(id);
+  const matchIdNum = parseId(matchId);
+  if (!tournoiId || !matchIdNum) return apiBadRequest("ID invalide");
 
   try {
     const match = await prisma.match.findUnique({
-      where: { id: parseInt(matchId) },
+      where: { id: matchIdNum },
     });
 
-    if (!match) {
-      return NextResponse.json(
-        { error: "Match non trouvé" },
-        { status: 404 }
-      );
+    if (!match || match.tournoiId !== tournoiId) {
+      return apiNotFound("Match non trouvé");
     }
 
     await prisma.match.delete({
-      where: { id: parseInt(matchId) },
+      where: { id: matchIdNum },
     });
 
-    return NextResponse.json({ message: "Match supprimé" });
+    return apiSuccess({ message: "Match supprimé" });
   } catch (error) {
-    console.error("Erreur suppression match:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la suppression" },
-      { status: 500 }
-    );
+    logApiError("Erreur suppression match:", error);
+    return apiError("Erreur lors de la suppression");
   }
 }

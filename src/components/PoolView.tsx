@@ -2,12 +2,14 @@ import { Match } from "@/types/match";
 import { MatchCardEditable } from "./MatchCardEditable";
 import { useMemo } from "react";
 
+/** Props de la vue poule */
 interface PoolViewProps {
   matches: Match[];
   category: string;
   onAddOpponent?: (match: Match) => void;
 }
 
+/** Vue poule : matchs groupés par pool (A, B, C...) puis demis et finale */
 export function PoolView({ matches, category, onAddOpponent }: PoolViewProps) {
   // Grouper par poolName
   const matchesByPool = useMemo(() => {

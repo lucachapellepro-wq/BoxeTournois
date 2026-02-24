@@ -1,11 +1,13 @@
 import { Boxeur, Club } from "@/types";
 
+/** Props du composant Stats */
 interface StatsProps {
   boxeurs: Boxeur[];
   clubs: Club[];
   statsByAge: [string, number][];
 }
 
+/** Barre de statistiques : nombre de tireurs, clubs, répartition H/F et top catégories d'âge */
 export function Stats({ boxeurs, clubs, statsByAge }: StatsProps) {
   const hommes = boxeurs.filter((b) => b.sexe === "M").length;
   const femmes = boxeurs.filter((b) => b.sexe === "F").length;

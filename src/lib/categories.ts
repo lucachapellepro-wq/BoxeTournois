@@ -1,3 +1,5 @@
+import type React from "react";
+
 // =============================================
 // CATÉGORIES SAVATE BOXE FRANÇAISE
 // Basé sur le règlement FFSbf&DA 2025-2026
@@ -7,8 +9,8 @@
 export function calculerAgeSaison(
   anneeNaissance: number | null,
 ): number | null {
-  if (!anneeNaissance) return null;
-  const anneeEnCours = new Date().getFullYear();
+  if (anneeNaissance == null) return null;
+  const anneeEnCours = new Date().getUTCFullYear();
   return anneeEnCours - anneeNaissance;
 }
 
@@ -16,9 +18,9 @@ export function calculerAgeSaison(
 // CATÉGORIES D'ÂGE
 // =============================================
 export function getCategorieAge(anneeNaissance: number | null): string {
-  if (!anneeNaissance) return "—";
+  if (anneeNaissance == null) return "—";
   const ageSaison = calculerAgeSaison(anneeNaissance);
-  if (!ageSaison) return "—";
+  if (ageSaison == null) return "—";
 
   if (ageSaison <= 9) return "Pré-poussins";
   if (ageSaison <= 11) return "Poussins";
@@ -133,9 +135,9 @@ export function getCategoriePoids(
   sexe: string,
   anneeNaissance: number | null,
 ): string {
-  if (!anneeNaissance) return "—";
+  if (anneeNaissance == null) return "—";
   const ageSaison = calculerAgeSaison(anneeNaissance);
-  if (!ageSaison) return "—";
+  if (ageSaison == null) return "—";
   const estJeune = ageSaison <= 17;
 
   let categories;

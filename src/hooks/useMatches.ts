@@ -1,64 +1,58 @@
 import { useState, useCallback } from "react";
 import { Match, MatchResult, MatchStats } from "@/types/match";
 
+/** Hook de gestion des matchs d'un tournoi : CRUD, génération auto, stats par catégorie */
 export function useMatches(tournoiId: number) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<MatchStats | null>(null);
 
   const fetchMatches = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetch(`/api/tournois/${tournoiId}/matches`);
+      const res = await fetch(`/api/tournois/${tournoiId}/matches?stats=true`);
       if (res.ok) {
-        const data: Match[] = await res.json();
-        setMatches(data);
+        const json = await res.json();
+        const matchList: Match[] = json.matches ?? [];
+        const serverStats = json.stats ?? { total: 0, byType: { BRACKET: 0, POOL: 0 }, byStatus: { PENDING: 0, COMPLETED: 0, FORFEIT: 0 } };
+        setMatches(matchList);
 
-        // Calculer les stats
-        const statsByType = {
-          BRACKET: data.filter((m) => m.matchType === "BRACKET").length,
-          POOL: data.filter((m) => m.matchType === "POOL").length,
-        };
-
-        const statsByStatus = {
-          PENDING: data.filter((m) => m.status === "PENDING").length,
-          COMPLETED: data.filter((m) => m.status === "COMPLETED").length,
-          FORFEIT: data.filter((m) => m.status === "FORFEIT").length,
-        };
-
-        // Grouper par catégorie
-        const categoriesMap = new Map<string, Match[]>();
-        data.forEach((m) => {
+        // Compléter avec les catégories groupées (pas dispo côté serveur)
+        const categoriesMap = new Map<string, { type: string; boxeurIds: Set<number>; count: number }>();
+        for (const m of matchList) {
           const key = m.categoryDisplay;
-          if (!categoriesMap.has(key)) {
-            categoriesMap.set(key, []);
+          let cat = categoriesMap.get(key);
+          if (!cat) {
+            cat = { type: m.matchType, boxeurIds: new Set(), count: 0 };
+            categoriesMap.set(key, cat);
           }
-          categoriesMap.get(key)!.push(m);
-        });
+          cat.count++;
+          if (m.boxeur1Id != null) cat.boxeurIds.add(m.boxeur1Id);
+          if (m.boxeur2Id != null) cat.boxeurIds.add(m.boxeur2Id);
+        }
 
         const categories = Array.from(categoriesMap.entries()).map(
-          ([name, categoryMatches]) => ({
+          ([name, cat]) => ({
             name,
-            type: categoryMatches[0].matchType,
-            boxeurs: new Set([
-              ...categoryMatches.map((m) => m.boxeur1Id),
-              ...categoryMatches
-                .map((m) => m.boxeur2Id)
-                .filter((id) => id !== null),
-            ]).size,
-            matches: categoryMatches.length,
+            type: cat.type,
+            boxeurs: cat.boxeurIds.size,
+            matches: cat.count,
           })
         );
 
         setStats({
-          total: data.length,
-          byType: statsByType,
-          byStatus: statsByStatus,
+          total: serverStats.total,
+          byType: serverStats.byType,
+          byStatus: serverStats.byStatus,
           categories,
         });
       }
-    } catch (error) {
-      console.error("Erreur fetch matchs:", error);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erreur réseau";
+      setError(message);
+      console.error("Erreur fetch matchs:", err);
     } finally {
       setLoading(false);
     }
@@ -187,7 +181,7 @@ export function useMatches(tournoiId: number) {
 
   const deleteAllMatches = useCallback(async () => {
     try {
-      const res = await fetch(`/api/tournois/${tournoiId}/matches`, {
+      const res = await fetch(`/api/tournois/${tournoiId}/matches?force=true`, {
         method: "DELETE",
       });
 
@@ -205,6 +199,7 @@ export function useMatches(tournoiId: number) {
   return {
     matches,
     loading,
+    error,
     stats,
     fetchMatches,
     generateMatches,

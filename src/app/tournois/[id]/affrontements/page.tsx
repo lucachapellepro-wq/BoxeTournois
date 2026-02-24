@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useMatches } from "@/hooks/useMatches";
-import { useToast } from "@/hooks/useToast";
-import { Toast } from "@/components/Toast";
-import { BracketView } from "@/components/BracketView";
-import { PoolView } from "@/components/PoolView";
-import { BoxeursSeulsView } from "@/components/BoxeursSeulsView";
-import { MatchCardEditable } from "@/components/MatchCardEditable";
+import { useGlobalToast } from "@/contexts/ToastContext";
+import dynamic from "next/dynamic";
+
+const BracketView = dynamic(() => import("@/components/BracketView").then(m => ({ default: m.BracketView })));
+const PoolView = dynamic(() => import("@/components/PoolView").then(m => ({ default: m.PoolView })));
+const BoxeursSeulsView = dynamic(() => import("@/components/BoxeursSeulsView").then(m => ({ default: m.BoxeursSeulsView })));
+const MatchCardEditable = dynamic(() => import("@/components/MatchCardEditable").then(m => ({ default: m.MatchCardEditable })));
 import Link from "next/link";
 import { Boxeur, TournoiDetail } from "@/types";
 import { Match } from "@/types/match";
@@ -19,8 +20,10 @@ import {
   WinnerEntry,
 } from "@/lib/match-helpers";
 
+/** Groupement par sexe pour l'affichage F/M */
 type SexeGroup<T> = { F: [string, T[]][]; M: [string, T[]][] };
 
+/** Rendu générique des sections Femmes/Hommes avec séparation visuelle */
 function renderSexeSections<T>(
   data: SexeGroup<T>,
   renderContent: (category: string, items: T[]) => React.ReactNode
@@ -43,11 +46,12 @@ function renderSexeSections<T>(
   );
 }
 
+/** Page affrontements : génération des matchs, vue bracket/poule/interclub, vainqueurs directs, impression */
 export default function AffrontementsPage() {
   const params = useParams();
-  const tournoiId = parseInt(params.id as string);
+  const tournoiId = Number(params.id) || 0;
   const { matches, loading, stats, fetchMatches, generateMatches, createManualMatch, addOpponentToMatch, deleteMatch } = useMatches(tournoiId);
-  const { toast, showToast } = useToast();
+  const { showToast } = useGlobalToast();
 
   const [tournoi, setTournoi] = useState<TournoiDetail | null>(null);
   const [activeTab, setActiveTab] = useState<"BRACKET" | "POOL" | "INTERCLUB" | "WINNERS">("BRACKET");
@@ -60,12 +64,7 @@ export default function AffrontementsPage() {
   const [addingToMatchId, setAddingToMatchId] = useState<number | null>(null);
   const [creatingMatch, setCreatingMatch] = useState(false);
 
-  useEffect(() => {
-    fetchTournoi();
-    fetchMatches();
-  }, [fetchMatches]);
-
-  const fetchTournoi = async () => {
+  const fetchTournoi = useCallback(async () => {
     try {
       const res = await fetch(`/api/tournois/${tournoiId}`);
       if (res.ok) {
@@ -75,7 +74,12 @@ export default function AffrontementsPage() {
     } catch (error) {
       console.error("Erreur fetch tournoi:", error);
     }
-  };
+  }, [tournoiId]);
+
+  useEffect(() => {
+    fetchTournoi();
+    fetchMatches();
+  }, [fetchTournoi, fetchMatches]);
 
   const handleGenerateMatches = async (regenerate: boolean = false) => {
     setGenerating(true);
@@ -246,6 +250,12 @@ export default function AffrontementsPage() {
               <button className="btn btn-ghost" onClick={() => window.print()}>
                 🖨️ Imprimer
               </button>
+              <button
+                className="btn btn-ghost"
+                onClick={() => window.open(`/tournois/${tournoiId}/feuille?print=true`, "_blank")}
+              >
+                📄 Export PDF
+              </button>
             </>
           )}
           <button className="btn btn-primary" onClick={() => handleOpenMatchBuilder()}>
@@ -284,7 +294,7 @@ export default function AffrontementsPage() {
             <div className="stat-label">Poules</div>
           </div>
           <div className="stat-card">
-            <div className="stat-value">{stats.categories.length}</div>
+            <div className="stat-value">{stats?.categories?.length ?? 0}</div>
             <div className="stat-label">Catégories</div>
           </div>
         </div>
@@ -529,7 +539,7 @@ export default function AffrontementsPage() {
                   ? `Adversaire de ${matchBuilder.boxeur1.nom.toUpperCase()} ${matchBuilder.boxeur1.prenom}`
                   : "Sélectionner le 1er boxeur"}
               </h2>
-              <button className="modal-close" onClick={closeModal}>×</button>
+              <button className="modal-close" onClick={closeModal} aria-label="Fermer">×</button>
             </div>
 
             <div className="filter-group">
@@ -599,7 +609,7 @@ export default function AffrontementsPage() {
           <div className="modal modal-sm" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="modal-title">Régénérer les matchs ?</h2>
-              <button className="modal-close" onClick={() => setShowConfirmGenerate(false)}>×</button>
+              <button className="modal-close" onClick={() => setShowConfirmGenerate(false)} aria-label="Fermer">×</button>
             </div>
             <p className="modal-description">
               Cela supprimera tous les matchs existants et tous les résultats enregistrés. Cette action est irréversible.
@@ -616,8 +626,6 @@ export default function AffrontementsPage() {
           </div>
         </div>
       )}
-
-      {toast.visible && <Toast message={toast.message} type={toast.type} action={toast.action} />}
     </>
   );
 }

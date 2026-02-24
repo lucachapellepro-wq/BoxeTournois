@@ -100,6 +100,7 @@ export function generateMatches(
   const matches: MatchCreateData[] = [];
 
   // Grouper par SEXE + CATÉGORIE DE POIDS + TYPE COMPETITION
+  // Note : gant et categorieAge sont des métadonnées du match, pas des critères de séparation
   const groups = new Map<string, Boxeur[]>();
   boxeurs.forEach((b) => {
     const key = `${b.sexe}|${b.categoriePoids}|${b.typeCompetition}`;
@@ -108,7 +109,7 @@ export function generateMatches(
   });
 
   // Détecter les solos Tournoi ↔ Interclub pour les apparier
-  // Clé : sexe|categoriePoids → { TOURNOI: Boxeur[], INTERCLUB: Boxeur[] }
+  // Clé : sexe|categoriePoids → { TOURNOI: key, INTERCLUB: key }
   const soloKeys = new Map<string, { tournoi: string; interclub: string }>();
   groups.forEach((groupBoxeurs, key) => {
     const [sexe, catPoids, typeCompetition] = key.split("|");
@@ -149,6 +150,7 @@ export function generateMatches(
 
     const [sexe, catPoids, typeCompetition] = key.split("|");
 
+    // categorieAge et gant : prendre la valeur la plus fréquente du groupe
     const category: CategoryInfo = {
       sexe,
       categorieAge: groupBoxeurs[0].categorieAge,
@@ -350,7 +352,7 @@ function smartPairing(boxers: Boxeur[]): Boxeur[] {
   return [...boxers].sort((a, b) => {
     if (a.categorieAge !== b.categorieAge) return a.categorieAge.localeCompare(b.categorieAge);
     if (a.gant !== b.gant) return a.gant.localeCompare(b.gant);
-    return a.club.id - b.club.id;
+    return (a.club?.id ?? 0) - (b.club?.id ?? 0);
   });
 }
 
@@ -369,7 +371,8 @@ function divideIntoPools(boxers: Boxeur[]): Boxeur[][] {
 /** Retourne le nom du round en fonction du nombre total de rounds */
 export function getRoundName(totalRounds: number, roundIndex: number): string {
   const allRounds = [BracketRound.HUITIEME, BracketRound.QUART, BracketRound.DEMI, BracketRound.FINAL];
-  return allRounds[4 - totalRounds + roundIndex];
+  const idx = 4 - totalRounds + roundIndex;
+  return allRounds[Math.max(0, Math.min(idx, allRounds.length - 1))] ?? BracketRound.FINAL;
 }
 
 /** Lie les matchs d'un bracket avec nextMatchId */

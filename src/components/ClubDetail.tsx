@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { Club } from "@/types";
 
+/** Props du détail club */
 interface ClubDetailProps {
   club: Club;
   onUpdate: (id: number, data: Partial<Club>) => Promise<void>;
 }
 
+/** Fiche détaillée d'un club avec édition inline (nom, ville, coach, couleur) */
 export function ClubDetail({ club, onUpdate }: ClubDetailProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({

@@ -1,5 +1,15 @@
 import { prisma } from "@/lib/prisma";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { z } from "zod";
+import { apiSuccess, apiBadRequest, apiNotFound, apiError, parseId, safeJson, logApiError } from "@/lib/api-response";
+
+const batchAddSchema = z.object({
+  boxeurIds: z.array(z.number().int().positive()).min(1).max(500),
+});
+
+const singleAddSchema = z.object({
+  boxeurId: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]),
+});
 
 // POST /api/tournois/[id]/boxeurs - Ajouter un boxeur au tournoi
 export async function POST(
@@ -7,63 +17,74 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  try {
-    const body = await request.json();
-    const { boxeurId } = body;
+  const tournoiId = parseId(id);
+  if (!tournoiId) return apiBadRequest("ID tournoi invalide");
 
-    if (!boxeurId) {
-      return NextResponse.json(
-        { error: "boxeurId requis" },
-        { status: 400 }
-      );
+  try {
+    const body = await safeJson(request);
+    if (!body) return apiBadRequest("JSON invalide");
+
+    // ── Batch add : tableau de boxeurIds ──
+    const batchParsed = batchAddSchema.safeParse(body);
+    if (batchParsed.success) {
+      const ids = batchParsed.data.boxeurIds;
+
+      const tournoi = await prisma.tournoi.findUnique({ where: { id: tournoiId } });
+      if (!tournoi) return apiNotFound("Tournoi non trouvé");
+
+      const result = await prisma.tournoiBoxeur.createMany({
+        data: ids.map((bid) => ({ tournoiId, boxeurId: bid })),
+        skipDuplicates: true,
+      });
+
+      return apiSuccess({ added: result.count }, 201);
     }
+
+    // ── Single add : un seul boxeurId ──
+    const singleParsed = singleAddSchema.safeParse(body);
+    if (!singleParsed.success) {
+      return apiBadRequest("boxeurId (number) ou boxeurIds (number[]) requis");
+    }
+
+    const boxeurIdNum = typeof singleParsed.data.boxeurId === "string"
+      ? parseId(singleParsed.data.boxeurId)
+      : singleParsed.data.boxeurId;
+    if (!boxeurIdNum) return apiBadRequest("boxeurId invalide");
 
     // Vérifier que le tournoi existe
     const tournoi = await prisma.tournoi.findUnique({
-      where: { id: parseInt(id) },
+      where: { id: tournoiId },
     });
 
     if (!tournoi) {
-      return NextResponse.json(
-        { error: "Tournoi non trouvé" },
-        { status: 404 }
-      );
+      return apiNotFound("Tournoi non trouvé");
     }
 
     // Vérifier que le boxeur existe
     const boxeur = await prisma.boxeur.findUnique({
-      where: { id: parseInt(boxeurId) },
+      where: { id: boxeurIdNum },
     });
 
     if (!boxeur) {
-      return NextResponse.json(
-        { error: "Boxeur non trouvé" },
-        { status: 404 }
-      );
+      return apiNotFound("Boxeur non trouvé");
     }
 
     // Ajouter le boxeur au tournoi
     const tournoiBoxeur = await prisma.tournoiBoxeur.create({
       data: {
-        tournoiId: parseInt(id),
-        boxeurId: parseInt(boxeurId),
+        tournoiId,
+        boxeurId: boxeurIdNum,
       },
     });
 
-    return NextResponse.json(tournoiBoxeur, { status: 201 });
+    return apiSuccess(tournoiBoxeur, 201);
   } catch (error: unknown) {
     // Si c'est une erreur de contrainte unique (boxeur déjà inscrit)
     if (error instanceof Error && "code" in error && (error as { code: string }).code === "P2002") {
-      return NextResponse.json(
-        { error: "Ce boxeur est déjà inscrit au tournoi" },
-        { status: 400 }
-      );
+      return apiBadRequest("Ce boxeur est déjà inscrit au tournoi");
     }
 
-    console.error("Erreur ajout boxeur au tournoi:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de l'ajout" },
-      { status: 500 }
-    );
+    logApiError("Erreur ajout boxeur au tournoi:", error);
+    return apiError("Erreur lors de l'ajout");
   }
 }

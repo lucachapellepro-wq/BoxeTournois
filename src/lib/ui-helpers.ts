@@ -41,11 +41,11 @@ export function calculateAge(dateNaissance: string | null): number | string {
   if (!dateNaissance) return "?";
   const today = new Date();
   const birthDate = new Date(dateNaissance);
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
+  let age = today.getUTCFullYear() - birthDate.getUTCFullYear();
+  const monthDiff = today.getUTCMonth() - birthDate.getUTCMonth();
   if (
     monthDiff < 0 ||
-    (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    (monthDiff === 0 && today.getUTCDate() < birthDate.getUTCDate())
   ) {
     age--;
   }

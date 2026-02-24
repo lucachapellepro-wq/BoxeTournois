@@ -2,10 +2,12 @@ import { Boxeur, getAnneeFromDate } from "@/types";
 import { GANTS_COULEUR, getGantStyle, getGantLabel } from "@/lib/categories";
 import { clubColorStyle } from "@/lib/ui-helpers";
 
+/** Props du récapitulatif tireurs */
 interface TireursRecapProps {
   groupedByCategory: [string, Boxeur[]][];
 }
 
+/** Récapitulatif des tireurs groupés par catégorie, en cartes détaillées */
 export function TireursRecap({ groupedByCategory }: TireursRecapProps) {
   if (groupedByCategory.length === 0) {
     return (
@@ -41,9 +43,10 @@ export function TireursRecap({ groupedByCategory }: TireursRecapProps) {
                   <div className="recap-row">
                     <span className="recap-row-label">Année</span>
                     <span className="recap-row-value">
-                      {b.dateNaissance != null
-                        ? `${getAnneeFromDate(b.dateNaissance)} (${new Date().getFullYear() - getAnneeFromDate(b.dateNaissance)!} ans)`
-                        : "—"}
+                      {(() => {
+                        const annee = b.dateNaissance != null ? getAnneeFromDate(b.dateNaissance) : null;
+                        return annee != null ? `${annee} (${new Date().getUTCFullYear() - annee} ans)` : "—";
+                      })()}
                     </span>
                   </div>
                   <div className="recap-row">

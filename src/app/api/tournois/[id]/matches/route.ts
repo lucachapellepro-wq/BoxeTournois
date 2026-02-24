@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { apiSuccess, apiBadRequest, apiError, parseId, logApiError } from "@/lib/api-response";
 
 // GET /api/tournois/[id]/matches - Récupérer tous les matchs
 export async function GET(
@@ -7,10 +8,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const tournoiId = parseId(id);
+  if (!tournoiId) return apiBadRequest("ID invalide");
+
+  const { searchParams } = new URL(request.url);
+  const withStats = searchParams.get("stats") === "true";
 
   try {
     const matches = await prisma.match.findMany({
-      where: { tournoiId: parseInt(id) },
+      where: { tournoiId },
       include: {
         boxeur1: {
           include: { club: true },
@@ -24,13 +30,26 @@ export async function GET(
       orderBy: { displayOrder: "asc" },
     });
 
-    return NextResponse.json(matches);
+    if (!withStats) return apiSuccess(matches);
+
+    // Stats calculées depuis les matchs déjà chargés (évite race condition + requêtes N+1)
+    const byType = { BRACKET: 0, POOL: 0 };
+    const byStatus = { PENDING: 0, COMPLETED: 0, FORFEIT: 0 };
+    for (const m of matches) {
+      if (m.matchType in byType) byType[m.matchType as keyof typeof byType]++;
+      if (m.status in byStatus) byStatus[m.status as keyof typeof byStatus]++;
+    }
+
+    const stats = {
+      total: matches.length,
+      byType,
+      byStatus,
+    };
+
+    return apiSuccess({ matches, stats });
   } catch (error) {
-    console.error("Erreur récupération matchs:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la récupération" },
-      { status: 500 }
-    );
+    logApiError("Erreur récupération matchs:", error);
+    return apiError("Erreur lors de la récupération");
   }
 }
 
@@ -40,21 +59,35 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const tournoiId = parseId(id);
+  if (!tournoiId) return apiBadRequest("ID invalide");
 
   try {
+    // Vérifier s'il y a des matchs terminés avec résultat
+    const { searchParams } = new URL(request.url);
+    const force = searchParams.get("force") === "true";
+
+    if (!force) {
+      const completedCount = await prisma.match.count({
+        where: { tournoiId, status: "COMPLETED" },
+      });
+      if (completedCount > 0) {
+        return apiBadRequest(
+          `${completedCount} match(s) terminé(s) avec résultat. Ajoutez ?force=true pour confirmer la suppression.`
+        );
+      }
+    }
+
     const result = await prisma.match.deleteMany({
-      where: { tournoiId: parseInt(id) },
+      where: { tournoiId },
     });
 
-    return NextResponse.json({
+    return apiSuccess({
       success: true,
       deleted: result.count,
     });
   } catch (error) {
-    console.error("Erreur suppression matchs:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la suppression" },
-      { status: 500 }
-    );
+    logApiError("Erreur suppression matchs:", error);
+    return apiError("Erreur lors de la suppression");
   }
 }

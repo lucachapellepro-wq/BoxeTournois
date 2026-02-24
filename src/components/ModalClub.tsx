@@ -1,3 +1,6 @@
+import { useBottomSheetDrag } from "@/hooks/useBottomSheetDrag";
+
+/** Données du formulaire de création de club */
 interface ClubFormData {
   nom: string;
   ville: string;
@@ -5,11 +8,13 @@ interface ClubFormData {
   couleur: string;
 }
 
+/** Couleurs prédéfinies proposées dans le sélecteur */
 const PRESET_COLORS = [
   "#e63946", "#f59e0b", "#22c55e", "#3b82f6", "#8b5cf6",
   "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#84cc16",
 ];
 
+/** Props de la modale de création de club */
 interface ModalClubProps {
   show: boolean;
   form: ClubFormData;
@@ -18,6 +23,7 @@ interface ModalClubProps {
   onChange: (form: ClubFormData) => void;
 }
 
+/** Modale de création d'un club avec sélecteur de couleur (presets + custom) */
 export function ModalClub({
   show,
   form,
@@ -25,14 +31,24 @@ export function ModalClub({
   onSubmit,
   onChange,
 }: ModalClubProps) {
+  const { modalRef, onTouchStart, onTouchMove, onTouchEnd } = useBottomSheetDrag(onClose);
+
   if (!show) return null;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal"
+        ref={modalRef}
+        onClick={(e) => e.stopPropagation()}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        <div className="modal-handle" />
         <div className="modal-header">
           <h2 className="modal-title">NOUVEAU CLUB</h2>
-          <button className="modal-close" onClick={onClose}>
+          <button className="modal-close" onClick={onClose} aria-label="Fermer">
             ✕
           </button>
         </div>
@@ -84,6 +100,7 @@ export function ModalClub({
                   type="button"
                   className="btn btn-ghost btn-sm"
                   onClick={() => onChange({ ...form, couleur: "" })}
+                  aria-label="Supprimer la couleur"
                 >
                   ✕
                 </button>

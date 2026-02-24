@@ -46,6 +46,9 @@ model Boxeur {
   matchesWon       Match[]           @relation("WonMatches")
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
+
+  @@index([clubId])
+  @@index([sexe])
 }
 
 // =============================================
@@ -71,6 +74,7 @@ model TournoiBoxeur {
   boxeurId  Int
 
   @@id([tournoiId, boxeurId])
+  @@index([boxeurId])
 }
 
 // =============================================
@@ -82,9 +86,9 @@ model Match {
   tournoiId   Int
 
   // Participants (null = TBD ou En attente)
-  boxeur1     Boxeur?  @relation(name: "Boxeur1Matches", fields: [boxeur1Id], references: [id], onDelete: Cascade)
+  boxeur1     Boxeur?  @relation(name: "Boxeur1Matches", fields: [boxeur1Id], references: [id], onDelete: SetNull)
   boxeur1Id   Int?
-  boxeur2     Boxeur?  @relation(name: "Boxeur2Matches", fields: [boxeur2Id], references: [id], onDelete: Cascade)
+  boxeur2     Boxeur?  @relation(name: "Boxeur2Matches", fields: [boxeur2Id], references: [id], onDelete: SetNull)
   boxeur2Id   Int?
 
   // Type et catégorie
@@ -118,4 +122,8 @@ model Match {
 
   @@index([tournoiId, categorieAge, categoriePoids, gant])
   @@index([tournoiId, matchType])
+  @@index([status])
+  @@index([winnerId])
+  @@index([boxeur1Id])
+  @@index([boxeur2Id])
 }

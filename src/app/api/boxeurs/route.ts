@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { getCategorieAge, getCategoriePoids } from "@/lib/categories";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { Boxeur, Club } from "@prisma/client";
 import { z } from "zod";
+import { apiSuccess, apiBadRequest, apiConflict, apiError, safeJson, logApiError } from "@/lib/api-response";
 
+/** Schéma de validation Zod pour la création d'un boxeur */
 const boxeurSchema = z.object({
   nom: z.string().min(1, "Nom obligatoire").max(100),
   prenom: z.string().min(1, "Prénom obligatoire").max(100),
@@ -17,27 +19,49 @@ const boxeurSchema = z.object({
 
 type BoxeurWithClub = Boxeur & { club: Club };
 
-// GET /api/boxeurs — Liste tous les tireurs
-export async function GET() {
-  const boxeurs: BoxeurWithClub[] = await prisma.boxeur.findMany({
-    include: { club: true },
-    orderBy: { createdAt: "desc" },
-  });
-  return NextResponse.json(boxeurs);
+// GET /api/boxeurs — Liste tous les tireurs (avec pagination optionnelle)
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const page = parseInt(searchParams.get("page") || "0");
+  const limit = Math.min(parseInt(searchParams.get("limit") || "0"), 200);
+
+  try {
+    // Si pas de pagination demandée, retourner tous les boxeurs (rétrocompatible)
+    if (!page || !limit) {
+      const boxeurs: BoxeurWithClub[] = await prisma.boxeur.findMany({
+        include: { club: true },
+        orderBy: { createdAt: "desc" },
+      });
+      return apiSuccess(boxeurs);
+    }
+
+    const skip = (page - 1) * limit;
+    const [boxeurs, total] = await Promise.all([
+      prisma.boxeur.findMany({
+        include: { club: true },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.boxeur.count(),
+    ]);
+
+    return apiSuccess({ data: boxeurs, total, page, limit, totalPages: Math.ceil(total / limit) });
+  } catch (error) {
+    logApiError("Erreur récupération boxeurs:", error);
+    return apiError("Erreur lors de la récupération");
+  }
 }
 
 // POST /api/boxeurs — Inscrire un tireur
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = await safeJson(request);
+    if (!body) return apiBadRequest("JSON invalide");
     const parsed = boxeurSchema.safeParse(body);
 
     if (!parsed.success) {
-      const firstError = parsed.error.issues[0]?.message || "Données invalides";
-      return NextResponse.json(
-        { error: firstError },
-        { status: 400 },
-      );
+      return apiBadRequest(parsed.error.issues[0]?.message || "Données invalides");
     }
 
     const { nom, prenom, anneeNaissance, sexe, poids, gant, clubId, typeCompetition } = parsed.data;
@@ -46,7 +70,7 @@ export async function POST(request: NextRequest) {
     const poidsNum: number = parseFloat(poids);
 
     // Convertir l'année en Date (1er janvier de l'année)
-    const dateNaissance: Date = new Date(annee, 0, 1);
+    const dateNaissance: Date = new Date(Date.UTC(annee, 0, 1));
 
     // Détection doublons
     const existing = await prisma.boxeur.findFirst({
@@ -58,11 +82,8 @@ export async function POST(request: NextRequest) {
       include: { club: true },
     });
     if (existing) {
-      return NextResponse.json(
-        {
-          error: `Ce tireur existe déjà : ${existing.nom.toUpperCase()} ${existing.prenom} (${existing.club.nom})`,
-        },
-        { status: 409 },
+      return apiConflict(
+        `Ce tireur existe déjà : ${existing.nom.toUpperCase()} ${existing.prenom} (${existing.club.nom})`
       );
     }
 
@@ -85,12 +106,9 @@ export async function POST(request: NextRequest) {
       include: { club: true },
     });
 
-    return NextResponse.json(boxeur, { status: 201 });
+    return apiSuccess(boxeur, 201);
   } catch (error: unknown) {
-    console.error("Erreur création tireur:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la création du tireur" },
-      { status: 500 },
-    );
+    logApiError("Erreur création tireur:", error);
+    return apiError("Erreur lors de la création du tireur");
   }
 }

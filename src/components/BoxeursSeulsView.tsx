@@ -1,11 +1,13 @@
 import { Boxeur } from "@/types";
 import { getGantColor, getGantLabel } from "@/lib/categories";
 
+/** Props de la vue des tireurs sans adversaire */
 interface BoxeursSeulsViewProps {
   boxeurs: Boxeur[];
   onAddMatch?: (boxeur: Boxeur) => void;
 }
 
+/** Liste des tireurs en attente d'adversaire, groupés par sexe et catégorie */
 export function BoxeursSeulsView({ boxeurs, onAddMatch }: BoxeursSeulsViewProps) {
   if (boxeurs.length === 0) return null;
 

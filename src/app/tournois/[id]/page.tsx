@@ -1,32 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useBoxeurs } from "@/hooks/useBoxeurs";
-import { useToast } from "@/hooks/useToast";
-import { Toast } from "@/components/Toast";
+import { useGlobalToast } from "@/contexts/ToastContext";
 import { Boxeur, TournoiDetail } from "@/types";
 import { formatDate, calculateAge, clubColorStyle } from "@/lib/ui-helpers";
 import { getGantColor, getGantLabel } from "@/lib/categories";
 import Link from "next/link";
 
+/** Page détail d'un tournoi : participants par club, ajout/retrait de boxeurs, navigation vers affrontements */
 export default function TournoiDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { boxeurs: allBoxeurs, fetchBoxeurs } = useBoxeurs();
-  const { toast, showToast } = useToast();
+  const { showToast } = useGlobalToast();
 
   const [tournoi, setTournoi] = useState<TournoiDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [batchAdding, setBatchAdding] = useState(false);
 
-  useEffect(() => {
-    fetchBoxeurs();
-    fetchTournoi();
-  }, [params.id]);
-
-  const fetchTournoi = async () => {
+  const fetchTournoi = useCallback(async () => {
     try {
       const res = await fetch(`/api/tournois/${params.id}`);
       if (res.ok) {
@@ -38,7 +34,11 @@ export default function TournoiDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
+
+  useEffect(() => {
+    fetchTournoi();
+  }, [fetchTournoi]);
 
   const handleAddBoxeur = async (boxeurId: number) => {
     try {
@@ -95,27 +95,34 @@ export default function TournoiDetailPage() {
     }
   };
 
-  const enrolledBoxeursIds = tournoi?.boxeurs.map((tb) => tb.boxeur.id) || [];
-
-  const availableBoxeurs = allBoxeurs.filter(
-    (b) => !enrolledBoxeursIds.includes(b.id)
+  const enrolledBoxeursIds = useMemo(
+    () => new Set(tournoi?.boxeurs.map((tb) => tb.boxeur.id) || []),
+    [tournoi]
   );
 
-  const filteredBoxeurs = availableBoxeurs.filter((b) => {
+  const availableBoxeurs = useMemo(
+    () => allBoxeurs.filter((b) => !enrolledBoxeursIds.has(b.id)),
+    [allBoxeurs, enrolledBoxeursIds]
+  );
+
+  const filteredBoxeurs = useMemo(() => {
     const searchLower = searchTerm.toLowerCase();
-    return (
+    return availableBoxeurs.filter((b) =>
       b.nom.toLowerCase().includes(searchLower) ||
       b.prenom.toLowerCase().includes(searchLower) ||
       b.club.nom.toLowerCase().includes(searchLower)
     );
-  });
+  }, [availableBoxeurs, searchTerm]);
 
-  const boxeursByClub = tournoi?.boxeurs.reduce((acc, tb) => {
-    const clubNom = tb.boxeur.club.nom;
-    if (!acc[clubNom]) acc[clubNom] = [];
-    acc[clubNom].push(tb.boxeur);
-    return acc;
-  }, {} as Record<string, Boxeur[]>);
+  const boxeursByClub = useMemo(
+    () => tournoi?.boxeurs.reduce((acc, tb) => {
+      const clubNom = tb.boxeur.club.nom;
+      if (!acc[clubNom]) acc[clubNom] = [];
+      acc[clubNom].push(tb.boxeur);
+      return acc;
+    }, {} as Record<string, Boxeur[]>),
+    [tournoi]
+  );
 
   if (loading) {
     return (
@@ -163,7 +170,7 @@ export default function TournoiDetailPage() {
           <Link href={`/tournois/${params.id}/affrontements`} className="btn btn-primary">
             🥊 Affrontements
           </Link>
-          <button className="btn btn-ghost" onClick={() => setShowAddModal(true)}>
+          <button className="btn btn-ghost" onClick={() => { fetchBoxeurs(); setShowAddModal(true); }}>
             + Ajouter des boxeurs
           </button>
         </div>
@@ -216,7 +223,7 @@ export default function TournoiDetailPage() {
             <div className="empty-state-icon">👥</div>
             <p>Aucun boxeur inscrit pour le moment</p>
             <p className="empty-hint">Ajoutez des boxeurs pour commencer à organiser votre tournoi</p>
-            <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
+            <button className="btn btn-primary" onClick={() => { fetchBoxeurs(); setShowAddModal(true); }}>
               + Ajouter des boxeurs
             </button>
           </div>
@@ -245,7 +252,11 @@ export default function TournoiDetailPage() {
                           <span className="badge badge-poids">{b.poids}kg</span>
                           <span
                             className={`badge ${b.typeCompetition === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`}
+                            role="button"
+                            tabIndex={0}
+                            aria-label="Changer le type de compétition"
                             onClick={() => handleToggleType(b)}
+                            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleToggleType(b); } }}
                             title="Cliquer pour changer"
                           >
                             {b.typeCompetition === "INTERCLUB" ? "IC" : "T"}
@@ -270,6 +281,7 @@ export default function TournoiDetailPage() {
                         className="btn-icon btn-danger btn-icon-sm"
                         onClick={() => handleRemoveBoxeur(b.id)}
                         title="Retirer"
+                        aria-label="Retirer du tournoi"
                       >
                         ✕
                       </button>
@@ -288,7 +300,7 @@ export default function TournoiDetailPage() {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="modal-title">Ajouter des boxeurs</h2>
-              <button className="modal-close" onClick={() => setShowAddModal(false)}>
+              <button className="modal-close" onClick={() => setShowAddModal(false)} aria-label="Fermer">
                 ✕
               </button>
             </div>
@@ -307,13 +319,29 @@ export default function TournoiDetailPage() {
               <div style={{ display: "flex", justifyContent: "flex-end", padding: "0 0 8px" }}>
                 <button
                   className="btn btn-ghost btn-sm"
+                  disabled={batchAdding}
                   onClick={async () => {
-                    for (const b of filteredBoxeurs) {
-                      await handleAddBoxeur(b.id);
+                    setBatchAdding(true);
+                    try {
+                      const ids = filteredBoxeurs.map((b) => b.id);
+                      const res = await fetch(`/api/tournois/${params.id}/boxeurs`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ boxeurIds: ids }),
+                      });
+                      if (res.ok) {
+                        const data = await res.json();
+                        showToast(`${data.added} tireur(s) ajouté(s)`, "success");
+                        fetchTournoi();
+                      }
+                    } catch {
+                      showToast("Erreur lors de l'ajout groupé", "error");
+                    } finally {
+                      setBatchAdding(false);
                     }
                   }}
                 >
-                  + Tout ajouter ({filteredBoxeurs.length})
+                  {batchAdding ? "Ajout en cours..." : `+ Tout ajouter (${filteredBoxeurs.length})`}
                 </button>
               </div>
             )}
@@ -348,7 +376,6 @@ export default function TournoiDetailPage() {
                         className="btn btn-sm btn-primary"
                         onClick={() => {
                           handleAddBoxeur(b.id);
-                          setSearchTerm("");
                         }}
                       >
                         + Ajouter
@@ -374,7 +401,6 @@ export default function TournoiDetailPage() {
         </div>
       )}
 
-      {toast.visible && <Toast message={toast.message} type={toast.type} action={toast.action} />}
     </>
   );
 }

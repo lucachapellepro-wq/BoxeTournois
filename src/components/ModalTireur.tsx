@@ -1,7 +1,9 @@
 import { useMemo } from "react";
 import { Club } from "@/types";
-import { GANTS_COULEUR } from "@/lib/categories";
+import { GANTS_COULEUR, getCategorieAge, getCategoriePoids } from "@/lib/categories";
+import { useBottomSheetDrag } from "@/hooks/useBottomSheetDrag";
 
+/** Données du formulaire d'inscription d'un tireur */
 interface FormData {
   nom: string;
   prenom: string;
@@ -24,61 +26,7 @@ interface ModalTireurProps {
   onOpenClubModal: () => void;
 }
 
-// Fonctions de calcul côté client
-function calcCatAge(annee: number | null): string {
-  if (!annee) return "—";
-  const age = new Date().getFullYear() - annee;
-  if (age <= 9) return "Pré-poussins";
-  if (age <= 11) return "Poussins";
-  if (age <= 13) return "Benjamins";
-  if (age <= 15) return "Minimes";
-  if (age <= 17) return "Cadets";
-  if (age <= 20) return "Juniors";
-  if (age <= 34) return "Seniors";
-  if (age <= 39) return "Vétérans Combat";
-  return "Vétérans";
-}
-
-function calcCatPoids(poids: number, sexe: string, annee: number | null): string {
-  if (!annee) return "—";
-  const age = new Date().getFullYear() - annee;
-  const estJeune = age <= 17;
-
-  const jeunesCats = [
-    { max: 24, nom: "Moustique" }, { max: 27, nom: "Pré-mini-mouche" },
-    { max: 30, nom: "Pré-mini-coq" }, { max: 33, nom: "Pré-mini-plume" },
-    { max: 36, nom: "Pré-mini-léger" }, { max: 39, nom: "Mini-mouche" },
-    { max: 42, nom: "Mini-coq" }, { max: 45, nom: "Mini-plume" },
-    { max: 48, nom: "Mini-léger" }, { max: 51, nom: "Mouche" },
-    { max: 54, nom: "Coq" }, { max: 57, nom: "Plume" },
-    { max: 60, nom: "Super-plume" }, { max: 63, nom: "Léger" },
-    { max: 66, nom: "Super-léger" }, { max: 70, nom: "Mi-moyen" },
-    { max: 74, nom: "Super-mi-moyen" }, { max: 79, nom: "Moyen" },
-    { max: 85, nom: "Mi-lourd" }, { max: 9999, nom: "Lourd" },
-  ];
-  const hommesCats = [
-    { max: 48, nom: "Mouche" }, { max: 52, nom: "Coq" },
-    { max: 56, nom: "Plume" }, { max: 60, nom: "Léger" },
-    { max: 65, nom: "Super-léger" }, { max: 70, nom: "Mi-moyen" },
-    { max: 75, nom: "Super-mi-moyen" }, { max: 80, nom: "Moyen" },
-    { max: 85, nom: "Mi-lourd" }, { max: 9999, nom: "Lourd" },
-  ];
-  const femmesCats = [
-    { max: 48, nom: "Mouche" }, { max: 52, nom: "Coq" },
-    { max: 56, nom: "Plume" }, { max: 60, nom: "Léger" },
-    { max: 65, nom: "Super-léger" }, { max: 70, nom: "Mi-moyen" },
-    { max: 75, nom: "Super-mi-moyen" }, { max: 9999, nom: "Moyen" },
-  ];
-
-  const cats = estJeune ? jeunesCats : sexe === "F" ? femmesCats : hommesCats;
-  const cat = cats.find((c) => poids <= c.max);
-  if (!cat) return "—";
-  const idx = cats.indexOf(cat);
-  const min = idx > 0 ? cats[idx - 1].max : 0;
-  if (cat.max === 9999) return `${cat.nom} (+${min}kg)`;
-  return `${cat.nom} (${min}-${cat.max}kg)`;
-}
-
+/** Modale d'inscription d'un tireur avec preview en temps réel des catégories */
 export function ModalTireur({
   show,
   form,
@@ -89,16 +37,18 @@ export function ModalTireur({
   onChange,
   onOpenClubModal,
 }: ModalTireurProps) {
+  const { modalRef, onTouchStart, onTouchMove, onTouchEnd } = useBottomSheetDrag(onClose);
+
   // Preview en temps réel
   const preview = useMemo(() => {
     const annee = parseInt(form.anneeNaissance);
     const poids = parseFloat(form.poids);
     if (!annee || !poids) return null;
-    const ageSaison = new Date().getFullYear() - annee;
+    const ageSaison = new Date().getUTCFullYear() - annee;
     return {
       age: ageSaison,
-      catAge: calcCatAge(annee),
-      catPoids: calcCatPoids(poids, form.sexe, annee),
+      catAge: getCategorieAge(annee),
+      catPoids: getCategoriePoids(poids, form.sexe, annee),
       gantInfo: GANTS_COULEUR.find((g) => g.value === form.gant),
     };
   }, [form.anneeNaissance, form.poids, form.sexe, form.gant]);
@@ -107,10 +57,18 @@ export function ModalTireur({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal"
+        ref={modalRef}
+        onClick={(e) => e.stopPropagation()}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        <div className="modal-handle" />
         <div className="modal-header">
           <h2 className="modal-title">INSCRIPTION TIREUR</h2>
-          <button className="modal-close" onClick={onClose}>
+          <button className="modal-close" onClick={onClose} aria-label="Fermer">
             ✕
           </button>
         </div>
@@ -158,7 +116,7 @@ export function ModalTireur({
               type="number"
               placeholder="Ex: 2001 (optionnel)"
               min="1950"
-              max={new Date().getFullYear()}
+              max={new Date().getUTCFullYear()}
               value={form.anneeNaissance}
               onChange={(e) =>
                 onChange({ ...form, anneeNaissance: e.target.value })

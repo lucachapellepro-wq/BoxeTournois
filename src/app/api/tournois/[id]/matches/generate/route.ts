@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 import { generateMatches, linkBracketMatches } from "@/lib/matchGeneration";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { apiSuccess, apiBadRequest, apiNotFound, apiConflict, apiError, parseId, safeJson, logApiError } from "@/lib/api-response";
 
 // POST /api/tournois/[id]/matches/generate - Générer tous les matchs
 export async function POST(
@@ -9,12 +9,13 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const tournoiId = parseId(id);
+  if (!tournoiId) return apiBadRequest("ID invalide");
 
   try {
-    const body = await request.json();
+    const body = await safeJson<{ regenerate?: boolean }>(request);
+    if (!body) return apiBadRequest("JSON invalide");
     const { regenerate } = body;
-
-    const tournoiId = parseInt(id);
 
     // Vérifier si le tournoi existe
     const tournoi = await prisma.tournoi.findUnique({
@@ -34,91 +35,68 @@ export async function POST(
     });
 
     if (!tournoi) {
-      return NextResponse.json(
-        { error: "Tournoi non trouvé" },
-        { status: 404 }
-      );
+      return apiNotFound("Tournoi non trouvé");
     }
 
     // Vérifier si des matchs existent déjà
     if (tournoi.matches.length > 0 && !regenerate) {
-      return NextResponse.json(
-        {
-          error: "Des matchs existent déjà pour ce tournoi",
-          hint: "Utilisez regenerate: true pour les régénérer",
-        },
-        { status: 409 }
-      );
-    }
-
-    // Si régénération, supprimer tous les matchs existants
-    if (regenerate && tournoi.matches.length > 0) {
-      await prisma.match.deleteMany({
-        where: { tournoiId },
-      });
+      return apiConflict("Des matchs existent déjà pour ce tournoi. Utilisez regenerate: true pour les régénérer.");
     }
 
     // Extraire les boxeurs
     const boxeurs = tournoi.boxeurs.map((tb) => ({
       ...tb.boxeur,
       dateNaissance: tb.boxeur.dateNaissance?.toISOString() || "",
-      categoriePoids: tb.boxeur.categoriePoids || "",
-      categorieAge: tb.boxeur.categorieAge || "",
+      categoriePoids: tb.boxeur.categoriePoids || "Non classé",
+      categorieAge: tb.boxeur.categorieAge || "Non classé",
     }));
 
     if (boxeurs.length === 0) {
-      return NextResponse.json(
-        { error: "Aucun boxeur inscrit au tournoi" },
-        { status: 400 }
-      );
+      return apiBadRequest("Aucun boxeur inscrit au tournoi");
     }
 
     // Générer les matchs (logique métier)
     const matchesData = generateMatches(boxeurs, tournoiId);
 
     if (matchesData.length === 0) {
-      return NextResponse.json(
-        {
-          message: "Aucun match généré (tous les groupes ont 1 seul boxeur)",
-          matches: [],
-          stats: { total: 0, brackets: 0, pools: 0 },
-        },
-        { status: 200 }
-      );
+      return apiSuccess({
+        message: "Aucun match généré (tous les groupes ont 1 seul boxeur)",
+        matches: [],
+        stats: { total: 0, brackets: 0, pools: 0 },
+      });
     }
 
-    // Créer tous les matchs en transaction avec timeout étendu
+    // Créer tous les matchs en transaction atomique (delete + create)
     const createdMatches = await prisma.$transaction(async (tx) => {
-      // Créer les matchs séquentiellement pour éviter le timeout
-      const matches = [];
-      for (const data of matchesData) {
-        const createData: Prisma.MatchCreateInput = {
-          tournoi: { connect: { id: data.tournoiId } },
-          matchType: data.matchType,
-          sexe: data.sexe,
-          categorieAge: data.categorieAge || "",
-          categoriePoids: data.categoriePoids,
-          gant: data.gant || "",
-          categoryDisplay: data.categoryDisplay,
-          displayOrder: data.displayOrder,
-        };
-
-        if (data.boxeur1Id) {
-          createData.boxeur1 = { connect: { id: data.boxeur1Id } };
-        }
-        if (data.boxeur2Id) {
-          createData.boxeur2 = { connect: { id: data.boxeur2Id } };
-        }
-        if (data.bracketRound) {
-          createData.bracketRound = data.bracketRound;
-          createData.bracketPosition = data.bracketPosition ?? 0;
-        }
-        if (data.poolName) {
-          createData.poolName = data.poolName;
-        }
-
-        matches.push(await tx.match.create({ data: createData }));
+      // Si régénération, supprimer les anciens matchs dans la même transaction
+      if (regenerate && tournoi.matches.length > 0) {
+        await tx.match.deleteMany({ where: { tournoiId } });
       }
+
+      // Créer tous les matchs en batch
+      const createInputs = matchesData.map((data) => ({
+        tournoiId: data.tournoiId,
+        matchType: data.matchType,
+        sexe: data.sexe,
+        categorieAge: data.categorieAge || "",
+        categoriePoids: data.categoriePoids,
+        gant: data.gant || "",
+        categoryDisplay: data.categoryDisplay,
+        displayOrder: data.displayOrder,
+        boxeur1Id: data.boxeur1Id || null,
+        boxeur2Id: data.boxeur2Id || null,
+        bracketRound: data.bracketRound || null,
+        bracketPosition: data.bracketRound ? (data.bracketPosition ?? 0) : null,
+        poolName: data.poolName || null,
+      }));
+
+      await tx.match.createMany({ data: createInputs });
+
+      // Récupérer les matchs créés pour obtenir les IDs
+      const matches = await tx.match.findMany({
+        where: { tournoiId },
+        orderBy: { id: "asc" },
+      });
 
       // Lier les matchs de bracket avec nextMatchId
       const bracketMatches = matches.filter(
@@ -134,12 +112,15 @@ export async function POST(
           }))
         );
 
-        for (const link of links) {
-          await tx.match.update({
-            where: { id: link.id },
-            data: { nextMatchId: link.nextMatchId },
-          });
-        }
+        // Batch update des liens via Promise.all
+        await Promise.all(
+          links.map((link) =>
+            tx.match.update({
+              where: { id: link.id },
+              data: { nextMatchId: link.nextMatchId },
+            })
+          )
+        );
       }
 
       return matches;
@@ -152,16 +133,13 @@ export async function POST(
       pools: createdMatches.filter((m) => m.matchType === "POOL").length,
     };
 
-    return NextResponse.json({
+    return apiSuccess({
       message: "Matchs générés avec succès",
       matches: createdMatches,
       stats,
     });
   } catch (error) {
-    console.error("Erreur génération matchs:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la génération" },
-      { status: 500 }
-    );
+    logApiError("Erreur génération matchs:", error);
+    return apiError("Erreur lors de la génération");
   }
 }

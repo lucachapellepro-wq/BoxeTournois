@@ -2,12 +2,14 @@ import { Match } from "@/types/match";
 import { MatchCardEditable } from "./MatchCardEditable";
 import { useMemo } from "react";
 
+/** Props de la vue bracket */
 interface BracketViewProps {
   matches: Match[];
   category: string;
   onAddOpponent?: (match: Match) => void;
 }
 
+/** Vue arbre de tournoi : matchs groupés par round (huitièmes → quarts → demis → finale) */
 export function BracketView({ matches, category, onAddOpponent }: BracketViewProps) {
   // Grouper par bracketRound
   const matchesByRound = useMemo(() => {

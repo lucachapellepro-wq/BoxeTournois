@@ -1,3 +1,4 @@
+/** Props du composant Toast */
 interface ToastProps {
   message: string;
   type: "success" | "error";
@@ -7,6 +8,7 @@ interface ToastProps {
   };
 }
 
+/** Notification toast avec action optionnelle (ex: "Annuler") */
 export function Toast({ message, type, action }: ToastProps) {
   return (
     <div className={`toast toast-${type}${action ? " toast-with-action" : ""}`}>

@@ -1,3 +1,8 @@
+/**
+ * Types principaux de l'application — miroir des modèles Prisma côté client.
+ */
+
+/** Club de boxe savate */
 export interface Club {
   id: number;
   nom: string;
@@ -6,6 +11,7 @@ export interface Club {
   couleur: string | null;
 }
 
+/** Tireur (boxeur) inscrit à un club, avec catégories calculées */
 export interface Boxeur {
   id: number;
   nom: string;
@@ -17,10 +23,11 @@ export interface Boxeur {
   categoriePoids: string;
   categorieAge: string;
   club: Club;
-  typeCompetition: string;
+  typeCompetition: string; // "TOURNOI" | "INTERCLUB"
   infoIncomplete: boolean;
 }
 
+/** Tournoi (liste) */
 export interface Tournoi {
   id: number;
   nom: string;
@@ -42,7 +49,8 @@ export interface TournoiDetail extends Tournoi {
 /** Valeur triable pour comparaison */
 export type SortValue = string | number;
 
+/** Extrait l'année depuis une date ISO (ou null) */
 export function getAnneeFromDate(dateStr: string | null): number | null {
   if (!dateStr) return null;
-  return new Date(dateStr).getFullYear();
+  return new Date(dateStr).getUTCFullYear();
 }

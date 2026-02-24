@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { useParams } from "next/navigation";
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import { useMatches } from "@/hooks/useMatches";
 import Link from "next/link";
 import { Match } from "@/types/match";
@@ -13,9 +13,72 @@ import {
   extractWinners,
 } from "@/lib/match-helpers";
 
+/** Feuille de tournoi imprimable : ordre des combats avec drag & drop, légende couleurs, vainqueurs */
+/** Organise les matchs par rounds avec espacement (fonction pure, hors composant) */
+function organizeByRounds(matchesToOrganize: Match[], spacing: number): Match[] {
+  const spaceMatches = (matchList: Match[]) => {
+    if (matchList.length === 0) return [];
+
+    const shuffled = [...matchList].sort(() => Math.random() - 0.5);
+    const result: Match[] = [];
+    const remaining = [...shuffled];
+
+    while (remaining.length > 0) {
+      let placed = false;
+
+      for (let i = 0; i < remaining.length; i++) {
+        const match = remaining[i];
+        const boxeurIds = [match.boxeur1Id, match.boxeur2Id].filter(id => id !== null);
+
+        const canPlace = boxeurIds.every(boxeurId => {
+          const recentMatches = result.slice(-spacing);
+          return !recentMatches.some(m =>
+            m.boxeur1Id === boxeurId || m.boxeur2Id === boxeurId
+          );
+        });
+
+        if (canPlace || result.length === 0) {
+          result.push(match);
+          remaining.splice(i, 1);
+          placed = true;
+          break;
+        }
+      }
+
+      if (!placed && remaining.length > 0) {
+        result.push(remaining.shift()!);
+      }
+    }
+
+    return result;
+  };
+
+  const byCategorySexe = new Map<string, Match[]>();
+  matchesToOrganize.forEach(match => {
+    const key = `${match.sexe}|${match.categorieAge}|${match.categoriePoids}|${match.gant}`;
+    if (!byCategorySexe.has(key)) {
+      byCategorySexe.set(key, []);
+    }
+    byCategorySexe.get(key)!.push(match);
+  });
+
+  const allOrganized: Match[] = [];
+  byCategorySexe.forEach(matches => {
+    const demis = matches.filter(isDemi);
+    const finales = matches.filter(isFinale);
+    const poules = matches.filter(isPoule);
+    const autres = matches.filter(m => !isDemi(m) && !isFinale(m) && !isPoule(m));
+    allOrganized.push(...autres, ...poules, ...demis, ...finales);
+  });
+
+  return spaceMatches(allOrganized);
+}
+
 export default function FeuilleTournoiPage() {
   const params = useParams();
-  const tournoiId = parseInt(params.id as string);
+  const searchParams = useSearchParams();
+  const autoPrint = searchParams.get("print") === "true";
+  const tournoiId = Number(params.id) || 0;
   const { matches: initialMatches, fetchMatches } = useMatches(tournoiId);
 
   const [tournoi, setTournoi] = useState<TournoiDetail | null>(null);
@@ -23,14 +86,20 @@ export default function FeuilleTournoiPage() {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [minSpacing, setMinSpacing] = useState<number>(2);
+  const [userReordered, setUserReordered] = useState(false);
+
+  // Auto-print quand ouvert avec ?print=true (pour export PDF via "Enregistrer en PDF")
+  useEffect(() => {
+    if (autoPrint && matches.length > 0 && tournoi) {
+      const timer = setTimeout(() => window.print(), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [autoPrint, matches.length, tournoi]);
 
   useEffect(() => {
-    fetchTournoi();
-    fetchMatches();
-  }, [fetchMatches]);
+    // Ne pas ré-organiser si l'utilisateur a déplacé des matchs manuellement
+    if (userReordered) return;
 
-  useEffect(() => {
-    // Séparer vrais matchs et matchs provisoires (TBD)
     const realMatches = initialMatches.filter(
       (m) => m.boxeur1 || m.boxeur2
     );
@@ -38,11 +107,9 @@ export default function FeuilleTournoiPage() {
       (m) => !m.boxeur1 && !m.boxeur2
     );
 
-    // Organiser les deux groupes
-    const organizedReal = organizeByRounds(realMatches, minSpacing, false);
-    const organizedTbd = organizeByRounds(tbdMatches, minSpacing, true);
+    const organizedReal = organizeByRounds(realMatches, minSpacing);
+    const organizedTbd = organizeByRounds(tbdMatches, minSpacing);
 
-    // Combiner avec séparateur si il y a les deux
     const combined: (Match | { separator: true })[] = [];
     combined.push(...organizedReal);
 
@@ -52,77 +119,9 @@ export default function FeuilleTournoiPage() {
 
     combined.push(...organizedTbd);
     setMatches(combined);
-  }, [initialMatches, minSpacing]);
+  }, [initialMatches, minSpacing, userReordered]);
 
-  const organizeByRounds = (matchesToOrganize: Match[], spacing: number, isProvisional: boolean) => {
-    // Fonction pour espacer les matchs d'une même personne
-    const spaceMatches = (matches: Match[]) => {
-      if (matches.length === 0) return [];
-
-      // Mélanger d'abord aléatoirement
-      const shuffled = [...matches].sort(() => Math.random() - 0.5);
-      const result: Match[] = [];
-      const remaining = [...shuffled];
-
-      while (remaining.length > 0) {
-        let placed = false;
-
-        for (let i = 0; i < remaining.length; i++) {
-          const match = remaining[i];
-          const boxeurIds = [match.boxeur1Id, match.boxeur2Id].filter(id => id !== null);
-
-          // Vérifier si on peut placer ce match (aucun boxeur dans les X derniers matchs)
-          const canPlace = boxeurIds.every(boxeurId => {
-            const recentMatches = result.slice(-spacing);
-            return !recentMatches.some(m =>
-              m.boxeur1Id === boxeurId || m.boxeur2Id === boxeurId
-            );
-          });
-
-          if (canPlace || result.length === 0) {
-            result.push(match);
-            remaining.splice(i, 1);
-            placed = true;
-            break;
-          }
-        }
-
-        // Si aucun match ne peut être placé, prendre le premier disponible
-        if (!placed && remaining.length > 0) {
-          result.push(remaining.shift()!);
-        }
-      }
-
-      return result;
-    };
-
-    // Grouper par catégorie/sexe pour respecter l'ordre des rounds
-    const byCategorySexe = new Map<string, Match[]>();
-    matchesToOrganize.forEach(match => {
-      const key = `${match.sexe}|${match.categorieAge}|${match.categoriePoids}|${match.gant}`;
-      if (!byCategorySexe.has(key)) {
-        byCategorySexe.set(key, []);
-      }
-      byCategorySexe.get(key)!.push(match);
-    });
-
-    // Pour chaque groupe, organiser par ordre de round
-    const allOrganized: Match[] = [];
-    byCategorySexe.forEach(matches => {
-      const demis = matches.filter(isDemi);
-      const finales = matches.filter(isFinale);
-      const poules = matches.filter(isPoule);
-      const autres = matches.filter(m => !isDemi(m) && !isFinale(m) && !isPoule(m));
-
-      // Ajouter dans l'ordre : autres → poules → demis → finales
-      allOrganized.push(...autres, ...poules, ...demis, ...finales);
-    });
-
-    // Mélanger tout en respectant les contraintes d'espacement
-    return spaceMatches(allOrganized);
-  };
-
-  const fetchTournoi = async () => {
+  const fetchTournoi = useCallback(async () => {
     try {
       const res = await fetch(`/api/tournois/${tournoiId}`);
       if (res.ok) {
@@ -132,7 +131,12 @@ export default function FeuilleTournoiPage() {
     } catch (error) {
       console.error("Erreur fetch tournoi:", error);
     }
-  };
+  }, [tournoiId]);
+
+  useEffect(() => {
+    fetchTournoi();
+    fetchMatches();
+  }, [fetchTournoi, fetchMatches]);
 
   const handleDragStart = (index: number) => {
     setDraggedIndex(index);
@@ -157,6 +161,7 @@ export default function FeuilleTournoiPage() {
     newMatches.splice(dropIndex, 0, draggedMatch);
 
     setMatches(newMatches);
+    setUserReordered(true);
     setDraggedIndex(null);
     setDragOverIndex(null);
   };
@@ -168,8 +173,8 @@ export default function FeuilleTournoiPage() {
     const tbdMatches = allMatches.filter(m => !m.boxeur1 && !m.boxeur2);
 
     // Organiser les deux groupes
-    const organizedReal = organizeByRounds(realMatches, minSpacing, false);
-    const organizedTbd = organizeByRounds(tbdMatches, minSpacing, true);
+    const organizedReal = organizeByRounds(realMatches, minSpacing);
+    const organizedTbd = organizeByRounds(tbdMatches, minSpacing);
 
     // Combiner avec séparateur
     const combined: (Match | { separator: true })[] = [];
@@ -181,6 +186,7 @@ export default function FeuilleTournoiPage() {
 
     combined.push(...organizedTbd);
     setMatches(combined);
+    setUserReordered(false);
   };
 
   const handlePrint = () => {

@@ -1,27 +1,19 @@
-import { useState, useCallback } from "react";
+import { useCallback } from "react";
 import { Boxeur } from "@/types";
+import { useFetch } from "./useFetch";
 
+/** Hook CRUD pour la gestion des boxeurs (fetch, update, delete) */
 export function useBoxeurs() {
-  const [boxeurs, setBoxeurs] = useState<Boxeur[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const fetchBoxeurs = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/boxeurs");
-      const data: Boxeur[] = await res.json();
-      setBoxeurs(data);
-    } catch (error) {
-      console.error("Erreur fetch boxeurs:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { data: boxeurs, loading, error, fetchData: fetchBoxeurs } = useFetch<Boxeur[]>("/api/boxeurs", []);
 
   const deleteBoxeur = useCallback(
     async (id: number) => {
       try {
-        await fetch(`/api/boxeurs/${id}`, { method: "DELETE" });
+        const res = await fetch(`/api/boxeurs/${id}`, { method: "DELETE" });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || "Erreur suppression");
+        }
         await fetchBoxeurs();
         return true;
       } catch (error) {
@@ -65,6 +57,7 @@ export function useBoxeurs() {
   return {
     boxeurs,
     loading,
+    error,
     fetchBoxeurs,
     deleteBoxeur,
     updateBoxeur,

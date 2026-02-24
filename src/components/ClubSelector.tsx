@@ -1,11 +1,13 @@
 import { Club } from "@/types";
 
+/** Props du sélecteur de club */
 interface ClubSelectorProps {
   clubs: Club[];
   selectedId: number | null;
-  onChange: (id: number) => void;
+  onChange: (id: number | null) => void;
 }
 
+/** Dropdown de sélection d'un club */
 export function ClubSelector({
   clubs,
   selectedId,
@@ -17,7 +19,7 @@ export function ClubSelector({
       <select
         id="club-select"
         value={selectedId || ""}
-        onChange={(e) => onChange(parseInt(e.target.value))}
+        onChange={(e) => { const val = parseInt(e.target.value); onChange(isNaN(val) ? null : val); }}
         className="select-club"
       >
         <option value="">-- Choisir un club --</option>

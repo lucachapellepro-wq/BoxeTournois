@@ -3,10 +3,12 @@ import { MatchCard } from "./MatchCard";
 import { useMemo } from "react";
 import { sortByWeight } from "@/lib/ui-helpers";
 
+/** Props du composant TournamentBrackets */
 interface TournamentBracketsProps {
   matches: Match[];
 }
 
+/** Vue globale des matchs groupés par catégorie (lecture seule) */
 export function TournamentBrackets({ matches }: TournamentBracketsProps) {
   // Grouper les matchs par catégorie
   const groupedMatches = useMemo(() => {

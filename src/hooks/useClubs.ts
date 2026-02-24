@@ -1,22 +1,10 @@
-import { useState, useCallback } from "react";
+import { useCallback } from "react";
 import { Club } from "@/types";
+import { useFetch } from "./useFetch";
 
+/** Hook CRUD pour la gestion des clubs (fetch, update avec couleur) */
 export function useClubs() {
-  const [clubs, setClubs] = useState<Club[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const fetchClubs = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/clubs");
-      const data: Club[] = await res.json();
-      setClubs(data);
-    } catch (error) {
-      console.error("Erreur fetch clubs:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { data: clubs, loading, error, fetchData: fetchClubs } = useFetch<Club[]>("/api/clubs", []);
 
   const updateClub = useCallback(
     async (
@@ -48,6 +36,7 @@ export function useClubs() {
   return {
     clubs,
     loading,
+    error,
     fetchClubs,
     updateClub,
   };

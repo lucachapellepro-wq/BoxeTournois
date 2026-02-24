@@ -1,24 +1,10 @@
-import { useState, useCallback } from "react";
+import { useCallback } from "react";
 import { Tournoi } from "@/types";
+import { useFetch } from "./useFetch";
 
+/** Hook CRUD complet pour les tournois (fetch, create, update, delete) */
 export function useTournois() {
-  const [tournois, setTournois] = useState<Tournoi[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const fetchTournois = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/tournois");
-      if (res.ok) {
-        const data = await res.json();
-        setTournois(data);
-      }
-    } catch (error) {
-      console.error("Erreur fetch tournois:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { data: tournois, loading, error, fetchData: fetchTournois } = useFetch<Tournoi[]>("/api/tournois", []);
 
   const createTournoi = useCallback(
     async (data: { nom: string; date: string }) => {
@@ -84,6 +70,7 @@ export function useTournois() {
   return {
     tournois,
     loading,
+    error,
     fetchTournois,
     createTournoi,
     updateTournoi,

@@ -2,14 +2,27 @@ import { Match } from "@/types/match";
 import { getGantColor, getGantLabel } from "@/lib/categories";
 import { clubColorStyle } from "@/lib/ui-helpers";
 
+/** Props de la carte de match */
 interface MatchCardProps {
   match: Match;
 }
 
+/** Carte de match en lecture seule (affichage boxeur1 VS boxeur2 ou "en attente") */
 export function MatchCard({ match }: MatchCardProps) {
+  if (!match.boxeur1) {
+    return (
+      <div className="match-card match-tbd">
+        <div className="match-waiting">
+          <div className="match-waiting-icon">⏳</div>
+          <div className="match-waiting-text">Match à déterminer</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="match-card">
-      {match.status === "paired" && match.boxeur2 ? (
+      {match.boxeur2 ? (
         <>
           <div className="match-fighter">
             <div className="match-fighter-name">

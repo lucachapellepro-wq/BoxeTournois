@@ -3,21 +3,24 @@
 import { useEffect, useState, useMemo } from "react";
 import { useBoxeurs } from "@/hooks/useBoxeurs";
 import { useClubs } from "@/hooks/useClubs";
-import { useToast } from "@/hooks/useToast";
+import { useGlobalToast } from "@/contexts/ToastContext";
 import { Stats } from "@/components/Stats";
 import { TireursTable } from "@/components/TireursTable";
-import { TireursRecap } from "@/components/TireursRecap";
-import { ModalTireur } from "@/components/ModalTireur";
-import { ModalClub } from "@/components/ModalClub";
-import { Toast } from "@/components/Toast";
+import dynamic from "next/dynamic";
+
+const TireursRecap = dynamic(() => import("@/components/TireursRecap").then(m => ({ default: m.TireursRecap })));
+const ModalTireur = dynamic(() => import("@/components/ModalTireur").then(m => ({ default: m.ModalTireur })));
+const ModalClub = dynamic(() => import("@/components/ModalClub").then(m => ({ default: m.ModalClub })));
 import { Boxeur } from "@/types";
 import { sortByWeight } from "@/lib/ui-helpers";
+import { useDebounce } from "@/hooks/useDebounce";
 
+/** Page tireurs : tableau éditable avec filtres, stats et récapitulatif par catégorie */
 export default function TireursPage() {
   const { boxeurs, loading, fetchBoxeurs, deleteBoxeur, updateBoxeur } =
     useBoxeurs();
   const { clubs, fetchClubs } = useClubs();
-  const { toast, showToast } = useToast();
+  const { showToast } = useGlobalToast();
 
   const [showModal, setShowModal] = useState(false);
   const [showClubModal, setShowClubModal] = useState(false);
@@ -53,12 +56,14 @@ export default function TireursPage() {
     fetchClubs();
   }, [fetchBoxeurs, fetchClubs]);
 
+  const debouncedSearch = useDebounce(searchText, 300);
+
   // Filtrage des boxeurs
   const filteredBoxeurs = useMemo(() => {
     return boxeurs
       .filter((b) => {
-        if (searchText) {
-          const s = searchText.toLowerCase();
+        if (debouncedSearch) {
+          const s = debouncedSearch.toLowerCase();
           if (
             !b.nom.toLowerCase().includes(s) &&
             !b.prenom.toLowerCase().includes(s) &&
@@ -81,7 +86,7 @@ export default function TireursPage() {
         if (catCmp !== 0) return catCmp;
         return a.nom.localeCompare(b.nom);
       });
-  }, [boxeurs, searchText, filterClub, filterSexe, filterType]);
+  }, [boxeurs, debouncedSearch, filterClub, filterSexe, filterType]);
 
   const hasFilters = searchText || filterClub || filterSexe || filterType;
 
@@ -164,6 +169,9 @@ export default function TireursPage() {
       setClubForm({ nom: "", ville: "", coach: "", couleur: "" });
       setShowClubModal(false);
       fetchClubs();
+    } else {
+      const err = await res.json().catch(() => null);
+      showToast(err?.error || "Erreur création club", "error");
     }
   };
 
@@ -181,7 +189,7 @@ export default function TireursPage() {
             // Recréer le tireur
             try {
               const year = boxeur.dateNaissance
-                ? new Date(boxeur.dateNaissance).getFullYear()
+                ? new Date(boxeur.dateNaissance).getUTCFullYear()
                 : 2000;
               const res = await fetch("/api/boxeurs", {
                 method: "POST",
@@ -217,6 +225,13 @@ export default function TireursPage() {
     field: string,
     value: string | number | boolean
   ) => {
+    // Champ combiné "nom|prenom" envoyé en un seul PUT
+    if (field === "nom" && typeof value === "string" && value.includes("|")) {
+      const [nom, prenom] = value.split("|");
+      const success = await updateBoxeur(id, { nom, prenom });
+      if (success) { showToast("Modifié ✓", "success"); } else { showToast("Erreur modification", "error"); }
+      return;
+    }
     const success = await updateBoxeur(id, { [field]: value });
     if (success) {
       showToast("Modifié ✓", "success");
@@ -364,8 +379,6 @@ export default function TireursPage() {
         onSubmit={handleAddClub}
         onChange={setClubForm}
       />
-
-      {toast.visible && <Toast message={toast.message} type={toast.type} action={toast.action} />}
     </>
   );
 }

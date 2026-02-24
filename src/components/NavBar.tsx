@@ -4,6 +4,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 
+/** Barre de navigation principale avec menu hamburger mobile */
 export function NavBar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);

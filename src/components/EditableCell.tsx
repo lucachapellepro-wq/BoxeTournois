@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 
+/** Props de la cellule éditable */
 interface EditableCellProps {
   value: string | number | null;
   type: "text" | "number" | "select";
@@ -7,6 +8,7 @@ interface EditableCellProps {
   onSave: (newValue: string | number) => Promise<void>;
 }
 
+/** Cellule de tableau éditable au clic (text, number ou select) avec sauvegarde auto au blur */
 export function EditableCell({
   value,
   type,
@@ -17,6 +19,10 @@ export function EditableCell({
   const [editValue, setEditValue] = useState(String(value ?? ""));
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement | HTMLSelectElement>(null);
+
+  useEffect(() => {
+    if (!isEditing) setEditValue(String(value ?? ""));
+  }, [value, isEditing]);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -30,6 +36,12 @@ export function EditableCell({
   const handleSave = async () => {
     if (editValue === String(value ?? "")) {
       setIsEditing(false);
+      return;
+    }
+
+    // Empêcher l'envoi de NaN pour les champs numériques
+    if (type === "number" && (editValue === "" || isNaN(parseFloat(editValue)))) {
+      handleCancel();
       return;
     }
 

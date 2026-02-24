@@ -1,10 +1,12 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 
+/** Action cliquable affichée dans un toast (ex: "Annuler") */
 export interface ToastAction {
   label: string;
   onClick: () => void;
 }
 
+/** État interne du toast (message, visibilité, action optionnelle) */
 export interface ToastState {
   message: string;
   type: "success" | "error";
@@ -12,6 +14,7 @@ export interface ToastState {
   action?: ToastAction;
 }
 
+/** Hook de gestion des notifications toast avec auto-dismiss et action optionnelle */
 export function useToast() {
   const [toast, setToast] = useState<ToastState>({
     message: "",
@@ -19,6 +22,13 @@ export function useToast() {
     visible: false,
   });
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   const hideToast = useCallback(() => {
     if (timerRef.current) {

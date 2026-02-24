@@ -2,16 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useTournois } from "@/hooks/useTournois";
-import { useToast } from "@/hooks/useToast";
+import { useGlobalToast } from "@/contexts/ToastContext";
 import { ModalTournoi } from "@/components/ModalTournoi";
-import { Toast } from "@/components/Toast";
 import { formatDate } from "@/lib/ui-helpers";
 import { Tournoi } from "@/types";
 import Link from "next/link";
 
+/** Page d'accueil : liste des tournois avec création, édition et suppression */
 export default function TournoiPage() {
   const { tournois, loading, fetchTournois, createTournoi, updateTournoi, deleteTournoi } = useTournois();
-  const { toast, showToast } = useToast();
+  const { showToast } = useGlobalToast();
 
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -85,7 +85,10 @@ export default function TournoiPage() {
     }
   };
 
-  const isUpcoming = (date: string) => new Date(date) >= new Date();
+  const isUpcoming = (date: string) => {
+    const d = new Date(date); d.setUTCHours(23, 59, 59, 999);
+    return d >= new Date();
+  };
 
   return (
     <>
@@ -136,7 +139,7 @@ export default function TournoiPage() {
                       {new Date(t.date).toLocaleDateString("fr-FR", { month: "short" }).toUpperCase()}
                     </span>
                     <span className="tournoi-card-year">
-                      {new Date(t.date).getFullYear()}
+                      {new Date(t.date).getUTCFullYear()}
                     </span>
                   </div>
                   <div className="tournoi-card-info">
@@ -191,8 +194,6 @@ export default function TournoiPage() {
         onSubmit={handleSubmit}
         onChange={setForm}
       />
-
-      {toast.visible && <Toast message={toast.message} type={toast.type} action={toast.action} />}
     </>
   );
 }

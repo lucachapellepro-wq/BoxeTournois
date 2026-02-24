@@ -3,12 +3,14 @@ import { getGantColor, getGantLabel } from "@/lib/categories";
 import { clubColorStyle } from "@/lib/ui-helpers";
 import { isManuel, isMixte, isInterclub } from "@/lib/match-helpers";
 
+/** Props de la carte de match éditable */
 interface MatchCardEditableProps {
   match: Match;
   onAddOpponent?: (match: Match) => void;
   onDelete?: (matchId: number) => void;
 }
 
+/** Badge indiquant le type de compétition (Tournoi/Interclub) */
 const TypeBadge = ({ type }: { type: string }) => (
   <span className={`badge ${type === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`} style={{
     fontSize: 9, padding: "1px 4px", marginLeft: 4,
@@ -17,6 +19,7 @@ const TypeBadge = ({ type }: { type: string }) => (
   </span>
 );
 
+/** Carte de match interactive : ajout d'adversaire, suppression, badge vainqueur, styles par type */
 export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardEditableProps) {
   // Si les deux boxeurs sont null (match de prévu complet - finale, demi, etc.)
   if (!match.boxeur1 && !match.boxeur2) {
@@ -39,6 +42,7 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
             className="btn-add-opponent"
             onClick={() => onAddOpponent(match)}
             title="Ajouter un adversaire"
+            aria-label="Ajouter un adversaire"
           >
             +
           </button>
@@ -74,7 +78,8 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
     );
   }
 
-  // Match normal avec 2 boxeurs
+  // Match normal avec 2 boxeurs (boxeur1 et boxeur2 sont garantis non-null ici)
+  if (!match.boxeur1) return null;
   const isManualMatch = isManuel(match);
   const isMixteMatch = isMixte(match);
   const isInterclubMatch = isInterclub(match);
@@ -114,6 +119,7 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
             className="btn-delete-match"
             onClick={() => onDelete(match.id)}
             title="Supprimer ce combat"
+            aria-label="Supprimer ce combat"
           >
             ✕
           </button>

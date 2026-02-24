@@ -1,5 +1,22 @@
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap');
 
+/* Skip-to-content link (accessibility) */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 16px;
+  z-index: 9999;
+  padding: 8px 16px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 4px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 8px;
+}
+
 :root {
   --bg-primary: #09090b;
   --bg-secondary: #111113;
@@ -535,6 +552,7 @@ select option { background: var(--bg-secondary); color: var(--text-primary); }
   display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px;
   padding-top: 16px; border-top: 1px solid var(--border);
 }
+.modal-handle { display: none; }
 .modal-body { padding: 0 0 16px; }
 .modal-footer {
   display: flex; justify-content: flex-end; gap: 10px;
@@ -1206,11 +1224,44 @@ th.sortable:hover { color: var(--text-secondary); }
   }
   .table-wrapper table td.mobile-hide { display: none; }
 
-  /* === TABS — horizontal scroll with snap === */
+  /* === SWIPE-TO-DELETE on mobile cards === */
+  .table-wrapper table tr.swipe-tr {
+    position: relative; overflow: hidden;
+  }
+  .swipe-delete-action {
+    position: absolute !important; right: 0; top: 0; bottom: 0;
+    width: 90px; display: flex !important; flex-direction: column;
+    align-items: center; justify-content: center; gap: 4px;
+    background: var(--accent); border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+    z-index: 5;
+  }
+  .swipe-delete-action::before { display: none !important; }
+  .swipe-delete-action button {
+    background: none; border: none; color: #fff;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    padding: 6px 8px; width: 100%;
+  }
+  .swipe-delete-action .swipe-cancel {
+    font-size: 11px; opacity: 0.7; font-weight: 400;
+  }
+  /* Hide the inline delete button on mobile — swipe replaces it */
+  .table-wrapper table tr.swipe-tr > td:last-of-type:not(.swipe-delete-action) {
+    display: none;
+  }
+  /* Subtle bg tint while card is swiped */
+  .table-wrapper table tr.swipe-tr {
+    background: var(--bg-secondary);
+    transition: background 0.2s ease;
+  }
+
+  /* === TABS — horizontal scroll with snap + sticky === */
   .tabs {
     overflow-x: auto; -webkit-overflow-scrolling: touch;
     scrollbar-width: none; gap: 4px;
     padding-bottom: 2px; margin-bottom: 16px;
+    position: sticky; top: 52px; z-index: 50;
+    background: var(--bg-primary);
+    padding-top: 8px;
   }
   .tabs::-webkit-scrollbar { display: none; }
   .tab {
@@ -1255,6 +1306,11 @@ th.sortable:hover { color: var(--text-secondary); }
   .recap-card-name { font-size: 14px; }
 
   /* === MODAL — slide up from bottom, safe area === */
+  .modal-handle {
+    display: block; width: 40px; height: 4px;
+    background: var(--text-muted); border-radius: 2px;
+    margin: 0 auto 12px; opacity: 0.5;
+  }
   .modal-overlay { align-items: flex-end; }
   .modal {
     width: 100%; max-width: 100%;

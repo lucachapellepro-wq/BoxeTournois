@@ -1,5 +1,15 @@
 import { prisma } from "@/lib/prisma";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { z } from "zod";
+import { apiSuccess, apiBadRequest, apiNotFound, apiError, parseId, safeJson } from "@/lib/api-response";
+
+/** Schéma de validation Zod pour la mise à jour d'un club */
+const clubUpdateSchema = z.object({
+  nom: z.string().min(1).max(100).optional(),
+  ville: z.string().min(1).max(100).optional(),
+  coach: z.string().max(100).optional().nullable(),
+  couleur: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Couleur hex invalide").optional().nullable().or(z.literal("")),
+});
 
 // GET /api/clubs/[id]
 export async function GET(
@@ -7,9 +17,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const clubId = parseId(id);
+  if (!clubId) return apiBadRequest("ID invalide");
   try {
     const club = await prisma.club.findUnique({
-      where: { id: parseInt(id) },
+      where: { id: clubId },
       include: {
         _count: {
           select: { boxeurs: true },
@@ -18,16 +30,12 @@ export async function GET(
     });
 
     if (!club) {
-      return NextResponse.json({ error: "Club non trouvé" }, { status: 404 });
+      return apiNotFound("Club non trouvé");
     }
 
-    return NextResponse.json(club);
-  } catch (error) {
-    console.error("Erreur récupération club:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la récupération" },
-      { status: 500 }
-    );
+    return apiSuccess(club);
+  } catch {
+    return apiError("Erreur lors de la récupération");
   }
 }
 
@@ -37,9 +45,18 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const clubId = parseId(id);
+  if (!clubId) return apiBadRequest("ID invalide");
   try {
-    const body = await request.json();
-    const { nom, ville, coach, couleur } = body;
+    const body = await safeJson(request);
+    if (!body) return apiBadRequest("JSON invalide");
+    const parsed = clubUpdateSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return apiBadRequest(parsed.error.issues[0]?.message || "Données invalides");
+    }
+
+    const { nom, ville, coach, couleur } = parsed.data;
 
     const updateData: {
       nom?: string;
@@ -48,13 +65,13 @@ export async function PUT(
       couleur?: string | null;
     } = {};
 
-    if (nom) updateData.nom = nom;
-    if (ville) updateData.ville = ville;
+    if (nom !== undefined) updateData.nom = nom;
+    if (ville !== undefined) updateData.ville = ville;
     if (coach !== undefined) updateData.coach = coach || null;
     if (couleur !== undefined) updateData.couleur = couleur || null;
 
     const club = await prisma.club.update({
-      where: { id: parseInt(id) },
+      where: { id: clubId },
       data: updateData,
       include: {
         _count: {
@@ -63,12 +80,11 @@ export async function PUT(
       },
     });
 
-    return NextResponse.json(club);
+    return apiSuccess(club);
   } catch (error) {
-    console.error("Erreur mise à jour club:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la mise à jour" },
-      { status: 500 }
-    );
+    if (error && typeof error === "object" && "code" in error && error.code === "P2025") {
+      return apiNotFound("Club non trouvé");
+    }
+    return apiError("Erreur lors de la mise à jour");
   }
 }

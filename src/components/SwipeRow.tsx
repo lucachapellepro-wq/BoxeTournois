@@ -17,6 +17,10 @@ export function useSwipeRow(onDelete: () => void) {
   const THRESHOLD = 80;
 
   const onTouchStart = useCallback((e: React.TouchEvent) => {
+    // Don't swipe when an input/select is focused (editing inline)
+    const tag = (e.target as HTMLElement).tagName;
+    if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
+
     startX.current = e.touches[0].clientX;
     startY.current = e.touches[0].clientY;
     currentX.current = 0;

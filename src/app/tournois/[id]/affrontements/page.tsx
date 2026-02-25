@@ -4,6 +4,8 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useMatches } from "@/hooks/useMatches";
 import { useGlobalToast } from "@/contexts/ToastContext";
+import { useBottomSheetDrag } from "@/hooks/useBottomSheetDrag";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import dynamic from "next/dynamic";
 
 const BracketView = dynamic(() => import("@/components/BracketView").then(m => ({ default: m.BracketView })));
@@ -64,6 +66,17 @@ export default function AffrontementsPage() {
   const [addingToMatchId, setAddingToMatchId] = useState<number | null>(null);
   const [creatingMatch, setCreatingMatch] = useState(false);
 
+  const closeModal = useCallback(() => {
+    setShowMatchModal(false);
+    setMatchBuilder({ boxeur1: null });
+    setAddingToMatchId(null);
+    setMatchSearch("");
+    setMatchPoidsSearch("");
+  }, []);
+  const matchModalDrag = useBottomSheetDrag(closeModal);
+  const confirmModalDrag = useBottomSheetDrag(() => setShowConfirmGenerate(false));
+  useBodyScrollLock(showMatchModal || showConfirmGenerate);
+
   const fetchTournoi = useCallback(async () => {
     try {
       const res = await fetch(`/api/tournois/${tournoiId}`);
@@ -98,13 +111,6 @@ export default function AffrontementsPage() {
     }
   };
 
-  const closeModal = () => {
-    setShowMatchModal(false);
-    setMatchBuilder({ boxeur1: null });
-    setAddingToMatchId(null);
-    setMatchSearch("");
-    setMatchPoidsSearch("");
-  };
 
   const handleOpenMatchBuilder = (boxeur?: Boxeur) => {
     setMatchBuilder({ boxeur1: boxeur || null });
@@ -223,6 +229,9 @@ export default function AffrontementsPage() {
       {/* Header */}
       <div className="page-header">
         <div>
+          <Link href={`/tournois/${tournoiId}`} className="btn btn-ghost btn-sm section-back-btn">
+            ← Retour au tournoi
+          </Link>
           <h1 className="page-title">
             Affrontements — {tournoi?.nom || "Tournoi"}
           </h1>
@@ -235,10 +244,30 @@ export default function AffrontementsPage() {
             })}
           </p>
         </div>
-        <div className="page-header-actions">
-          <Link href={`/tournois/${tournoiId}`} className="btn btn-ghost">
-            ← Retour
-          </Link>
+      </div>
+
+      {/* Toolbar actions */}
+      <div className="affrontements-toolbar">
+        <div className="toolbar-primary">
+          <button className="btn btn-primary" onClick={() => handleOpenMatchBuilder()}>
+            + Combat manuel
+          </button>
+          {matches.length === 0 ? (
+            <button
+              className="btn btn-primary"
+              onClick={() => handleGenerateMatches(false)}
+              disabled={generating}
+            >
+              {generating && <div className="spinner spinner-sm" />}
+              {generating ? "Génération..." : "Générer le tirage"}
+            </button>
+          ) : (
+            <button className="btn btn-danger" onClick={() => setShowConfirmGenerate(true)}>
+              Régénérer le tirage
+            </button>
+          )}
+        </div>
+        <div className="toolbar-secondary">
           <Link href={`/tournois/${tournoiId}/categories`} className="btn btn-ghost">
             📊 Catégories
           </Link>
@@ -250,30 +279,14 @@ export default function AffrontementsPage() {
               <button className="btn btn-ghost" onClick={() => window.print()}>
                 🖨️ Imprimer
               </button>
-              <button
+              <Link
+                href={`/tournois/${tournoiId}/feuille?print=true`}
                 className="btn btn-ghost"
-                onClick={() => window.open(`/tournois/${tournoiId}/feuille?print=true`, "_blank")}
+                target="_blank"
               >
-                📄 Export PDF
-              </button>
+                📄 PDF
+              </Link>
             </>
-          )}
-          <button className="btn btn-primary" onClick={() => handleOpenMatchBuilder()}>
-            + Combat manuel
-          </button>
-          {matches.length === 0 ? (
-            <button
-              className="btn btn-primary"
-              onClick={() => handleGenerateMatches(false)}
-              disabled={generating}
-            >
-              {generating && <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />}
-              {generating ? "Génération..." : "Générer le tirage"}
-            </button>
-          ) : (
-            <button className="btn btn-danger" onClick={() => setShowConfirmGenerate(true)}>
-              Régénérer
-            </button>
           )}
         </div>
       </div>
@@ -532,7 +545,15 @@ export default function AffrontementsPage() {
       {/* Modal sélection adversaire */}
       {showMatchModal && (
         <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal"
+            ref={matchModalDrag.modalRef}
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={matchModalDrag.onTouchStart}
+            onTouchMove={matchModalDrag.onTouchMove}
+            onTouchEnd={matchModalDrag.onTouchEnd}
+          >
+            <div className="modal-handle" />
             <div className="modal-header">
               <h2 className="modal-title">
                 {matchBuilder.boxeur1
@@ -606,7 +627,15 @@ export default function AffrontementsPage() {
       {/* Modal confirmation régénération */}
       {showConfirmGenerate && (
         <div className="modal-overlay" onClick={() => setShowConfirmGenerate(false)}>
-          <div className="modal modal-sm" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal modal-sm"
+            ref={confirmModalDrag.modalRef}
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={confirmModalDrag.onTouchStart}
+            onTouchMove={confirmModalDrag.onTouchMove}
+            onTouchEnd={confirmModalDrag.onTouchEnd}
+          >
+            <div className="modal-handle" />
             <div className="modal-header">
               <h2 className="modal-title">Régénérer les matchs ?</h2>
               <button className="modal-close" onClick={() => setShowConfirmGenerate(false)} aria-label="Fermer">×</button>

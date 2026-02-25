@@ -308,7 +308,7 @@ function TireurRow({
                 }}
               />{" "}
               {annee != null && (
-                <span style={{ color: "var(--text-muted)", fontSize: 12 }}>
+                <span className="age-hint">
                   ({new Date().getUTCFullYear() - annee} ans)
                 </span>
               )}
@@ -349,7 +349,7 @@ function TireurRow({
       <td data-label="Club">
         <span className="badge badge-club" style={clubColorStyle(b.club.couleur)}>{b.club.nom}</span>
       </td>
-      <td data-label="Info" className="mobile-hide" style={{ textAlign: "center" }}>
+      <td data-label="Info" className="mobile-hide text-center">
         {incomplete ? (
           <span
             className="info-toggle info-incomplete"
@@ -373,6 +373,7 @@ function TireurRow({
           className="btn-icon btn-danger"
           onClick={onDelete}
           title="Supprimer"
+          aria-label={`Supprimer ${b.nom} ${b.prenom}`}
         >
           🗑️
         </button>

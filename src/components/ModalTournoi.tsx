@@ -1,4 +1,5 @@
 import { useBottomSheetDrag } from "@/hooks/useBottomSheetDrag";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
 /** Props de la modale tournoi (création ou édition) */
 interface ModalTournoiProps {
@@ -25,6 +26,7 @@ export function ModalTournoi({
   onChange,
 }: ModalTournoiProps) {
   const { modalRef, onTouchStart, onTouchMove, onTouchEnd } = useBottomSheetDrag(onClose);
+  useBodyScrollLock(show);
 
   if (!show) return null;
 

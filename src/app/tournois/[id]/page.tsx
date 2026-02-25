@@ -7,6 +7,9 @@ import { useGlobalToast } from "@/contexts/ToastContext";
 import { Boxeur, TournoiDetail } from "@/types";
 import { formatDate, calculateAge, clubColorStyle } from "@/lib/ui-helpers";
 import { getGantColor, getGantLabel } from "@/lib/categories";
+import { useBottomSheetDrag } from "@/hooks/useBottomSheetDrag";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
+import { ConfirmModal } from "@/components/ConfirmModal";
 import Link from "next/link";
 
 /** Page détail d'un tournoi : participants par club, ajout/retrait de boxeurs, navigation vers affrontements */
@@ -21,6 +24,9 @@ export default function TournoiDetailPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [batchAdding, setBatchAdding] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<{ id: number; nom: string } | null>(null);
+  const addModalDrag = useBottomSheetDrag(() => setShowAddModal(false));
+  useBodyScrollLock(showAddModal);
 
   const fetchTournoi = useCallback(async () => {
     try {
@@ -59,11 +65,14 @@ export default function TournoiDetailPage() {
     }
   };
 
-  const handleRemoveBoxeur = async (boxeurId: number) => {
-    if (!confirm("Retirer ce boxeur du tournoi ?")) return;
+  const handleRemoveBoxeur = (boxeurId: number, nom: string) => {
+    setRemoveTarget({ id: boxeurId, nom });
+  };
 
+  const confirmRemove = async () => {
+    if (!removeTarget) return;
     try {
-      const res = await fetch(`/api/tournois/${params.id}/boxeurs/${boxeurId}`, {
+      const res = await fetch(`/api/tournois/${params.id}/boxeurs/${removeTarget.id}`, {
         method: "DELETE",
       });
 
@@ -76,6 +85,7 @@ export default function TournoiDetailPage() {
     } catch {
       showToast("Erreur réseau", "error");
     }
+    setRemoveTarget(null);
   };
 
   const handleToggleType = async (boxeur: Boxeur) => {
@@ -279,7 +289,7 @@ export default function TournoiDetailPage() {
                       </div>
                       <button
                         className="btn-icon btn-danger btn-icon-sm"
-                        onClick={() => handleRemoveBoxeur(b.id)}
+                        onClick={() => handleRemoveBoxeur(b.id, `${b.nom} ${b.prenom}`)}
                         title="Retirer"
                         aria-label="Retirer du tournoi"
                       >
@@ -294,10 +304,27 @@ export default function TournoiDetailPage() {
         </div>
       )}
 
+      <ConfirmModal
+        show={removeTarget !== null}
+        title="Retirer du tournoi"
+        message={`Retirer ${removeTarget?.nom} du tournoi ?`}
+        confirmLabel="Retirer"
+        onConfirm={confirmRemove}
+        onCancel={() => setRemoveTarget(null)}
+      />
+
       {/* Modal d'ajout de boxeurs */}
       {showAddModal && (
         <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal"
+            ref={addModalDrag.modalRef}
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={addModalDrag.onTouchStart}
+            onTouchMove={addModalDrag.onTouchMove}
+            onTouchEnd={addModalDrag.onTouchEnd}
+          >
+            <div className="modal-handle" />
             <div className="modal-header">
               <h2 className="modal-title">Ajouter des boxeurs</h2>
               <button className="modal-close" onClick={() => setShowAddModal(false)} aria-label="Fermer">

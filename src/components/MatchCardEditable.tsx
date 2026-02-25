@@ -12,9 +12,7 @@ interface MatchCardEditableProps {
 
 /** Badge indiquant le type de compétition (Tournoi/Interclub) */
 const TypeBadge = ({ type }: { type: string }) => (
-  <span className={`badge ${type === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`} style={{
-    fontSize: 9, padding: "1px 4px", marginLeft: 4,
-  }}>
+  <span className={`badge badge-type-sm ${type === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`}>
     {type === "INTERCLUB" ? "Interclub" : "Tournoi"}
   </span>
 );

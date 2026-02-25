@@ -45,7 +45,7 @@ export function TournamentBrackets({ matches }: TournamentBracketsProps) {
         <div className="tournament-category" key={category}>
           <h2>
             {category}{" "}
-            <span style={{ color: "var(--text-muted)", fontSize: 16, fontWeight: "normal" }}>
+            <span className="category-match-count">
               ({categoryMatches.length} match
               {categoryMatches.length > 1 ? "s" : ""})
             </span>

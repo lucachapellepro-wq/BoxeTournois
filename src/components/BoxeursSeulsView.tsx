@@ -32,13 +32,12 @@ export function BoxeursSeulsView({ boxeurs, onAddMatch }: BoxeursSeulsViewProps)
           <button
             className="btn btn-primary btn-sm"
             onClick={() => onAddMatch(boxeur)}
-            title="Ajouter un combat"
-            style={{ padding: "6px 10px", fontSize: 16 }}
+            aria-label={`Ajouter un combat pour ${boxeur.nom} ${boxeur.prenom}`}
           >
             +
           </button>
         )}
-        {!onAddMatch && <div style={{ fontSize: 24 }}>⏳</div>}
+        {!onAddMatch && <div className="boxeur-seul-icon">⏳</div>}
         <div style={{ flex: 1 }}>
           <div className="boxeur-seul-name">
             {boxeur.nom.toUpperCase()} {boxeur.prenom}
@@ -82,7 +81,7 @@ export function BoxeursSeulsView({ boxeurs, onAddMatch }: BoxeursSeulsViewProps)
           {icon} {sexeLabel}
         </h3>
         {Object.entries(categories).map(([category, categoryBoxeurs]) => (
-          <div key={category} style={{ marginBottom: 32 }}>
+          <div key={category} className="boxeurs-seuls-category">
             <h4 className="subcategory-title">
               {category} ({categoryBoxeurs.length} tireur{categoryBoxeurs.length > 1 ? "s" : ""})
             </h4>
@@ -96,11 +95,11 @@ export function BoxeursSeulsView({ boxeurs, onAddMatch }: BoxeursSeulsViewProps)
   };
 
   return (
-    <div className="section-gap-lg" style={{ paddingTop: 32, borderTop: "2px solid var(--border)" }}>
-      <h3 style={{ fontSize: 24, marginBottom: 8, color: "var(--interclub)" }}>
+    <div className="section-gap-lg boxeurs-seuls-section-wrapper">
+      <h3 className="boxeurs-seuls-title">
         ⏳ Tireurs en attente d&apos;adversaire
       </h3>
-      <p className="empty-hint" style={{ marginBottom: 24 }}>
+      <p className="empty-hint boxeurs-seuls-hint">
         Ces tireurs n&apos;ont pas d&apos;adversaire dans leur catégorie pour le moment.
       </p>
 

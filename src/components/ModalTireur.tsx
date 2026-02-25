@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Club } from "@/types";
 import { GANTS_COULEUR, getCategorieAge, getCategoriePoids } from "@/lib/categories";
 import { useBottomSheetDrag } from "@/hooks/useBottomSheetDrag";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
 /** Données du formulaire d'inscription d'un tireur */
 interface FormData {
@@ -38,6 +39,7 @@ export function ModalTireur({
   onOpenClubModal,
 }: ModalTireurProps) {
   const { modalRef, onTouchStart, onTouchMove, onTouchEnd } = useBottomSheetDrag(onClose);
+  useBodyScrollLock(show);
 
   // Preview en temps réel
   const preview = useMemo(() => {
@@ -150,8 +152,7 @@ export function ModalTireur({
             <label>Club</label>
             {clubs.length === 0 ? (
               <button
-                className="btn btn-ghost"
-                style={{ justifyContent: "center" }}
+                className="btn btn-ghost btn-justify-center"
                 onClick={onOpenClubModal}
               >
                 + Créer un club d&apos;abord

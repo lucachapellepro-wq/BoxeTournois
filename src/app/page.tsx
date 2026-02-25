@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTournois } from "@/hooks/useTournois";
 import { useGlobalToast } from "@/contexts/ToastContext";
 import { ModalTournoi } from "@/components/ModalTournoi";
+import { ConfirmModal } from "@/components/ConfirmModal";
 import { formatDate } from "@/lib/ui-helpers";
 import { Tournoi } from "@/types";
 import Link from "next/link";
@@ -16,6 +17,7 @@ export default function TournoiPage() {
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; nom: string } | null>(null);
 
   const [form, setForm] = useState({
     nom: "",
@@ -72,17 +74,21 @@ export default function TournoiPage() {
     setSaving(false);
   };
 
-  const handleDelete = async (e: React.MouseEvent, id: number, nom: string) => {
+  const handleDelete = (e: React.MouseEvent, id: number, nom: string) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!confirm(`Supprimer le tournoi "${nom}" ?`)) return;
+    setDeleteTarget({ id, nom });
+  };
 
-    const success = await deleteTournoi(id);
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    const success = await deleteTournoi(deleteTarget.id);
     if (success) {
       showToast("Tournoi supprimé", "success");
     } else {
       showToast("Erreur suppression", "error");
     }
+    setDeleteTarget(null);
   };
 
   const isUpcoming = (date: string) => {
@@ -193,6 +199,15 @@ export default function TournoiPage() {
         }}
         onSubmit={handleSubmit}
         onChange={setForm}
+      />
+
+      <ConfirmModal
+        show={deleteTarget !== null}
+        title="Supprimer le tournoi"
+        message={`Supprimer le tournoi "${deleteTarget?.nom}" ? Cette action est irréversible.`}
+        confirmLabel="Supprimer"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
       />
     </>
   );

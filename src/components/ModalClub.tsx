@@ -1,4 +1,5 @@
 import { useBottomSheetDrag } from "@/hooks/useBottomSheetDrag";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
 /** Données du formulaire de création de club */
 interface ClubFormData {
@@ -32,6 +33,7 @@ export function ModalClub({
   onChange,
 }: ModalClubProps) {
   const { modalRef, onTouchStart, onTouchMove, onTouchEnd } = useBottomSheetDrag(onClose);
+  useBodyScrollLock(show);
 
   if (!show) return null;
 

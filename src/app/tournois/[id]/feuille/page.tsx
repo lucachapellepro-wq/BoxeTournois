@@ -12,6 +12,7 @@ import {
   getMatchColor, getMatchLabel, getMatchLabelFull,
   extractWinners,
 } from "@/lib/match-helpers";
+import { useTouchDragDrop } from "@/hooks/useTouchDragDrop";
 
 /** Feuille de tournoi imprimable : ordre des combats avec drag & drop, légende couleurs, vainqueurs */
 /** Organise les matchs par rounds avec espacement (fonction pure, hors composant) */
@@ -87,6 +88,15 @@ export default function FeuilleTournoiPage() {
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [minSpacing, setMinSpacing] = useState<number>(2);
   const [userReordered, setUserReordered] = useState(false);
+
+  const handleTouchReorder = useCallback((fromIndex: number, toIndex: number) => {
+    const newMatches = [...matches];
+    const [draggedMatch] = newMatches.splice(fromIndex, 1);
+    newMatches.splice(toIndex, 0, draggedMatch);
+    setMatches(newMatches);
+    setUserReordered(true);
+  }, [matches]);
+  const touchDrag = useTouchDragDrop(matches, handleTouchReorder);
 
   // Auto-print quand ouvert avec ?print=true (pour export PDF via "Enregistrer en PDF")
   useEffect(() => {
@@ -455,12 +465,16 @@ export default function FeuilleTournoiPage() {
                 return (
               <div
                 key={match.id}
-                className={`match-row ${index % 2 === 0 ? "match-row-even" : "match-row-odd"}${draggedIndex === index ? " match-row-dragging" : ""}${dragOverIndex === index && draggedIndex !== index ? " match-row-drag-over" : ""}`}
+                ref={(el) => touchDrag.setRowRef(index, el)}
+                className={`match-row ${index % 2 === 0 ? "match-row-even" : "match-row-odd"}${draggedIndex === index || touchDrag.touchDragIndex === index ? " match-row-dragging" : ""}${(dragOverIndex === index && draggedIndex !== index) || (touchDrag.touchOverIndex === index && touchDrag.touchDragIndex !== index) ? " match-row-drag-over" : ""}`}
                 draggable
                 onDragStart={() => handleDragStart(index)}
                 onDragOver={(e) => handleDragOver(e, index)}
                 onDragEnd={handleDragEnd}
                 onDrop={(e) => handleDrop(e, index)}
+                onTouchStart={(e) => touchDrag.onTouchStart(index, e)}
+                onTouchMove={touchDrag.onTouchMove}
+                onTouchEnd={touchDrag.onTouchEnd}
                 style={{ borderLeftColor: matchColor }}
               >
                 {/* Numéro */}

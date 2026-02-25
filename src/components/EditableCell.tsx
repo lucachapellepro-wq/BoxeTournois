@@ -74,8 +74,11 @@ export function EditableCell({
     return (
       <span
         className="editable-cell"
+        role="button"
+        tabIndex={0}
         onClick={() => setIsEditing(true)}
-        title="Cliquer pour modifier"
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setIsEditing(true); } }}
+        aria-label={`Modifier : ${value ?? ""}`}
       >
         {value ?? ""}
       </span>

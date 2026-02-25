@@ -65,7 +65,7 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -827,6 +827,11 @@ th.sortable:hover { color: var(--text-secondary); }
 .boxeur-seul-name { font-size: 15px; font-weight: 700; }
 .boxeur-seul-club { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
 .boxeur-seul-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+.boxeur-seul-icon { font-size: 24px; }
+.boxeurs-seuls-section-wrapper { padding-top: 32px; border-top: 2px solid var(--border); }
+.boxeurs-seuls-title { font-size: 24px; margin-bottom: 8px; color: var(--interclub); }
+.boxeurs-seuls-hint { margin-bottom: 24px; }
+.boxeurs-seuls-category { margin-bottom: 32px; }
 
 /* SUBCATEGORY TITLE */
 .subcategory-title {
@@ -927,6 +932,12 @@ th.sortable:hover { color: var(--text-secondary); }
 /* FILTER UTILITIES */
 .filter-input-flex { flex: 1; }
 .filter-select-auto { width: auto; min-width: 140px; }
+
+/* INLINE STYLE REPLACEMENTS */
+.badge-type-sm { font-size: 10px; padding: 1px 4px; margin-left: 4px; }
+.age-hint { color: var(--text-muted); font-size: 12px; }
+.category-match-count { color: var(--text-muted); font-size: 16px; font-weight: normal; }
+.btn-justify-center { justify-content: center; }
 
 /* TEXT UTILITIES */
 .text-center { text-align: center; }
@@ -1077,6 +1088,18 @@ th.sortable:hover { color: var(--text-secondary); }
   vertical-align: middle;
 }
 
+/* AFFRONTEMENTS TOOLBAR */
+.affrontements-toolbar {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; margin-bottom: 24px; flex-wrap: wrap;
+  padding: 16px 20px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.toolbar-primary { display: flex; gap: 8px; align-items: center; }
+.toolbar-secondary { display: flex; gap: 6px; align-items: center; }
+.spinner-sm { width: 16px; height: 16px; border-width: 2px; }
+
 /* Print-only elements */
 .print-only { display: none !important; }
 .print-section { /* visible on screen only if tab active, but print shows all */ }
@@ -1131,8 +1154,9 @@ th.sortable:hover { color: var(--text-secondary); }
   /* === HEADER — sticky avec row layout + hamburger === */
   .header { position: sticky; top: 0; }
   .header-inner {
-    flex-direction: row; height: 52px; padding: 0 16px;
+    flex-direction: row; height: auto; min-height: 52px; padding: 0 16px;
     justify-content: space-between; align-items: center;
+    flex-wrap: wrap;
   }
   .logo { font-size: 20px; letter-spacing: 2px; gap: 6px; }
   nav { display: none; }
@@ -1167,11 +1191,11 @@ th.sortable:hover { color: var(--text-secondary); }
     flex: 1; min-width: 0; justify-content: center;
     min-height: 44px; font-size: 12px; padding: 10px 12px;
   }
-  .section-back-btn { margin-bottom: 4px; min-height: 36px !important; }
+  .section-back-btn { margin-bottom: 4px; min-height: 44px !important; }
 
   /* === BUTTONS — 44px min touch target === */
   .btn { padding: 12px 18px; font-size: 13px; min-height: 44px; border-radius: var(--radius); }
-  .btn-sm { padding: 10px 14px; font-size: 12px; min-height: 40px; }
+  .btn-sm { padding: 10px 14px; font-size: 12px; min-height: 44px; }
   .btn-icon { min-width: 44px; min-height: 44px; font-size: 16px; padding: 0; display: flex; align-items: center; justify-content: center; }
 
   /* === CARDS === */
@@ -1180,13 +1204,31 @@ th.sortable:hover { color: var(--text-secondary); }
   .card-clickable:hover { transform: none; }
 
   /* === STATS === */
-  .stats-row { grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 16px; }
   .stat-card { padding: 12px 10px; text-align: center; }
   .stat-value { font-size: 26px; }
-  .stat-label { font-size: 9px; letter-spacing: 0.8px; margin-top: 2px; }
+  .stat-label { font-size: 10px; letter-spacing: 0.8px; margin-top: 2px; }
   .stats-bar { gap: 16px; padding: 16px; }
   .stats-bar-value { font-size: 26px; }
   .stats-bar-label { font-size: 10px; }
+
+  /* === AFFRONTEMENTS TOOLBAR === */
+  .affrontements-toolbar {
+    flex-direction: column; gap: 10px; padding: 12px;
+    margin-bottom: 16px;
+  }
+  .toolbar-primary {
+    width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    order: -1;
+  }
+  .toolbar-primary .btn { min-height: 48px; font-size: 13px; justify-content: center; }
+  .toolbar-secondary {
+    width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+  }
+  .toolbar-secondary .btn {
+    min-height: 44px; font-size: 11px; justify-content: center;
+    padding: 8px 6px;
+  }
 
   /* === SECTION HEADERS === */
   .section-header { font-size: 18px; margin-bottom: 12px; padding-bottom: 8px; margin-top: 16px; gap: 8px; }
@@ -1262,11 +1304,12 @@ th.sortable:hover { color: var(--text-secondary); }
     position: sticky; top: 52px; z-index: 50;
     background: var(--bg-primary);
     padding-top: 8px;
+    box-shadow: 0 4px 8px -2px rgba(0, 0, 0, 0.4);
   }
   .tabs::-webkit-scrollbar { display: none; }
   .tab {
     padding: 10px 16px; font-size: 12px; white-space: nowrap;
-    min-height: 40px; border-radius: var(--radius) var(--radius) 0 0;
+    min-height: 44px; border-radius: var(--radius) var(--radius) 0 0;
     scroll-snap-align: start;
   }
 
@@ -1281,12 +1324,14 @@ th.sortable:hover { color: var(--text-secondary); }
   .match-fighter-info { gap: 4px; }
   .match-vs { padding: 4px 8px; font-size: 10px; align-self: center; }
   .match-actions { justify-content: center; width: 100%; padding-top: 4px; }
-  .btn-delete-match { width: 40px; height: 40px; font-size: 14px; }
-  .btn-add-opponent { width: 40px; height: 40px; font-size: 18px; }
+  .btn-delete-match { width: 44px; height: 44px; font-size: 14px; }
+  .btn-add-opponent { width: 44px; height: 44px; font-size: 18px; }
   .match-score { font-size: 22px; }
   .match-waiting { padding: 16px; }
   .match-waiting-icon { font-size: 24px; }
   .match-waiting-text { font-size: 12px; }
+  .age-hint { font-size: 11px; }
+  .category-match-count { font-size: 14px; }
 
   /* === POOL GRID === */
   .pool-grid { grid-template-columns: 1fr; gap: 10px; }
@@ -1337,14 +1382,14 @@ th.sortable:hover { color: var(--text-secondary); }
   .tournoi-card-date { padding: 6px 10px; min-width: 50px; }
   .tournoi-card-day { font-size: 22px; }
   .tournoi-card-month { font-size: 10px; }
-  .tournoi-card-year { font-size: 9px; }
+  .tournoi-card-year { font-size: 10px; }
   .tournoi-card-name { font-size: 15px; }
   .tournoi-card-meta { font-size: 12px; }
   .tournoi-card-stats { padding-top: 10px; }
   .tournoi-card-stat-value { font-size: 20px; }
   .tournoi-card-stat-label { font-size: 11px; }
   .tournoi-card-actions { padding-top: 10px; }
-  .tournoi-card-actions .btn { min-height: 40px; }
+  .tournoi-card-actions .btn { min-height: 44px; }
 
   /* === CLUB PARTICIPANT CARDS (tournoi detail) === */
   .club-cards-grid { grid-template-columns: 1fr; gap: 12px; }
@@ -1364,8 +1409,8 @@ th.sortable:hover { color: var(--text-secondary); }
   .category-card-label { font-size: 12px; }
   .category-card-row { font-size: 12px; padding: 6px 0; gap: 6px; }
   .category-card-row-badges { gap: 3px; }
-  .category-card-row-badges .badge { font-size: 9px; padding: 2px 5px; }
-  .category-card-row-badges .badge-gant { font-size: 9px; padding: 1px 5px; }
+  .category-card-row-badges .badge { font-size: 10px; padding: 2px 5px; }
+  .category-card-row-badges .badge-gant { font-size: 10px; padding: 1px 5px; }
 
   /* === WINNER CARDS === */
   .winner-card { flex-direction: column; align-items: flex-start; gap: 8px; padding: 14px; }
@@ -1383,6 +1428,11 @@ th.sortable:hover { color: var(--text-secondary); }
   .boxeur-seul-badges { gap: 4px; }
   .boxeur-seul-badges .badge { font-size: 10px; padding: 2px 6px; }
   .subcategory-title { font-size: 14px; padding-left: 12px; margin-bottom: 8px; }
+  .boxeurs-seuls-section-wrapper { padding-top: 20px; }
+  .boxeurs-seuls-title { font-size: 20px; }
+  .boxeurs-seuls-hint { margin-bottom: 16px; }
+  .boxeurs-seuls-category { margin-bottom: 20px; }
+  .boxeur-seul-icon { font-size: 20px; }
 
   /* === FEUILLE DE MATCH === */
   .feuille-container { padding: 16px; max-width: 100%; }
@@ -1421,7 +1471,7 @@ th.sortable:hover { color: var(--text-secondary); }
   .match-row-type { min-width: auto; }
   .match-type-badge { font-size: 10px; }
   .match-row-vs { font-size: 11px; }
-  .fighter-tag { font-size: 9px; }
+  .fighter-tag { font-size: 10px; }
   .fighter-club { font-size: 11px; }
   .feuille-legend { flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
   .feuille-legend-item { gap: 6px; }
@@ -1447,17 +1497,17 @@ th.sortable:hover { color: var(--text-secondary); }
 
   /* === BOXEUR ROW (modal lists) === */
   .boxeur-row { padding: 12px 10px; gap: 10px; flex-wrap: wrap; }
-  .boxeur-row .btn { min-height: 40px; }
+  .boxeur-row .btn { min-height: 44px; }
 
   /* === FILTER GROUP === */
   .filter-group { width: 100%; gap: 6px; }
   .filter-group .btn { flex: 1; justify-content: center; min-height: 44px; }
-  .filter-group input { min-height: 44px; font-size: 14px; }
-  .filter-group select { min-height: 44px; font-size: 14px; }
+  .filter-group input { min-height: 44px; font-size: 16px; }
+  .filter-group select { min-height: 44px; font-size: 16px; }
 
   /* === ACTION BUTTONS === */
   .action-buttons { gap: 6px; }
-  .action-buttons .btn { min-height: 40px; }
+  .action-buttons .btn { min-height: 44px; }
 
   /* === WINNER ROW (feuille) === */
   .winner-row {
@@ -1474,7 +1524,7 @@ th.sortable:hover { color: var(--text-secondary); }
   .modal-sm { max-width: 100%; }
 
   /* === BTN-ICON SM on mobile === */
-  .btn-icon-sm { min-width: 40px; min-height: 40px; font-size: 14px; }
+  .btn-icon-sm { min-width: 44px; min-height: 44px; font-size: 14px; }
 
   /* === FILTER UTILITIES === */
   .filter-input-flex { width: 100%; }
@@ -1491,7 +1541,8 @@ th.sortable:hover { color: var(--text-secondary); }
     left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     text-align: center; justify-content: center;
     border-radius: var(--radius-lg); font-size: 13px;
-    padding: 14px 20px;
+    padding: 14px 20px; z-index: 200;
+    max-width: calc(100vw - 24px);
   }
 
   /* === PREVIEW BOX === */
@@ -1499,8 +1550,8 @@ th.sortable:hover { color: var(--text-secondary); }
   .preview-box h4 { font-size: 16px; }
 
   /* === EDITABLE CELL === */
-  .editable-cell { padding: 6px 8px; min-height: 36px; display: flex; align-items: center; }
-  .editable-cell-input { min-height: 40px; font-size: 14px; padding: 8px 10px; }
+  .editable-cell { padding: 6px 8px; min-height: 44px; display: flex; align-items: center; }
+  .editable-cell-input { min-height: 44px; font-size: 16px; padding: 8px 10px; }
 
   /* === FILTER BAR === */
   .filter-bar { flex-direction: column; padding: 10px 12px; gap: 6px; }
@@ -1510,13 +1561,33 @@ th.sortable:hover { color: var(--text-secondary); }
   /* === MISC === */
   .info-toggle { padding: 4px; min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
   .row-incomplete { border-left-width: 3px !important; }
+
+  /* === NEUTRALIZE HOVER (prevents sticky hover on touch) === */
+  .stat-card:hover { transform: none; box-shadow: none; }
+  .stat-card:hover::before { opacity: 0; }
+  .match-card:hover { border-color: var(--border); box-shadow: none; }
+  .recap-card:hover { transform: none; box-shadow: none; border-color: var(--border); }
+  .btn-primary:hover { transform: none; box-shadow: none; }
+  .btn-add-opponent:hover { transform: none; }
+  .logo:hover { transform: none; }
+  .info-toggle:hover { transform: none; }
+  .color-swatch:hover { transform: none; }
+  .boxeur-row:hover { background: transparent; }
+  .category-card:hover { transform: none; box-shadow: none; border-color: var(--border); }
+  .btn-secondary:hover { transform: none; box-shadow: none; }
+  .club-participant-row:hover { background: transparent; }
+  .match-row:hover { background-color: inherit; }
+  .match-fighter:hover { background: transparent; }
+  .category-card-row:hover { background: transparent; }
+  .editable-cell:hover { background: transparent; border-color: transparent; }
 }
 
 /* PRINT */
 @media print {
   .header, .nav-toggle, .page-header-actions, .tabs,
   .no-print, .toast, .modal-overlay, .filter-bar,
-  .boxeurs-seuls-section, .stats-row { display: none !important; }
+  .boxeurs-seuls-section, .stats-row,
+  .affrontements-toolbar { display: none !important; }
   .print-only { display: block !important; }
   .print-section { display: block !important; }
   body { background: white !important; color: black !important; }
@@ -1574,7 +1645,7 @@ th.sortable:hover { color: var(--text-secondary); }
   .stats-row { grid-template-columns: 1fr 1fr; gap: 6px; }
   .stat-card { padding: 10px 8px; }
   .stat-value { font-size: 22px; }
-  .stat-label { font-size: 8px; }
+  .stat-label { font-size: 10px; }
   .stats-bar { flex-direction: column; gap: 10px; padding: 12px; }
   .stats-bar-value { font-size: 22px; }
 
@@ -1583,7 +1654,7 @@ th.sortable:hover { color: var(--text-secondary); }
 
   /* Badges smaller */
   .badge { padding: 2px 6px; font-size: 10px; }
-  .badge-gant { padding: 2px 6px; font-size: 9px; }
+  .badge-gant { padding: 2px 6px; font-size: 10px; }
 
   /* Modal → full screen */
   .modal {
@@ -1591,16 +1662,17 @@ th.sortable:hover { color: var(--text-secondary); }
     padding: 16px 12px calc(12px + env(safe-area-inset-bottom, 0px));
   }
   .modal-overlay { align-items: stretch; }
+  .modal-handle { display: none; }
   .modal-title { font-size: 18px; }
 
   /* Tabs ultra compact */
-  .tab { padding: 8px 12px; font-size: 11px; min-height: 36px; }
+  .tab { padding: 8px 12px; font-size: 11px; min-height: 44px; }
 
   /* Match cards tighter */
   .match-card { padding: 10px; gap: 6px; }
   .match-fighter { padding: 8px; }
   .match-fighter-name { font-size: 12px; }
-  .match-fighter-info .badge { font-size: 9px; padding: 1px 5px; }
+  .match-fighter-info .badge { font-size: 10px; padding: 2px 5px; }
 
   /* Feuille tighter */
   .feuille-container { padding: 12px; }
@@ -1614,12 +1686,17 @@ th.sortable:hover { color: var(--text-secondary); }
   .match-row { padding: 10px; }
   .match-row-number { font-size: 16px; }
   .match-row-fighter { font-size: 12px; }
-  .fighter-tag { font-size: 8px; }
+  .fighter-tag { font-size: 10px; }
   .fighter-club { font-size: 10px; }
 
   /* Page header actions → stack */
   .page-header-actions { gap: 6px; }
   .page-header-actions .btn { font-size: 11px; padding: 10px 10px; }
+
+  /* Toolbar */
+  .affrontements-toolbar { padding: 10px; gap: 8px; }
+  .toolbar-primary .btn { min-height: 44px; font-size: 12px; }
+  .toolbar-secondary .btn { font-size: 10px; padding: 6px 4px; }
 
   /* Club page */
   .club-tireurs-header h2 { font-size: 18px; }
@@ -1652,7 +1729,7 @@ th.sortable:hover { color: var(--text-secondary); }
   .club-participant-card { padding: 12px; }
   .club-participant-name { font-size: 13px; }
   .club-participant-fighter-name { font-size: 11px; }
-  .club-participant-badges .badge { font-size: 9px; padding: 1px 5px; }
+  .club-participant-badges .badge { font-size: 10px; padding: 2px 5px; }
 
   /* Boxeur seul */
   .boxeur-seul-name { font-size: 12px; }
@@ -1667,4 +1744,6 @@ th.sortable:hover { color: var(--text-secondary); }
   /* Bracket */
   .bracket-category { font-size: 16px; }
   .bracket-round-title { font-size: 13px; }
+  .category-match-count { font-size: 12px; }
+  .age-hint { font-size: 10px; }
 }

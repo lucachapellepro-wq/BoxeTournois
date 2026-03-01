@@ -1,5 +1,5 @@
 import { Boxeur } from "@/types";
-import { getGantColor, getGantLabel } from "@/lib/categories";
+import { getGantStyle, getGantLabel } from "@/lib/categories";
 
 /** Props de la vue des tireurs sans adversaire */
 interface BoxeursSeulsViewProps {
@@ -38,7 +38,7 @@ export function BoxeursSeulsView({ boxeurs, onAddMatch }: BoxeursSeulsViewProps)
           </button>
         )}
         {!onAddMatch && <div className="boxeur-seul-icon">⏳</div>}
-        <div style={{ flex: 1 }}>
+        <div className="boxeur-seul-info">
           <div className="boxeur-seul-name">
             {boxeur.nom.toUpperCase()} {boxeur.prenom}
           </div>
@@ -50,18 +50,7 @@ export function BoxeursSeulsView({ boxeurs, onAddMatch }: BoxeursSeulsViewProps)
         <span className="badge badge-sexe">{boxeur.sexe}</span>
         <span className="badge badge-poids">{boxeur.categoriePoids}</span>
         <span className="badge badge-age">{boxeur.categorieAge}</span>
-        <span
-          className="badge-gant"
-          style={{
-            borderColor: getGantColor(boxeur.gant),
-            backgroundColor: `${getGantColor(boxeur.gant)}20`,
-            color: getGantColor(boxeur.gant),
-          }}
-        >
-          <span
-            className="gant-dot"
-            style={{ backgroundColor: getGantColor(boxeur.gant) }}
-          ></span>
+        <span className="badge-gant" style={getGantStyle(boxeur.gant)}>
           {getGantLabel(boxeur.gant)}
         </span>
       </div>

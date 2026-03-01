@@ -15,19 +15,19 @@ export function Stats({ boxeurs, clubs, statsByAge }: StatsProps) {
   return (
     <div className="stats-row">
       <div className="stat-card">
-        <div className="stat-value" style={{ color: "var(--gold)" }}>{boxeurs.length}</div>
+        <div className="stat-value stat-value-gold">{boxeurs.length}</div>
         <div className="stat-label">Tireurs inscrits</div>
       </div>
       <div className="stat-card">
-        <div className="stat-value" style={{ color: "var(--interclub-green)" }}>{clubs.length}</div>
+        <div className="stat-value stat-value-green">{clubs.length}</div>
         <div className="stat-label">Clubs</div>
       </div>
       <div className="stat-card">
-        <div className="stat-value" style={{ color: "var(--blue)" }}>{hommes}</div>
+        <div className="stat-value stat-value-blue">{hommes}</div>
         <div className="stat-label">Tireurs (H)</div>
       </div>
       <div className="stat-card">
-        <div className="stat-value" style={{ color: "var(--accent)" }}>{femmes}</div>
+        <div className="stat-value stat-value-accent">{femmes}</div>
         <div className="stat-label">Tireuses (F)</div>
       </div>
       {statsByAge.slice(0, 2).map(([cat, count]) => (

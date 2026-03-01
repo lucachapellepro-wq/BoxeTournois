@@ -189,37 +189,37 @@ export default function TournoiDetailPage() {
       {/* Stats dashboard */}
       <div className="stats-row section-gap">
         <div className="stat-card">
-          <div className="stat-value" style={{ color: "var(--gold)" }}>
+          <div className="stat-value stat-value-gold">
             {tournoi.boxeurs.length}
           </div>
           <div className="stat-label">Tireurs inscrits</div>
         </div>
         <div className="stat-card">
-          <div className="stat-value" style={{ color: "var(--interclub-green)" }}>
+          <div className="stat-value stat-value-green">
             {Object.keys(boxeursByClub || {}).length}
           </div>
           <div className="stat-label">Clubs</div>
         </div>
         <div className="stat-card">
-          <div className="stat-value" style={{ color: "var(--accent)" }}>
+          <div className="stat-value stat-value-accent">
             {tournoi.boxeurs.filter(tb => tb.boxeur.sexe === "F").length}
           </div>
           <div className="stat-label">Femmes</div>
         </div>
         <div className="stat-card">
-          <div className="stat-value" style={{ color: "var(--blue)" }}>
+          <div className="stat-value stat-value-blue">
             {tournoi.boxeurs.filter(tb => tb.boxeur.sexe === "M").length}
           </div>
           <div className="stat-label">Hommes</div>
         </div>
         <div className="stat-card">
-          <div className="stat-value" style={{ color: "var(--tournoi-blue)" }}>
+          <div className="stat-value stat-value-blue">
             {tournoi.boxeurs.filter(tb => tb.boxeur.typeCompetition === "TOURNOI").length}
           </div>
           <div className="stat-label">Tournoi</div>
         </div>
         <div className="stat-card">
-          <div className="stat-value" style={{ color: "var(--interclub-green)" }}>
+          <div className="stat-value stat-value-green">
             {tournoi.boxeurs.filter(tb => tb.boxeur.typeCompetition === "INTERCLUB").length}
           </div>
           <div className="stat-label">Interclub</div>
@@ -245,9 +245,9 @@ export default function TournoiDetailPage() {
           </h2>
           <div className="club-cards-grid">
             {clubEntries.map(([clubNom, boxeurs]) => (
-              <div key={clubNom} className="card club-participant-card" style={boxeurs[0]?.club.couleur ? { borderLeftColor: boxeurs[0].club.couleur, borderLeftWidth: 4, borderLeftStyle: "solid" } : undefined}>
+              <div key={clubNom} className={`card club-participant-card ${boxeurs[0]?.club.couleur ? "club-participant-card-colored" : ""}`} style={boxeurs[0]?.club.couleur ? { "--club-color": boxeurs[0].club.couleur } as React.CSSProperties : undefined}>
                 <div className="club-participant-header">
-                  <h3 className="club-participant-name" style={boxeurs[0]?.club.couleur ? { color: boxeurs[0].club.couleur } : undefined}>{clubNom}</h3>
+                  <h3 className={`club-participant-name ${boxeurs[0]?.club.couleur ? "club-participant-name-colored" : ""}`}>{clubNom}</h3>
                   <span className="badge badge-count">{boxeurs.length}</span>
                 </div>
                 <div className="club-participant-list">
@@ -343,7 +343,7 @@ export default function TournoiDetailPage() {
             </div>
 
             {filteredBoxeurs.length > 0 && (
-              <div style={{ display: "flex", justifyContent: "flex-end", padding: "0 0 8px" }}>
+              <div className="add-all-wrapper">
                 <button
                   className="btn btn-ghost btn-sm"
                   disabled={batchAdding}

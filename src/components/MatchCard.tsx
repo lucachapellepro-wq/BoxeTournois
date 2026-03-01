@@ -1,5 +1,5 @@
 import { Match } from "@/types/match";
-import { getGantColor, getGantLabel } from "@/lib/categories";
+import { getGantStyle, getGantLabel } from "@/lib/categories";
 import { clubColorStyle } from "@/lib/ui-helpers";
 
 /** Props de la carte de match */
@@ -26,23 +26,14 @@ export function MatchCard({ match }: MatchCardProps) {
         <>
           <div className="match-fighter">
             <div className="match-fighter-name">
-              <strong>{match.boxeur1.nom.toUpperCase()}</strong>{" "}
-              {match.boxeur1.prenom}
+              <span className="match-fighter-name-text">
+                <strong>{match.boxeur1.nom.toUpperCase()}</strong>{" "}
+                {match.boxeur1.prenom}
+              </span>
             </div>
             <div className="match-fighter-info">
               <span className="badge badge-club" style={clubColorStyle(match.boxeur1.club.couleur)}>{match.boxeur1.club.nom}</span>
-              <span
-                className="badge-gant"
-                style={{
-                  borderColor: getGantColor(match.boxeur1.gant),
-                  backgroundColor: `${getGantColor(match.boxeur1.gant)}20`,
-                  color: getGantColor(match.boxeur1.gant),
-                }}
-              >
-                <span
-                  className="gant-dot"
-                  style={{ backgroundColor: getGantColor(match.boxeur1.gant) }}
-                ></span>
+              <span className="badge-gant" style={getGantStyle(match.boxeur1.gant)}>
                 {getGantLabel(match.boxeur1.gant)}
               </span>
             </div>
@@ -52,23 +43,14 @@ export function MatchCard({ match }: MatchCardProps) {
 
           <div className="match-fighter">
             <div className="match-fighter-name">
-              <strong>{match.boxeur2.nom.toUpperCase()}</strong>{" "}
-              {match.boxeur2.prenom}
+              <span className="match-fighter-name-text">
+                <strong>{match.boxeur2.nom.toUpperCase()}</strong>{" "}
+                {match.boxeur2.prenom}
+              </span>
             </div>
             <div className="match-fighter-info">
               <span className="badge badge-club" style={clubColorStyle(match.boxeur2.club.couleur)}>{match.boxeur2.club.nom}</span>
-              <span
-                className="badge-gant"
-                style={{
-                  borderColor: getGantColor(match.boxeur2.gant),
-                  backgroundColor: `${getGantColor(match.boxeur2.gant)}20`,
-                  color: getGantColor(match.boxeur2.gant),
-                }}
-              >
-                <span
-                  className="gant-dot"
-                  style={{ backgroundColor: getGantColor(match.boxeur2.gant) }}
-                ></span>
+              <span className="badge-gant" style={getGantStyle(match.boxeur2.gant)}>
                 {getGantLabel(match.boxeur2.gant)}
               </span>
             </div>
@@ -78,23 +60,14 @@ export function MatchCard({ match }: MatchCardProps) {
         <>
           <div className="match-fighter">
             <div className="match-fighter-name">
-              <strong>{match.boxeur1.nom.toUpperCase()}</strong>{" "}
-              {match.boxeur1.prenom}
+              <span className="match-fighter-name-text">
+                <strong>{match.boxeur1.nom.toUpperCase()}</strong>{" "}
+                {match.boxeur1.prenom}
+              </span>
             </div>
             <div className="match-fighter-info">
               <span className="badge badge-club" style={clubColorStyle(match.boxeur1.club.couleur)}>{match.boxeur1.club.nom}</span>
-              <span
-                className="badge-gant"
-                style={{
-                  borderColor: getGantColor(match.boxeur1.gant),
-                  backgroundColor: `${getGantColor(match.boxeur1.gant)}20`,
-                  color: getGantColor(match.boxeur1.gant),
-                }}
-              >
-                <span
-                  className="gant-dot"
-                  style={{ backgroundColor: getGantColor(match.boxeur1.gant) }}
-                ></span>
+              <span className="badge-gant" style={getGantStyle(match.boxeur1.gant)}>
                 {getGantLabel(match.boxeur1.gant)}
               </span>
             </div>

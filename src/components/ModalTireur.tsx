@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Club } from "@/types";
-import { GANTS_COULEUR, getCategorieAge, getCategoriePoids } from "@/lib/categories";
+import { GANTS_COULEUR, getCategorieAge, getCategoriePoids, getGantStyle } from "@/lib/categories";
 import { useBottomSheetDrag } from "@/hooks/useBottomSheetDrag";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
@@ -75,6 +75,7 @@ export function ModalTireur({
           </button>
         </div>
 
+        <div className="modal-body">
         <div className="form-grid">
           <div className="form-group">
             <label>Nom</label>
@@ -191,31 +192,15 @@ export function ModalTireur({
                 </div>
               </div>
               {preview.gantInfo && (
-                <div style={{ marginTop: 12 }}>
-                  <span
-                    className="badge-gant"
-                    style={{
-                      color:
-                        preview.gantInfo.value === "blanc"
-                          ? "#1a1a1a"
-                          : preview.gantInfo.color,
-                      borderColor: preview.gantInfo.color,
-                      backgroundColor:
-                        preview.gantInfo.value === "blanc"
-                          ? preview.gantInfo.color
-                          : `${preview.gantInfo.color}20`,
-                    }}
-                  >
-                    <span
-                      className="gant-dot"
-                      style={{ backgroundColor: preview.gantInfo.color }}
-                    ></span>
+                <div className="preview-gant-row">
+                  <span className="badge-gant" style={getGantStyle(preview.gantInfo.value)}>
                     {preview.gantInfo.label}
                   </span>
                 </div>
               )}
             </div>
           )}
+        </div>
         </div>
 
         <div className="modal-actions">

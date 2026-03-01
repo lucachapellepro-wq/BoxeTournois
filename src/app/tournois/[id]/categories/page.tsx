@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { sortByWeight } from "@/lib/ui-helpers";
-import { getGantColor, getGantLabel } from "@/lib/categories";
+import { getGantStyle, getGantLabel } from "@/lib/categories";
 
 interface Boxeur {
   id: number;
@@ -91,7 +91,7 @@ export default function CategoriesPage() {
     total: number,
     sectionClass: string,
     cardClass: string,
-    titleColor: string
+    titleClass: string
   ) => {
     if (categories.length === 0) return null;
     return (
@@ -102,7 +102,7 @@ export default function CategoriesPage() {
         <div className="category-grid">
           {categories.map(([category, boxeurs]) => (
             <div key={category} className={`card category-card ${cardClass}`}>
-              <div className="category-card-title" style={{ color: titleColor }}>
+              <div className={`category-card-title ${titleClass}`}>
                 {category}
               </div>
               <div className="category-card-count">{boxeurs.length}</div>
@@ -120,18 +120,7 @@ export default function CategoriesPage() {
                         {boxeur.typeCompetition === "INTERCLUB" ? "IC" : "T"}
                       </span>
                       <span className="badge badge-poids">{boxeur.poids}kg</span>
-                      <span
-                        className="badge-gant badge-gant-sm"
-                        style={{
-                          borderColor: getGantColor(boxeur.gant),
-                          backgroundColor: `${getGantColor(boxeur.gant)}15`,
-                          color: getGantColor(boxeur.gant),
-                        }}
-                      >
-                        <span
-                          className="gant-dot gant-dot-sm"
-                          style={{ backgroundColor: getGantColor(boxeur.gant) }}
-                        ></span>
+                      <span className="badge-gant badge-gant-sm" style={getGantStyle(boxeur.gant)}>
                         {getGantLabel(boxeur.gant)}
                       </span>
                     </div>
@@ -182,15 +171,15 @@ export default function CategoriesPage() {
       {/* Stats */}
       <div className="stats-row section-gap">
         <div className="stat-card">
-          <div className="stat-value" style={{ color: "var(--gold)" }}>{totalBoxeurs}</div>
+          <div className="stat-value stat-value-gold">{totalBoxeurs}</div>
           <div className="stat-label">Total tireurs</div>
         </div>
         <div className="stat-card">
-          <div className="stat-value" style={{ color: "var(--accent)" }}>{totalFemmes}</div>
+          <div className="stat-value stat-value-accent">{totalFemmes}</div>
           <div className="stat-label">Femmes</div>
         </div>
         <div className="stat-card">
-          <div className="stat-value" style={{ color: "var(--blue)" }}>{totalHommes}</div>
+          <div className="stat-value stat-value-blue">{totalHommes}</div>
           <div className="stat-label">Hommes</div>
         </div>
         <div className="stat-card">
@@ -212,8 +201,8 @@ export default function CategoriesPage() {
         ))}
       </div>
 
-      {renderSection(categoriesBySexe.F, "FEMMES", totalFemmes, "section-header-femmes", "category-card-femme", "var(--accent)")}
-      {renderSection(categoriesBySexe.M, "HOMMES", totalHommes, "section-header-hommes", "category-card-homme", "var(--blue)")}
+      {renderSection(categoriesBySexe.F, "FEMMES", totalFemmes, "section-header-femmes", "category-card-femme", "category-card-title-femme")}
+      {renderSection(categoriesBySexe.M, "HOMMES", totalHommes, "section-header-hommes", "category-card-homme", "category-card-title-homme")}
 
       {totalBoxeurs === 0 && (
         <div className="card section-gap">

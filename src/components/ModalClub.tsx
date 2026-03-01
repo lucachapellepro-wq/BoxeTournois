@@ -54,6 +54,7 @@ export function ModalClub({
             ✕
           </button>
         </div>
+        <div className="modal-body">
         <div className="form-grid">
           <div className="form-group">
             <label>Nom du club</label>
@@ -89,6 +90,7 @@ export function ModalClub({
                   className={`color-swatch${form.couleur === c ? " color-swatch-active" : ""}`}
                   style={{ backgroundColor: c }}
                   onClick={() => onChange({ ...form, couleur: c })}
+                  aria-label={`Couleur ${c}`}
                 />
               ))}
               <input
@@ -109,6 +111,7 @@ export function ModalClub({
               )}
             </div>
           </div>
+        </div>
         </div>
         <div className="modal-actions">
           <button className="btn btn-ghost" onClick={onClose}>

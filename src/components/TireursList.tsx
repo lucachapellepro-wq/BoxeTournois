@@ -1,5 +1,5 @@
 import { Boxeur, getAnneeFromDate } from "@/types";
-import { GANTS_COULEUR, getGantStyle, getGantLabel } from "@/lib/categories";
+import { getGantStyle, getGantLabel } from "@/lib/categories";
 import { clubColorStyle } from "@/lib/ui-helpers";
 import { useSwipeRow } from "./SwipeRow";
 
@@ -80,7 +80,7 @@ function TireurListRow({ b, onDelete }: { b: Boxeur; onDelete: () => void }) {
       <td data-label="Année">
         {b.dateNaissance ? getAnneeFromDate(b.dateNaissance) : "—"}{" "}
         {b.dateNaissance != null && (
-          <span style={{ color: "var(--text-muted)", fontSize: 12 }}>
+          <span className="age-hint">
             ({new Date().getUTCFullYear() - (getAnneeFromDate(b.dateNaissance) ?? 0)} ans)
           </span>
         )}
@@ -88,14 +88,6 @@ function TireurListRow({ b, onDelete }: { b: Boxeur; onDelete: () => void }) {
       <td data-label="Poids">{b.poids} kg</td>
       <td data-label="Gant">
         <span className="badge-gant" style={getGantStyle(b.gant)}>
-          <span
-            className="gant-dot"
-            style={{
-              backgroundColor: GANTS_COULEUR.find(
-                (g) => g.value === b.gant
-              )?.color,
-            }}
-          ></span>
           {getGantLabel(b.gant)}
         </span>
       </td>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Club } from "@/types";
 
 /** Props du détail club */
@@ -167,7 +167,7 @@ export function ClubDetail({ club, onUpdate }: ClubDetailProps) {
                 {club.couleur ? (
                   <span
                     className="color-preview"
-                    style={{ backgroundColor: club.couleur }}
+                    style={{ "--preview-color": club.couleur } as React.CSSProperties}
                   />
                 ) : "—"}
               </span>

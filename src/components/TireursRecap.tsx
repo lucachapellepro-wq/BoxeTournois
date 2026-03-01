@@ -1,5 +1,5 @@
 import { Boxeur, getAnneeFromDate } from "@/types";
-import { GANTS_COULEUR, getGantStyle, getGantLabel } from "@/lib/categories";
+import { getGantStyle, getGantLabel } from "@/lib/categories";
 import { clubColorStyle } from "@/lib/ui-helpers";
 
 /** Props du récapitulatif tireurs */
@@ -56,14 +56,6 @@ export function TireursRecap({ groupedByCategory }: TireursRecapProps) {
                   <div className="recap-row">
                     <span className="recap-row-label">Gant</span>
                     <span className="badge-gant" style={getGantStyle(b.gant)}>
-                      <span
-                        className="gant-dot"
-                        style={{
-                          backgroundColor: GANTS_COULEUR.find(
-                            (g) => g.value === b.gant
-                          )?.color,
-                        }}
-                      ></span>
                       {getGantLabel(b.gant)}
                     </span>
                   </div>

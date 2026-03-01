@@ -208,7 +208,7 @@ export function TireursTable({
               >
                 Club{getSortIcon("club")}
               </th>
-              <th style={{ textAlign: "center" }} title="Information complète">
+              <th className="text-center" title="Information complète">
                 ℹ️
               </th>
               <th>Actions</th>
@@ -273,7 +273,7 @@ function TireurRow({
           {b.sexe === "M" ? "H" : "F"}
         </span>
       </td>
-      <td data-label="Type">
+      <td data-label="Type" className="mobile-hide">
         <span
           className={`badge ${b.typeCompetition === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`}
           role="button"
@@ -354,7 +354,11 @@ function TireurRow({
           <span
             className="info-toggle info-incomplete"
             title="Cliquez pour marquer comme complet"
+            role="button"
+            tabIndex={0}
+            aria-label="Marquer comme complet"
             onClick={onToggleInfo}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggleInfo(); } }}
           >
             ⚠️
           </span>
@@ -362,7 +366,11 @@ function TireurRow({
           <span
             className="info-toggle info-complete"
             title="Cliquez pour marquer comme incomplet"
+            role="button"
+            tabIndex={0}
+            aria-label="Marquer comme incomplet"
             onClick={onToggleInfo}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggleInfo(); } }}
           >
             ✓
           </span>

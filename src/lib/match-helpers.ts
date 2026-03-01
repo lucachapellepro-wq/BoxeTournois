@@ -50,14 +50,36 @@ export function isInterclubOrMixte(m: Match): boolean {
 // COULEURS ET LABELS
 // =============================================
 
+/** Couleurs par type de match — alignées avec les CSS variables :root */
+export const MATCH_TYPE_COLORS = {
+  manual: "#f97316",   // --manual
+  mixte: "#14b8a6",    // --mixte
+  interclub: "#f59e0b", // --interclub
+  finale: "#ef4444",   // --danger
+  demi: "#8b5cf6",     // --demi
+  pool: "#22c55e",     // --pool-green
+  elim: "#3b82f6",     // --elim-blue
+} as const;
+
 export function getMatchColor(match: Match): string {
-  if (isManuel(match)) return "#e67e22";
-  if (isMixte(match)) return "#1abc9c";
-  if (isInterclub(match)) return "#f39c12";
-  if (isFinale(match)) return "#e74c3c";
-  if (isDemi(match)) return "#8e44ad";
-  if (match.matchType === "POOL") return "#27ae60";
-  return "#2980b9";
+  if (isManuel(match)) return MATCH_TYPE_COLORS.manual;
+  if (isMixte(match)) return MATCH_TYPE_COLORS.mixte;
+  if (isInterclub(match)) return MATCH_TYPE_COLORS.interclub;
+  if (isFinale(match)) return MATCH_TYPE_COLORS.finale;
+  if (isDemi(match)) return MATCH_TYPE_COLORS.demi;
+  if (match.matchType === "POOL") return MATCH_TYPE_COLORS.pool;
+  return MATCH_TYPE_COLORS.elim;
+}
+
+/** Returns a CSS class suffix for the match type badge */
+export function getMatchTypeBadgeClass(match: Match): string {
+  if (isManuel(match)) return "match-type-badge-manual";
+  if (isMixte(match)) return "match-type-badge-mixte";
+  if (isInterclub(match)) return "match-type-badge-interclub";
+  if (isFinale(match)) return "match-type-badge-finale";
+  if (isDemi(match)) return "match-type-badge-demi";
+  if (match.matchType === "POOL") return "match-type-badge-pool";
+  return "match-type-badge-elim";
 }
 
 export function getMatchLabel(match: Match): string {

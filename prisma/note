@@ -1,0 +1,42 @@
+1. Nouvelles Fonctionnalités
+Priorité haute
+Feature	Description
+Export PDF feuille de match	Bouton "Imprimer" sur la page feuille qui génère un PDF propre avec les matchs par round, prêt pour l'impression le jour du tournoi
+Résultats en direct	Sur la page affrontements, permettre de saisir les scores (points par round, avertissements) et non juste le vainqueur
+Classement final	Page récap post-tournoi avec podium par catégorie, affichage 1er/2ème/3ème
+Import CSV/Excel	Importer les tireurs en masse depuis un fichier CSV (nom, prénom, année, poids, club, gant) — évite la saisie manuelle
+Priorité moyenne
+Feature	Description
+Historique tireur	Page profil tireur avec ses tournois passés, W/L ratio, adversaires rencontrés
+Dashboard stats avancées	Graphiques : répartition par catégorie d'âge, par poids, par club. Évolution du nombre de participants
+Système de pesée	Le jour J, scanner/cocher les tireurs présents, enregistrer le poids réel (peut différer de l'inscription) et recalculer les catégories
+Notifications/Alertes	Alerter quand un boxeur est seul dans sa catégorie, quand un match n'a pas encore de résultat, etc.
+Duplication de tournoi	Copier un tournoi existant (même tireurs) comme template pour le prochain
+Nice to have
+Feature	Description
+Mode hors-ligne (PWA)	Service worker pour utiliser l'app sans internet le jour du tournoi (synchro au retour)
+QR Code par match	Générer un QR code pour chaque feuille de match que l'arbitre peut scanner
+Multi-utilisateurs	Auth + rôles (admin tournoi, arbitre, spectateur lecture seule)
+2. Améliorations Design
+UI/UX
+Amélioration	Description
+Dark/Light mode toggle	Ajouter un switch light mode — certains utilisateurs en salle de sport préfèrent un fond clair
+Animations de transition	Framer Motion pour les transitions entre pages, les modals, les listes (entrée/sortie fluide)
+Drag & drop tireurs	Glisser-déposer les tireurs entre catégories ou entre clubs sur la page tournoi
+Cards tournoi améliorées	Ajouter une progress bar (% de matchs complétés), un indicateur visuel du statut (préparation / en cours / terminé)
+Breadcrumb navigation	Fil d'Ariane : Tournois > Mon Tournoi > Affrontements — plus clair que le bouton "Retour"
+Filtres avancés tireurs	Filtrer par catégorie d'âge, poids, gant, club simultanément (multi-filtres)
+Vue timeline	Page d'accueil en timeline verticale avec les tournois passés en grisé et les prochains en couleur
+Mobile
+Amélioration	Description
+Swipe actions	Swiper gauche sur un tireur pour supprimer, droite pour modifier
+Bottom sheet modals	Remplacer les modals centrées par des bottom sheets sur mobile
+Tabs sticky	Les onglets (Bracket/Poule/Interclub) restent collés en haut au scroll
+3. Optimisations Techniques
+Optim	Description
+React Server Components	Convertir les pages statiques (catégories, liste clubs) en RSC pour réduire le JS client
+Optimistic updates	Quand on ajoute/retire un tireur, mettre à jour l'UI immédiatement avant la réponse serveur
+SWR / React Query	Remplacer les hooks fetch manuels par SWR pour avoir cache, revalidation, et stale-while-revalidate automatiques
+Virtualized lists	Pour les tournois avec 200+ tireurs, utiliser react-window pour les listes longues
+Bundle splitting	Les composants BracketView, PoolView sont déjà en dynamic() — ajouter un skeleton loading
+Database: full-text search	Pour la recherche de tireurs, utiliser un index tsvector PostgreSQL au lieu de LIKE

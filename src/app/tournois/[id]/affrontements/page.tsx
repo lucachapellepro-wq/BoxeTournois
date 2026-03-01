@@ -295,15 +295,15 @@ export default function AffrontementsPage() {
       {stats && matches.length > 0 && (
         <div className="stats-row section-gap">
           <div className="stat-card">
-            <div className="stat-value" style={{ color: "var(--accent)" }}>{stats.total}</div>
+            <div className="stat-value stat-value-accent">{stats.total}</div>
             <div className="stat-label">Matchs total</div>
           </div>
           <div className="stat-card">
-            <div className="stat-value" style={{ color: "var(--gold)" }}>{stats.byType.BRACKET}</div>
+            <div className="stat-value stat-value-gold">{stats.byType.BRACKET}</div>
             <div className="stat-label">Tableaux</div>
           </div>
           <div className="stat-card">
-            <div className="stat-value" style={{ color: "var(--success)" }}>{stats.byType.POOL}</div>
+            <div className="stat-value stat-value-success">{stats.byType.POOL}</div>
             <div className="stat-label">Poules</div>
           </div>
           <div className="stat-card">
@@ -329,16 +329,22 @@ export default function AffrontementsPage() {
       {/* Tabs */}
       {matches.length > 0 && (
         <div className="section-gap-lg">
-          <div className="tabs">
+          <div className="tabs" role="tablist">
             <button
               className={`tab ${activeTab === "BRACKET" ? "tab-active" : ""}`}
               onClick={() => setActiveTab("BRACKET")}
+              role="tab"
+              aria-selected={activeTab === "BRACKET"}
+              aria-label="Voir les tableaux d'élimination directe"
             >
               Élimination directe ({bracketMatches.length})
             </button>
             <button
               className={`tab ${activeTab === "POOL" ? "tab-active" : ""}`}
               onClick={() => setActiveTab("POOL")}
+              role="tab"
+              aria-selected={activeTab === "POOL"}
+              aria-label="Voir les matchs en poules"
             >
               Poules ({poolMatches.length})
             </button>
@@ -346,6 +352,9 @@ export default function AffrontementsPage() {
               <button
                 className={`tab ${activeTab === "INTERCLUB" ? "tab-active" : ""}`}
                 onClick={() => setActiveTab("INTERCLUB")}
+                role="tab"
+                aria-selected={activeTab === "INTERCLUB"}
+                aria-label="Voir les rencontres interclub"
               >
                 Interclub ({interclubMatches.length})
               </button>
@@ -354,6 +363,9 @@ export default function AffrontementsPage() {
               <button
                 className={`tab ${activeTab === "WINNERS" ? "tab-active" : ""}`}
                 onClick={() => setActiveTab("WINNERS")}
+                role="tab"
+                aria-selected={activeTab === "WINNERS"}
+                aria-label="Voir les vainqueurs directs"
               >
                 Vainqueurs directs ({winners.length})
               </button>
@@ -367,6 +379,7 @@ export default function AffrontementsPage() {
                 <div className="empty-state">
                   <div className="empty-state-icon">🏆</div>
                   <p>Aucun tableau d&apos;élimination</p>
+                  <p className="empty-hint">Générez le tirage pour créer les tableaux automatiquement</p>
                 </div>
               </div>
             ) : renderSexeSections(bracketsBySexe, (category, categoryMatches) => (
@@ -386,6 +399,7 @@ export default function AffrontementsPage() {
                 <div className="empty-state">
                   <div className="empty-state-icon">🔄</div>
                   <p>Aucune poule</p>
+                  <p className="empty-hint">Les poules sont créées quand 3+ tireurs sont dans la même catégorie</p>
                 </div>
               </div>
             ) : renderSexeSections(poolsBySexe, (category, categoryMatches) => (
@@ -405,6 +419,7 @@ export default function AffrontementsPage() {
                 <div className="empty-state">
                   <div className="empty-state-icon">🏆</div>
                   <p>Aucun vainqueur direct</p>
+                  <p className="empty-hint">Les tireurs seuls dans leur catégorie apparaîtront ici</p>
                 </div>
               </div>
             ) : renderSexeSections(winnersBySexe, (category, entries: WinnerEntry[]) => (
@@ -425,7 +440,7 @@ export default function AffrontementsPage() {
                           {entry.boxeur.club.nom} — {entry.boxeur.poids}kg — {entry.boxeur.categoriePoids}
                         </div>
                       </div>
-                      <span className="winner-card-status" style={{ color: entry.source === "interclub" ? "var(--tournoi-blue)" : "var(--gold)" }}>
+                      <span className={`winner-card-status ${entry.source === "interclub" ? "winner-card-status-interclub" : "winner-card-status-solo"}`}>
                         {entry.source === "interclub" ? "Interclub" : "Seul en catégorie"}
                       </span>
                     </div>
@@ -442,6 +457,7 @@ export default function AffrontementsPage() {
                 <div className="empty-state">
                   <div className="empty-state-icon">🤝</div>
                   <p>Aucune rencontre interclub</p>
+                  <p className="empty-hint">Les combats interclub sont générés pour les tireurs de type IC</p>
                 </div>
               </div>
             ) : renderSexeSections(interclubBySexe, (category, categoryMatches) => (
@@ -614,7 +630,7 @@ export default function AffrontementsPage() {
                       onClick={() => handleSelectBoxeur(b)}
                       disabled={creatingMatch}
                     >
-                      {creatingMatch && matchBuilder.boxeur1 && <div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />}
+                      {creatingMatch && matchBuilder.boxeur1 && <div className="spinner spinner-xs" />}
                       {matchBuilder.boxeur1 ? "Sélectionner" : "Choisir"}
                     </button>
                   </div>
@@ -648,7 +664,7 @@ export default function AffrontementsPage() {
                 Annuler
               </button>
               <button className="btn btn-danger" onClick={() => handleGenerateMatches(true)} disabled={generating}>
-                {generating && <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />}
+                {generating && <div className="spinner spinner-sm" />}
                 {generating ? "Régénération..." : "Régénérer"}
               </button>
             </div>

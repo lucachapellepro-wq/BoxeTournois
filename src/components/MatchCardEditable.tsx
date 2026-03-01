@@ -1,5 +1,5 @@
 import { Match } from "@/types/match";
-import { getGantColor, getGantLabel } from "@/lib/categories";
+import { getGantStyle, getGantLabel } from "@/lib/categories";
 import { clubColorStyle } from "@/lib/ui-helpers";
 import { isManuel, isMixte, isInterclub } from "@/lib/match-helpers";
 
@@ -34,7 +34,7 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
   // Si boxeur2 est null (boxeur seul, pas d'adversaire)
   if (!match.boxeur2) {
     return (
-      <div className="match-card match-solo" style={{ position: "relative" }}>
+      <div className="match-card match-solo">
         {onAddOpponent && (
           <button
             className="btn-add-opponent"
@@ -48,25 +48,16 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
         {match.boxeur1 && (
           <div className="match-fighter">
             <div className="match-fighter-name">
-              <strong>{match.boxeur1.nom.toUpperCase()}</strong> {match.boxeur1.prenom}
+              <span className="match-fighter-name-text">
+                <strong>{match.boxeur1.nom.toUpperCase()}</strong> {match.boxeur1.prenom}
+              </span>
               <TypeBadge type={match.boxeur1.typeCompetition} />
             </div>
             <div className="match-fighter-info">
               <span className="badge badge-club" style={clubColorStyle(match.boxeur1.club.couleur)}>{match.boxeur1.club.nom}</span>
               <span className="badge badge-sexe">{match.boxeur1.sexe}</span>
               <span className="badge">{match.boxeur1.poids}kg</span>
-              <span
-                className="badge-gant"
-                style={{
-                  borderColor: getGantColor(match.boxeur1.gant),
-                  backgroundColor: `${getGantColor(match.boxeur1.gant)}20`,
-                  color: getGantColor(match.boxeur1.gant),
-                }}
-              >
-                <span
-                  className="gant-dot"
-                  style={{ backgroundColor: getGantColor(match.boxeur1.gant) }}
-                ></span>
+              <span className="badge-gant" style={getGantStyle(match.boxeur1.gant)}>
                 {getGantLabel(match.boxeur1.gant)}
               </span>
             </div>
@@ -88,31 +79,30 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
   const cardClass = [
     "match-card",
     match.status === "COMPLETED" ? "match-completed" : "",
+    isMixteMatch ? "match-type-mixte-card" :
+    isManualMatch ? "match-type-manual-card" :
+    isTournoi ? "match-type-tournoi-card" :
+    "match-type-interclub-card",
   ].filter(Boolean).join(" ");
 
   return (
-    <div className={cardClass} style={
-      isMixteMatch ? { borderColor: "var(--mixte)", borderWidth: 2, background: "rgba(26, 188, 156, 0.08)" }
-      : isManualMatch ? { borderColor: "var(--manual)", borderWidth: 2, background: "rgba(230, 126, 34, 0.08)" }
-      : isTournoi ? { borderColor: "var(--accent)", borderWidth: 2, background: "rgba(230, 57, 70, 0.05)" }
-      : { borderColor: "var(--interclub)", borderWidth: 2, background: "rgba(243, 156, 18, 0.08)" }
-    }>
+    <div className={cardClass}>
       {isMixteMatch && (
-        <div style={{ marginBottom: 4 }}>
+        <div className="match-card-label-row">
           <span className="match-type-label match-type-mixte">
             Interclub mixte
           </span>
         </div>
       )}
       {isManualMatch && (
-        <div style={{ marginBottom: 4 }}>
+        <div className="match-card-label-row">
           <span className="match-type-label match-type-manual">
             Combat ajouté
           </span>
         </div>
       )}
       {isManualMatch && onDelete && (
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
+        <div className="match-card-delete-row">
           <button
             className="btn-delete-match"
             onClick={() => onDelete(match.id)}
@@ -124,13 +114,14 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
         </div>
       )}
       {/* Boxeur 1 */}
-      <div className={`match-fighter ${isBoxeur1Winner ? "match-winner" : ""}`} style={
+      <div className={`match-fighter ${isBoxeur1Winner ? "match-winner" : ""} ${
         (isMixteMatch || isInterclubMatch) && match.boxeur1?.typeCompetition === "TOURNOI"
-          ? { border: "2px solid var(--tournoi-blue)", borderRadius: 8, padding: 6, background: "rgba(59, 130, 246, 0.06)" }
-          : undefined
-      }>
+          ? "match-fighter-tournoi-type" : ""
+      }`}>
         <div className="match-fighter-name">
-          <strong>{match.boxeur1.nom.toUpperCase()}</strong> {match.boxeur1.prenom}
+          <span className="match-fighter-name-text">
+            <strong>{match.boxeur1.nom.toUpperCase()}</strong> {match.boxeur1.prenom}
+          </span>
           <TypeBadge type={match.boxeur1.typeCompetition} />
           {isBoxeur1Winner && <span className="winner-badge">🏆</span>}
         </div>
@@ -138,18 +129,7 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
           <span className="badge badge-club" style={clubColorStyle(match.boxeur1.club.couleur)}>{match.boxeur1.club.nom}</span>
           <span className="badge badge-sexe">{match.boxeur1.sexe}</span>
           <span className="badge">{match.boxeur1.poids}kg</span>
-          <span
-            className="badge-gant"
-            style={{
-              borderColor: getGantColor(match.boxeur1.gant),
-              backgroundColor: `${getGantColor(match.boxeur1.gant)}20`,
-              color: getGantColor(match.boxeur1.gant),
-            }}
-          >
-            <span
-              className="gant-dot"
-              style={{ backgroundColor: getGantColor(match.boxeur1.gant) }}
-            ></span>
+          <span className="badge-gant" style={getGantStyle(match.boxeur1.gant)}>
             {getGantLabel(match.boxeur1.gant)}
           </span>
         </div>
@@ -158,13 +138,14 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
       <div className="match-vs">VS</div>
 
       {/* Boxeur 2 */}
-      <div className={`match-fighter ${isBoxeur2Winner ? "match-winner" : ""} ${match.boxeur2Manual ? "match-fighter-added" : ""}`} style={
+      <div className={`match-fighter ${isBoxeur2Winner ? "match-winner" : ""} ${match.boxeur2Manual ? "match-fighter-added" : ""} ${
         (isMixteMatch || isInterclubMatch) && match.boxeur2?.typeCompetition === "TOURNOI"
-          ? { border: "2px solid var(--tournoi-blue)", borderRadius: 8, padding: 6, background: "rgba(59, 130, 246, 0.06)" }
-          : undefined
-      }>
+          ? "match-fighter-tournoi-type" : ""
+      }`}>
         <div className="match-fighter-name">
-          <strong>{match.boxeur2.nom.toUpperCase()}</strong> {match.boxeur2.prenom}
+          <span className="match-fighter-name-text">
+            <strong>{match.boxeur2.nom.toUpperCase()}</strong> {match.boxeur2.prenom}
+          </span>
           <TypeBadge type={match.boxeur2.typeCompetition} />
           {isBoxeur2Winner && <span className="winner-badge">🏆</span>}
         </div>
@@ -172,18 +153,7 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
           <span className="badge badge-club" style={clubColorStyle(match.boxeur2.club.couleur)}>{match.boxeur2.club.nom}</span>
           <span className="badge badge-sexe">{match.boxeur2.sexe}</span>
           <span className="badge">{match.boxeur2.poids}kg</span>
-          <span
-            className="badge-gant"
-            style={{
-              borderColor: getGantColor(match.boxeur2.gant),
-              backgroundColor: `${getGantColor(match.boxeur2.gant)}20`,
-              color: getGantColor(match.boxeur2.gant),
-            }}
-          >
-            <span
-              className="gant-dot"
-              style={{ backgroundColor: getGantColor(match.boxeur2.gant) }}
-            ></span>
+          <span className="badge-gant" style={getGantStyle(match.boxeur2.gant)}>
             {getGantLabel(match.boxeur2.gant)}
           </span>
         </div>

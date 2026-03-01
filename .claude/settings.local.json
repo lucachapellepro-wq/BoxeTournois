@@ -22,7 +22,8 @@
       "Bash(npx next build)",
       "Bash(git rm:*)",
       "Bash(node generate-pdf.mjs:*)",
-      "Bash(python3 -c \" import sys, json for line in sys.stdin: try: obj = json.loads\\(line.strip\\(\\)\\) if isinstance\\(obj, dict\\) and obj.get\\(''type''\\) == ''assistant'': msg = obj.get\\(''message'', {}\\) content = msg.get\\(''content'', []\\) for c in content: if isinstance\\(c, dict\\) and c.get\\(''type''\\) == ''text'': text = c.get\\(''text'', ''''\\) if ''Fifth-Round Audit'' in text: print\\(text[:8000]\\) print\\(''---TRUNCATED---''\\) except: pass \")"
+      "Bash(python3 -c \" import sys, json for line in sys.stdin: try: obj = json.loads\\(line.strip\\(\\)\\) if isinstance\\(obj, dict\\) and obj.get\\(''type''\\) == ''assistant'': msg = obj.get\\(''message'', {}\\) content = msg.get\\(''content'', []\\) for c in content: if isinstance\\(c, dict\\) and c.get\\(''type''\\) == ''text'': text = c.get\\(''text'', ''''\\) if ''Fifth-Round Audit'' in text: print\\(text[:8000]\\) print\\(''---TRUNCATED---''\\) except: pass \")",
+      "mcp__ide__getDiagnostics"
     ]
   }
 }

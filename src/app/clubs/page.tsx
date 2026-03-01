@@ -198,12 +198,14 @@ export default function ClubsPage() {
             Sélectionne un club pour voir ses détails et ses tireurs
           </p>
         </div>
-        <button
-          className="btn btn-primary"
-          onClick={() => setShowClubModal(true)}
-        >
-          + Nouveau club
-        </button>
+        <div className="page-header-actions">
+          <button
+            className="btn btn-primary"
+            onClick={() => setShowClubModal(true)}
+          >
+            + Nouveau club
+          </button>
+        </div>
       </div>
 
       {clubs.length === 0 ? (

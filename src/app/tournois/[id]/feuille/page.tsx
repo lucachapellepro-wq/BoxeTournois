@@ -410,13 +410,15 @@ export default function FeuilleTournoiPage() {
                   key={entry.boxeur.id}
                   className={`winner-row ${entry.source === "interclub" ? "winner-row-ic" : "winner-row-solo"}`}
                 >
-                  <span className="winner-row-name">{entry.boxeur.nom.toUpperCase()}</span>
-                  <span>{entry.boxeur.prenom}</span>
-                  <span className="text-muted">—</span>
-                  <span className="text-gold">{entry.category}</span>
-                  <span>{entry.sexe === "F" ? "♀" : "♂"}</span>
-                  <span className="text-muted">—</span>
-                  <span className="text-muted">{entry.boxeur.club.nom}</span>
+                  <span className="winner-row-identity">
+                    <span className="winner-row-name">{entry.boxeur.nom.toUpperCase()}</span>{" "}
+                    {entry.boxeur.prenom}
+                  </span>
+                  <span className="winner-row-details">
+                    <span className="text-gold">{entry.category}</span>
+                    {" "}{entry.sexe === "F" ? "♀" : "♂"}{" — "}
+                    <span className="text-muted">{entry.boxeur.club.nom}</span>
+                  </span>
                   {entry.source === "interclub" && (
                     <span className="winner-row-label">Placé en interclub</span>
                   )}

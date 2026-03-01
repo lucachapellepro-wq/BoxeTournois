@@ -42,6 +42,8 @@ export function ModalClub({
       <div
         className="modal"
         ref={modalRef}
+        role="dialog"
+        aria-modal="true"
         onClick={(e) => e.stopPropagation()}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}

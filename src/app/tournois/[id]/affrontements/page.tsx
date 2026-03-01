@@ -564,6 +564,8 @@ export default function AffrontementsPage() {
           <div
             className="modal"
             ref={matchModalDrag.modalRef}
+            role="dialog"
+            aria-modal="true"
             onClick={(e) => e.stopPropagation()}
             onTouchStart={matchModalDrag.onTouchStart}
             onTouchMove={matchModalDrag.onTouchMove}
@@ -646,6 +648,8 @@ export default function AffrontementsPage() {
           <div
             className="modal modal-sm"
             ref={confirmModalDrag.modalRef}
+            role="dialog"
+            aria-modal="true"
             onClick={(e) => e.stopPropagation()}
             onTouchStart={confirmModalDrag.onTouchStart}
             onTouchMove={confirmModalDrag.onTouchMove}

@@ -105,9 +105,11 @@ export default function TournoiPage() {
             Créez et gérez vos tournois de savate boxe française
           </p>
         </div>
-        <button className="btn btn-primary" onClick={handleOpenCreate}>
-          + Nouveau tournoi
-        </button>
+        <div className="page-header-actions">
+          <button className="btn btn-primary" onClick={handleOpenCreate}>
+            + Nouveau tournoi
+          </button>
+        </div>
       </div>
 
       {loading ? (

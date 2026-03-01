@@ -319,6 +319,8 @@ export default function TournoiDetailPage() {
           <div
             className="modal"
             ref={addModalDrag.modalRef}
+            role="dialog"
+            aria-modal="true"
             onClick={(e) => e.stopPropagation()}
             onTouchStart={addModalDrag.onTouchStart}
             onTouchMove={addModalDrag.onTouchMove}

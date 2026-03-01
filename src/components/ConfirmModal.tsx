@@ -35,6 +35,8 @@ export function ConfirmModal({
       <div
         className="modal modal-sm"
         ref={modalRef}
+        role="dialog"
+        aria-modal="true"
         onClick={(e) => e.stopPropagation()}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}

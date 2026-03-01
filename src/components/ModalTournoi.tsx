@@ -35,6 +35,8 @@ export function ModalTournoi({
       <div
         className="modal"
         ref={modalRef}
+        role="dialog"
+        aria-modal="true"
         onClick={(e) => e.stopPropagation()}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
@@ -57,7 +59,7 @@ export function ModalTournoi({
               placeholder="Ex: Championnat Savoie 2026"
               value={form.nom}
               onChange={(e) => onChange({ ...form, nom: e.target.value })}
-              autoFocus
+              autoFocus={typeof window !== 'undefined' && window.innerWidth > 768}
             />
           </div>
 

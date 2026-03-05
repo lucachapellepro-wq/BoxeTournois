@@ -55,7 +55,7 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
             </div>
             <div className="match-fighter-info">
               <span className="badge badge-club" style={clubColorStyle(match.boxeur1.club.couleur)}>{match.boxeur1.club.nom}</span>
-              <span className="badge badge-sexe">{match.boxeur1.sexe}</span>
+              <span className="badge badge-sexe">{match.boxeur1.sexe === "M" ? "H" : "F"}</span>
               <span className="badge">{match.boxeur1.poids}kg</span>
               <span className="badge-gant" style={getGantStyle(match.boxeur1.gant)}>
                 {getGantLabel(match.boxeur1.gant)}
@@ -127,7 +127,7 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
         </div>
         <div className="match-fighter-info">
           <span className="badge badge-club" style={clubColorStyle(match.boxeur1.club.couleur)}>{match.boxeur1.club.nom}</span>
-          <span className="badge badge-sexe">{match.boxeur1.sexe}</span>
+          <span className="badge badge-sexe">{match.boxeur1.sexe === "M" ? "H" : "F"}</span>
           <span className="badge">{match.boxeur1.poids}kg</span>
           <span className="badge-gant" style={getGantStyle(match.boxeur1.gant)}>
             {getGantLabel(match.boxeur1.gant)}
@@ -151,7 +151,7 @@ export function MatchCardEditable({ match, onAddOpponent, onDelete }: MatchCardE
         </div>
         <div className="match-fighter-info">
           <span className="badge badge-club" style={clubColorStyle(match.boxeur2.club.couleur)}>{match.boxeur2.club.nom}</span>
-          <span className="badge badge-sexe">{match.boxeur2.sexe}</span>
+          <span className="badge badge-sexe">{match.boxeur2.sexe === "M" ? "H" : "F"}</span>
           <span className="badge">{match.boxeur2.poids}kg</span>
           <span className="badge-gant" style={getGantStyle(match.boxeur2.gant)}>
             {getGantLabel(match.boxeur2.gant)}

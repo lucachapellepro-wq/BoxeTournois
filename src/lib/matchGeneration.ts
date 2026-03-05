@@ -99,10 +99,18 @@ export function generateMatches(
 ): MatchCreateData[] {
   const matches: MatchCreateData[] = [];
 
+  // Dédupliquer par ID pour éviter les auto-affrontements
+  const seen = new Set<number>();
+  const uniqueBoxeurs = boxeurs.filter((b) => {
+    if (seen.has(b.id)) return false;
+    seen.add(b.id);
+    return true;
+  });
+
   // Grouper par SEXE + CATÉGORIE DE POIDS + TYPE COMPETITION
   // Note : gant et categorieAge sont des métadonnées du match, pas des critères de séparation
   const groups = new Map<string, Boxeur[]>();
-  boxeurs.forEach((b) => {
+  uniqueBoxeurs.forEach((b) => {
     const key = `${b.sexe}|${b.categoriePoids}|${b.typeCompetition}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(b);
@@ -153,9 +161,9 @@ export function generateMatches(
     // categorieAge et gant : prendre la valeur la plus fréquente du groupe
     const category: CategoryInfo = {
       sexe,
-      categorieAge: groupBoxeurs[0].categorieAge,
+      categorieAge: mostFrequent(groupBoxeurs.map((b) => b.categorieAge)),
       categoriePoids: catPoids,
-      gant: groupBoxeurs[0].gant,
+      gant: mostFrequent(groupBoxeurs.map((b) => b.gant)),
       categoryDisplay: catPoids,
     };
 
@@ -347,13 +355,41 @@ export function generateLargePools(
 // UTILITAIRES
 // =============================================
 
-/** Appariement intelligent : varier âge, gant, club */
+/** Appariement intelligent : séparer les boxeurs du même club */
 function smartPairing(boxers: Boxeur[]): Boxeur[] {
-  return [...boxers].sort((a, b) => {
-    if (a.categorieAge !== b.categorieAge) return a.categorieAge.localeCompare(b.categorieAge);
-    if (a.gant !== b.gant) return a.gant.localeCompare(b.gant);
-    return (a.club?.id ?? 0) - (b.club?.id ?? 0);
+  // Trier d'abord par club pour regrouper, puis distribuer en alternance
+  const sorted = [...boxers].sort((a, b) => (a.club?.id ?? 0) - (b.club?.id ?? 0));
+  const result: Boxeur[] = [];
+  const remaining = [...sorted];
+
+  // Snake draft : alterner les clubs pour maximiser la diversité
+  while (remaining.length > 0) {
+    const lastClubId = result.length > 0 ? result[result.length - 1].club?.id : null;
+    // Trouver un boxeur d'un club différent du dernier placé
+    const diffIdx = remaining.findIndex((b) => b.club?.id !== lastClubId);
+    if (diffIdx >= 0) {
+      result.push(remaining.splice(diffIdx, 1)[0]);
+    } else {
+      // Plus de diversité possible, prendre le premier restant
+      result.push(remaining.shift()!);
+    }
+  }
+
+  return result;
+}
+
+/** Retourne la valeur la plus fréquente d'un tableau de strings */
+function mostFrequent(values: string[]): string {
+  const counts = new Map<string, number>();
+  for (const v of values) {
+    counts.set(v, (counts.get(v) ?? 0) + 1);
+  }
+  let best = values[0];
+  let bestCount = 0;
+  counts.forEach((count, val) => {
+    if (count > bestCount) { best = val; bestCount = count; }
   });
+  return best;
 }
 
 /** Divise les boxeurs en poules de 3-4 (snake draft) */
@@ -366,13 +402,6 @@ function divideIntoPools(boxers: Boxeur[]): Boxeur[][] {
   });
 
   return pools;
-}
-
-/** Retourne le nom du round en fonction du nombre total de rounds */
-export function getRoundName(totalRounds: number, roundIndex: number): string {
-  const allRounds = [BracketRound.HUITIEME, BracketRound.QUART, BracketRound.DEMI, BracketRound.FINAL];
-  const idx = 4 - totalRounds + roundIndex;
-  return allRounds[Math.max(0, Math.min(idx, allRounds.length - 1))] ?? BracketRound.FINAL;
 }
 
 /** Lie les matchs d'un bracket avec nextMatchId */

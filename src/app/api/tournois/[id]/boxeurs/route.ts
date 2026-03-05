@@ -32,6 +32,17 @@ export async function POST(
       const tournoi = await prisma.tournoi.findUnique({ where: { id: tournoiId } });
       if (!tournoi) return apiNotFound("Tournoi non trouvé");
 
+      // Vérifier que tous les boxeurs existent
+      const existingBoxeurs = await prisma.boxeur.findMany({
+        where: { id: { in: ids } },
+        select: { id: true },
+      });
+      const existingIds = new Set(existingBoxeurs.map((b) => b.id));
+      const invalidIds = ids.filter((id) => !existingIds.has(id));
+      if (invalidIds.length > 0) {
+        return apiBadRequest(`Boxeur(s) introuvable(s) : ${invalidIds.join(", ")}`);
+      }
+
       const result = await prisma.tournoiBoxeur.createMany({
         data: ids.map((bid) => ({ tournoiId, boxeurId: bid })),
         skipDuplicates: true,

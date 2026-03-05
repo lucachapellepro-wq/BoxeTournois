@@ -49,19 +49,23 @@ export default function ClubsPage() {
       showToast("Nom et ville obligatoires", "error");
       return;
     }
-    const res = await fetch("/api/clubs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(clubForm),
-    });
-    if (res.ok) {
-      showToast("Club ajouté ✓", "success");
-      setClubForm({ nom: "", ville: "", coach: "", couleur: "" });
-      setShowClubModal(false);
-      fetchClubs();
-    } else {
-      const err = await res.json().catch(() => null);
-      showToast(err?.error || "Erreur création club", "error");
+    try {
+      const res = await fetch("/api/clubs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(clubForm),
+      });
+      if (res.ok) {
+        showToast("Club ajouté ✓", "success");
+        setClubForm({ nom: "", ville: "", coach: "", couleur: "" });
+        setShowClubModal(false);
+        fetchClubs();
+      } else {
+        const err = await res.json().catch(() => null);
+        showToast(err?.error || "Erreur création club", "error");
+      }
+    } catch {
+      showToast("Erreur réseau", "error");
     }
   };
 
@@ -82,7 +86,15 @@ export default function ClubsPage() {
     field: string,
     value: string | number | boolean
   ) => {
-    const success = await updateBoxeur(id, { [field]: value });
+    // Le champ "nom" encode "NOM|prenom" via TireursTable
+    let data: Record<string, string | number | boolean>;
+    if (field === "nom" && typeof value === "string" && value.includes("|")) {
+      const [nom, prenom] = value.split("|");
+      data = { nom, prenom };
+    } else {
+      data = { [field]: value };
+    }
+    const success = await updateBoxeur(id, data);
     if (success) {
       showToast("Modifié ✓", "success");
     } else {
@@ -119,7 +131,7 @@ export default function ClubsPage() {
                 }),
               });
               if (res.ok) {
-                showToast("Tireur restauré ✓", "success");
+                showToast("Tireur recréé (inscriptions tournois perdues)", "success");
                 fetchBoxeurs();
               }
             } catch {
@@ -149,11 +161,13 @@ export default function ClubsPage() {
       return;
     }
 
-    // Détection doublons côté client
+    // Détection doublons côté client (nom + prénom + année)
     const duplicate = boxeurs.find(
       (b) =>
         b.nom.toLowerCase() === tireurForm.nom.toLowerCase() &&
-        b.prenom.toLowerCase() === tireurForm.prenom.toLowerCase()
+        b.prenom.toLowerCase() === tireurForm.prenom.toLowerCase() &&
+        b.dateNaissance != null &&
+        new Date(b.dateNaissance).getUTCFullYear() === parseInt(tireurForm.anneeNaissance)
     );
     if (duplicate) {
       showToast(
@@ -175,13 +189,14 @@ export default function ClubsPage() {
         setShowTireurModal(false);
         fetchBoxeurs();
       } else {
-        const err = await res.json();
-        showToast(err.error || "Erreur lors de l'ajout", "error");
+        const err = await res.json().catch(() => null);
+        showToast(err?.error || "Erreur lors de l'ajout", "error");
       }
     } catch {
       showToast("Erreur réseau", "error");
+    } finally {
+      setSavingTireur(false);
     }
-    setSavingTireur(false);
   };
 
   const selectedClub = clubs.find((c) => c.id === selectedClubId);

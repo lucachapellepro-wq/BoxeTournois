@@ -1,4 +1,4 @@
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useEffect } from "react";
 
 /**
  * Hook pour ajouter le drag-to-dismiss sur les bottom sheet modals (mobile).
@@ -10,6 +10,16 @@ export function useBottomSheetDrag(onClose: () => void) {
   const currentY = useRef(0);
   const dragging = useRef(false);
   const modalRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  onCloseRef.current = onClose;
+
+  // Cleanup timeout on unmount to prevent calling onClose after unmount
+  useEffect(() => {
+    return () => {
+      if (dismissTimer.current) clearTimeout(dismissTimer.current);
+    };
+  }, []);
 
   const onTouchStart = useCallback((e: React.TouchEvent) => {
     startY.current = e.touches[0].clientY;
@@ -20,7 +30,6 @@ export function useBottomSheetDrag(onClose: () => void) {
     const modalBody = modalRef.current?.querySelector(".modal-body") as HTMLElement | null;
     const isInsideBody = modalBody && modalBody.contains(e.target as Node);
     if (isInsideBody && modalBody.scrollTop > 0) {
-      // Content is scrolled down, don't start drag
       dragging.current = false;
       return;
     }
@@ -35,7 +44,6 @@ export function useBottomSheetDrag(onClose: () => void) {
     if (!dragging.current) return;
 
     const deltaY = e.touches[0].clientY - startY.current;
-    // Only allow dragging downward
     if (deltaY > 0) {
       currentY.current = deltaY;
       if (modalRef.current) {
@@ -59,16 +67,20 @@ export function useBottomSheetDrag(onClose: () => void) {
         // Dismiss
         modalRef.current.style.transform = "translateY(100%)";
         if (overlay) overlay.style.opacity = "0";
-        setTimeout(onClose, 200);
+        dismissTimer.current = setTimeout(() => onCloseRef.current(), 200);
       } else {
         // Snap back
         modalRef.current.style.transform = "translateY(0)";
-        if (overlay) overlay.style.opacity = "1";
+        if (overlay) {
+          overlay.style.opacity = "1";
+          // Restore overlay transition after snap back
+          overlay.style.transition = "";
+        }
       }
     }
     currentY.current = 0;
     dragging.current = false;
-  }, [onClose]);
+  }, []);
 
   return { modalRef, onTouchStart, onTouchMove, onTouchEnd };
 }

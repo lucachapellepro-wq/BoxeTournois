@@ -51,7 +51,7 @@ export function isInterclubOrMixte(m: Match): boolean {
 // =============================================
 
 /** Couleurs par type de match — alignées avec les CSS variables :root */
-export const MATCH_TYPE_COLORS = {
+const MATCH_TYPE_COLORS = {
   manual: "#f97316",   // --manual
   mixte: "#14b8a6",    // --mixte
   interclub: "#f59e0b", // --interclub
@@ -126,9 +126,10 @@ export function extractWinners(matches: Match[]): WinnerEntry[] {
     }
   });
 
-  // 2. Tireurs Tournoi dans les rencontres interclub
+  // 2. Tireurs Tournoi dans les rencontres interclub/mixte (exclure manuels et solos)
   matches.forEach((m) => {
-    if (!isInterclubOrMixte(m)) return;
+    if (!isInterclub(m) && !isMixte(m)) return;
+    if (!m.boxeur1 || !m.boxeur2) return;
     if (m.boxeur1?.typeCompetition === "TOURNOI") {
       result.push({ boxeur: m.boxeur1, category: m.categoryDisplay || m.categoriePoids, sexe: m.sexe, source: "interclub" });
     }

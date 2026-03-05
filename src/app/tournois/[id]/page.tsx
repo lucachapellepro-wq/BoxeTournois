@@ -5,10 +5,11 @@ import { useParams, useRouter } from "next/navigation";
 import { useBoxeurs } from "@/hooks/useBoxeurs";
 import { useGlobalToast } from "@/contexts/ToastContext";
 import { Boxeur, TournoiDetail } from "@/types";
-import { formatDate, calculateAge, clubColorStyle } from "@/lib/ui-helpers";
+import { formatDate, clubColorStyle } from "@/lib/ui-helpers";
 import { getGantColor, getGantLabel } from "@/lib/categories";
 import { useBottomSheetDrag } from "@/hooks/useBottomSheetDrag";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
+import { useEscapeKey } from "@/hooks/useEscapeKey";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import Link from "next/link";
 
@@ -27,13 +28,14 @@ export default function TournoiDetailPage() {
   const [removeTarget, setRemoveTarget] = useState<{ id: number; nom: string } | null>(null);
   const addModalDrag = useBottomSheetDrag(() => setShowAddModal(false));
   useBodyScrollLock(showAddModal);
+  useEscapeKey(showAddModal, () => setShowAddModal(false));
 
   const fetchTournoi = useCallback(async () => {
     try {
       const res = await fetch(`/api/tournois/${params.id}`);
       if (res.ok) {
-        const data = await res.json();
-        setTournoi(data);
+        const data = await res.json().catch(() => null);
+        if (data) setTournoi(data);
       }
     } catch (error) {
       console.error("Erreur fetch tournoi:", error);
@@ -99,9 +101,11 @@ export default function TournoiDetailPage() {
       if (res.ok) {
         showToast(`Type changé → ${newType}`, "success");
         fetchTournoi();
+      } else {
+        showToast("Erreur lors du changement de type", "error");
       }
     } catch {
-      showToast("Erreur", "error");
+      showToast("Erreur réseau", "error");
     }
   };
 
@@ -291,7 +295,7 @@ export default function TournoiDetailPage() {
                         className="btn-icon btn-danger btn-icon-sm"
                         onClick={() => handleRemoveBoxeur(b.id, `${b.nom} ${b.prenom}`)}
                         title="Retirer"
-                        aria-label="Retirer du tournoi"
+                        aria-label={`Retirer ${b.nom} ${b.prenom} du tournoi`}
                       >
                         ✕
                       </button>
@@ -321,6 +325,7 @@ export default function TournoiDetailPage() {
             ref={addModalDrag.modalRef}
             role="dialog"
             aria-modal="true"
+            aria-labelledby="modal-add-boxeurs-title"
             onClick={(e) => e.stopPropagation()}
             onTouchStart={addModalDrag.onTouchStart}
             onTouchMove={addModalDrag.onTouchMove}
@@ -328,7 +333,7 @@ export default function TournoiDetailPage() {
           >
             <div className="modal-handle" />
             <div className="modal-header">
-              <h2 className="modal-title">Ajouter des boxeurs</h2>
+              <h2 id="modal-add-boxeurs-title" className="modal-title">Ajouter des boxeurs</h2>
               <button className="modal-close" onClick={() => setShowAddModal(false)} aria-label="Fermer">
                 ✕
               </button>
@@ -340,6 +345,7 @@ export default function TournoiDetailPage() {
                 placeholder="Rechercher par nom, prénom ou club..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                aria-label="Rechercher un boxeur par nom, prénom ou club"
                 autoFocus
               />
             </div>
@@ -394,7 +400,7 @@ export default function TournoiDetailPage() {
                         </div>
                         <div className="club-participant-badges">
                           <span className="badge badge-club" style={clubColorStyle(b.club.couleur)}>{b.club.nom}</span>
-                          <span className="badge badge-sexe">{b.sexe}</span>
+                          <span className="badge badge-sexe">{b.sexe === "M" ? "H" : "F"}</span>
                           <span className="badge badge-poids">{b.poids}kg</span>
                           <span className={`badge ${b.typeCompetition === "INTERCLUB" ? "badge-interclub" : "badge-tournoi"}`}>
                             {b.typeCompetition === "INTERCLUB" ? "IC" : "T"}
@@ -406,6 +412,7 @@ export default function TournoiDetailPage() {
                         onClick={() => {
                           handleAddBoxeur(b.id);
                         }}
+                        aria-label={`Ajouter ${b.nom} ${b.prenom} au tournoi`}
                       >
                         + Ajouter
                       </button>

@@ -6,7 +6,7 @@ import { z } from "zod";
 /** Schéma de validation Zod pour la mise à jour d'un tournoi */
 const tournoiUpdateSchema = z.object({
   nom: z.string().min(1).max(200).optional(),
-  date: z.string().refine(
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date invalide (format YYYY-MM-DD)").refine(
     (val) => !isNaN(Date.parse(val)),
     "Date invalide"
   ).optional(),
@@ -97,16 +97,13 @@ export async function DELETE(
   const tournoiId = parseId(id);
   if (!tournoiId) return apiBadRequest("ID invalide");
   try {
-    // Vérifier si le tournoi a des matchs non terminés
-    const activeMatchCount = await prisma.match.count({
-      where: {
-        tournoiId,
-        status: "PENDING",
-      },
+    // Vérifier si le tournoi a des matchs (tous statuts confondus)
+    const matchCount = await prisma.match.count({
+      where: { tournoiId },
     });
-    if (activeMatchCount > 0) {
+    if (matchCount > 0) {
       return apiConflict(
-        `Ce tournoi a ${activeMatchCount} combat(s) en attente. Supprimez les matchs d'abord.`
+        `Ce tournoi a ${matchCount} combat(s). Supprimez les matchs d'abord.`
       );
     }
 

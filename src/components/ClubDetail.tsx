@@ -69,45 +69,46 @@ export function ClubDetail({ club, onUpdate }: ClubDetailProps) {
         {isEditing ? (
           <>
             <div className="form-group">
-              <label>Nom du club</label>
+              <label htmlFor="edit-club-nom">Nom du club</label>
               <input
+                id="edit-club-nom"
                 type="text"
                 value={formData.nom}
                 onChange={(e) =>
                   setFormData({ ...formData, nom: e.target.value })
                 }
-                className="input"
               />
             </div>
 
             <div className="form-group">
-              <label>Ville</label>
+              <label htmlFor="edit-club-ville">Ville</label>
               <input
+                id="edit-club-ville"
                 type="text"
                 value={formData.ville}
                 onChange={(e) =>
                   setFormData({ ...formData, ville: e.target.value })
                 }
-                className="input"
               />
             </div>
 
             <div className="form-group">
-              <label>Coach (optionnel)</label>
+              <label htmlFor="edit-club-coach">Coach (optionnel)</label>
               <input
+                id="edit-club-coach"
                 type="text"
                 value={formData.coach}
                 onChange={(e) =>
                   setFormData({ ...formData, coach: e.target.value })
                 }
-                className="input"
               />
             </div>
 
             <div className="form-group">
-              <label>Couleur</label>
+              <label htmlFor="edit-club-couleur">Couleur</label>
               <div className="color-picker-row">
                 <input
+                  id="edit-club-couleur"
                   type="color"
                   value={formData.couleur || "#22c55e"}
                   onChange={(e) =>

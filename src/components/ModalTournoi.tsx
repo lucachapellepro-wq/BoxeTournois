@@ -1,5 +1,6 @@
 import { useBottomSheetDrag } from "@/hooks/useBottomSheetDrag";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
+import { useEscapeKey } from "@/hooks/useEscapeKey";
 
 /** Props de la modale tournoi (création ou édition) */
 interface ModalTournoiProps {
@@ -27,6 +28,7 @@ export function ModalTournoi({
 }: ModalTournoiProps) {
   const { modalRef, onTouchStart, onTouchMove, onTouchEnd } = useBottomSheetDrag(onClose);
   useBodyScrollLock(show);
+  useEscapeKey(show, onClose);
 
   if (!show) return null;
 
@@ -37,6 +39,7 @@ export function ModalTournoi({
         ref={modalRef}
         role="dialog"
         aria-modal="true"
+        aria-labelledby="modal-tournoi-title"
         onClick={(e) => e.stopPropagation()}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
@@ -44,7 +47,7 @@ export function ModalTournoi({
       >
         <div className="modal-handle" />
         <div className="modal-header">
-          <h2 className="modal-title">{isEditing ? "Modifier le tournoi" : "Nouveau tournoi"}</h2>
+          <h2 id="modal-tournoi-title" className="modal-title">{isEditing ? "Modifier le tournoi" : "Nouveau tournoi"}</h2>
           <button className="modal-close" onClick={onClose} aria-label="Fermer">
             ✕
           </button>
@@ -59,7 +62,7 @@ export function ModalTournoi({
               placeholder="Ex: Championnat Savoie 2026"
               value={form.nom}
               onChange={(e) => onChange({ ...form, nom: e.target.value })}
-              autoFocus={typeof window !== 'undefined' && window.innerWidth > 768}
+              autoFocus
             />
           </div>
 

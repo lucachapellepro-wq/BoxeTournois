@@ -31,15 +31,15 @@ export interface Match {
   boxeur2: Boxeur | null;
 
   // Type et catégorie
-  matchType: string; // MatchType
-  sexe: string; // "M" | "F"
+  matchType: string;
+  sexe: string;
   categorieAge: string;
   categoriePoids: string;
   gant: string;
   categoryDisplay: string;
 
   // Pour BRACKET
-  bracketRound: string | null; // BracketRound
+  bracketRound: string | null;
   bracketPosition: number | null;
   nextMatchId: number | null;
   nextMatch?: Match | null;
@@ -49,7 +49,7 @@ export interface Match {
   poolName: string | null;
 
   // Résultat
-  status: string; // MatchStatus
+  status: string;
   winnerId: number | null;
   winner?: Boxeur | null;
 
@@ -79,8 +79,8 @@ export interface MatchCreateData {
 
 // Interface pour le résultat d'un match
 export interface MatchResult {
-  winnerId: number;
-  status: string; // MatchStatus
+  winnerId?: number | null;
+  status: string;
 }
 
 // Interface pour les statistiques des matchs

@@ -11,7 +11,7 @@ interface UseFetchReturn<T> {
 /** Hook générique pour fetch GET avec gestion loading/error */
 export function useFetch<T>(url: string, initialData: T): UseFetchReturn<T> {
   const [data, setData] = useState<T>(initialData);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {

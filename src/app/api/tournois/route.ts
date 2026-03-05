@@ -6,7 +6,7 @@ import { z } from "zod";
 /** Schéma de validation Zod pour la création d'un tournoi */
 const tournoiSchema = z.object({
   nom: z.string().min(1, "Nom obligatoire").max(200),
-  date: z.string().min(1, "Date obligatoire").refine(
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date invalide (format YYYY-MM-DD)").refine(
     (val) => !isNaN(Date.parse(val)),
     "Date invalide"
   ),

@@ -23,7 +23,14 @@
       "Bash(git rm:*)",
       "Bash(node generate-pdf.mjs:*)",
       "Bash(python3 -c \" import sys, json for line in sys.stdin: try: obj = json.loads\\(line.strip\\(\\)\\) if isinstance\\(obj, dict\\) and obj.get\\(''type''\\) == ''assistant'': msg = obj.get\\(''message'', {}\\) content = msg.get\\(''content'', []\\) for c in content: if isinstance\\(c, dict\\) and c.get\\(''type''\\) == ''text'': text = c.get\\(''text'', ''''\\) if ''Fifth-Round Audit'' in text: print\\(text[:8000]\\) print\\(''---TRUNCATED---''\\) except: pass \")",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(grep -h \"className=\" O:/Work/tournoi-boxe/src/components/*.tsx O:/Work/tournoi-boxe/src/app/*.tsx O:/Work/tournoi-boxe/src/app/**/*.tsx O:/Work/tournoi-boxe/src/app/**/**/*.tsx O:/Work/tournoi-boxe/src/contexts/*.tsx)",
+      "Bash(grep -n \"getMatchTypeBadgeClass\" O:/Work/tournoi-boxe/src/app/tournois/[id]/feuille/page.tsx)",
+      "Bash(node ./node_modules/.bin/next build)",
+      "Bash(PATH=\"/c/Program Files/nodejs:/c/Users/Luca/AppData/Roaming/npm:$PATH\" npx next build)",
+      "Bash(node node_modules/next/dist/bin/next build)",
+      "Bash(PATH=\"/c/Program Files/nodejs:/c/Windows/System32:$PATH\" node node_modules/next/dist/bin/next build)",
+      "Bash(node -e \"const fs=require\\(''fs''\\); fs.unlinkSync\\(''src/components/TournamentBrackets.tsx''\\); fs.unlinkSync\\(''src/components/MatchCard.tsx''\\); console.log\\(''deleted''\\)\")"
     ]
   }
 }

@@ -129,6 +129,11 @@ export async function PUT(
     }
     const { winnerId, status } = parsed.data;
 
+    // FORFEIT nécessite un winnerId pour savoir qui avance
+    if (status === "FORFEIT" && !winnerId) {
+      return apiBadRequest("Un forfait nécessite de désigner le vainqueur (winnerId)");
+    }
+
     // Récupérer le match actuel
     const currentMatch = await prisma.match.findUnique({
       where: { id: matchIdNum },
@@ -149,11 +154,11 @@ export async function PUT(
 
     // Mettre à jour le match en transaction
     const updatedMatch = await prisma.$transaction(async (tx) => {
-      // Mettre à jour le match
+      // Mettre à jour le match (reset winnerId si retour à PENDING)
       const match = await tx.match.update({
         where: { id: matchIdNum },
         data: {
-          winnerId,
+          winnerId: status === "PENDING" ? null : winnerId,
           status: status || "COMPLETED",
         },
         include: {
@@ -163,26 +168,26 @@ export async function PUT(
         },
       });
 
-      // Si c'est un match de bracket et qu'il a un nextMatch, propager le gagnant
+      // Propagation bracket : propager le gagnant ou nettoyer si PENDING
       if (
         match.matchType === "BRACKET" &&
         match.nextMatchId &&
-        winnerId &&
         match.bracketPosition !== null
       ) {
-        const nextMatch = await tx.match.findUnique({
-          where: { id: match.nextMatchId },
-        });
+        const isFirstSlot = match.bracketPosition % 2 === 0;
+        const slotField = isFirstSlot ? "boxeur1Id" : "boxeur2Id";
 
-        if (nextMatch) {
-          // Déterminer si le gagnant va en boxeur1 ou boxeur2 du prochain match
-          const isFirstSlot = match.bracketPosition % 2 === 0;
-
+        if (status === "PENDING") {
+          // Reset : retirer le boxeur propagé dans le nextMatch
           await tx.match.update({
             where: { id: match.nextMatchId },
-            data: {
-              [isFirstSlot ? "boxeur1Id" : "boxeur2Id"]: winnerId,
-            },
+            data: { [slotField]: null },
+          });
+        } else if (winnerId) {
+          // Propager le gagnant dans le nextMatch
+          await tx.match.update({
+            where: { id: match.nextMatchId },
+            data: { [slotField]: winnerId },
           });
         }
       }

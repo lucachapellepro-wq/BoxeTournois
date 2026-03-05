@@ -23,7 +23,13 @@ export function formatDate(dateStr: string): string {
     year: "numeric",
     month: "long",
     day: "numeric",
+    timeZone: "UTC",
   });
+}
+
+/** Année courante UTC — fonction pour éviter une constante module-level stale */
+export function getCurrentYear(): number {
+  return new Date().getUTCFullYear();
 }
 
 /** Style inline pour un badge coloré par la couleur du club */
@@ -34,20 +40,4 @@ export function clubColorStyle(couleur: string | null | undefined): React.CSSPro
     color: couleur,
     borderColor: `${couleur}40`,
   };
-}
-
-/** Calcule l'âge à partir d'une date de naissance ISO */
-export function calculateAge(dateNaissance: string | null): number | string {
-  if (!dateNaissance) return "?";
-  const today = new Date();
-  const birthDate = new Date(dateNaissance);
-  let age = today.getUTCFullYear() - birthDate.getUTCFullYear();
-  const monthDiff = today.getUTCMonth() - birthDate.getUTCMonth();
-  if (
-    monthDiff < 0 ||
-    (monthDiff === 0 && today.getUTCDate() < birthDate.getUTCDate())
-  ) {
-    age--;
-  }
-  return age;
 }

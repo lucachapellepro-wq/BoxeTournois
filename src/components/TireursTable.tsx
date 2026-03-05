@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Boxeur, SortValue, getAnneeFromDate } from "@/types";
 import { GANTS_COULEUR, getGantStyle } from "@/lib/categories";
-import { clubColorStyle } from "@/lib/ui-helpers";
+import { clubColorStyle, getCurrentYear } from "@/lib/ui-helpers";
 import { EditableCell } from "./EditableCell";
 import { useSwipeRow } from "./SwipeRow";
 
@@ -78,8 +78,8 @@ export function TireursTable({
           bVal = b.poids;
           break;
         case "gant":
-          aVal = a.gant;
-          bVal = b.gant;
+          aVal = GANTS_COULEUR.findIndex((g) => g.value === a.gant);
+          bVal = GANTS_COULEUR.findIndex((g) => g.value === b.gant);
           break;
         case "categoriePoids":
           aVal = a.categoriePoids;
@@ -108,6 +108,18 @@ export function TireursTable({
   const getSortIcon = (column: SortColumn) => {
     if (sortColumn !== column) return " ⇅";
     return sortDirection === "asc" ? " ↑" : " ↓";
+  };
+
+  const getAriaSort = (column: SortColumn): "ascending" | "descending" | "none" => {
+    if (sortColumn !== column) return "none";
+    return sortDirection === "asc" ? "ascending" : "descending";
+  };
+
+  const handleSortKeyDown = (e: React.KeyboardEvent, column: SortColumn) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleSort(column);
+    }
   };
 
   const hasIncompleteInfo = (boxeur: Boxeur): boolean => {
@@ -151,67 +163,40 @@ export function TireursTable({
   return (
     <div className="card">
       <div className="table-wrapper">
-        <table>
+        <table aria-label="Liste des tireurs">
           <thead>
             <tr>
-              <th
-                className="sortable"
-                onClick={() => handleSort("nom")}
-              >
+              <th className="sortable" scope="col" aria-sort={getAriaSort("nom")} tabIndex={0} onClick={() => handleSort("nom")} onKeyDown={(e) => handleSortKeyDown(e, "nom")}>
                 Nom{getSortIcon("nom")}
               </th>
-              <th
-                className="sortable"
-                onClick={() => handleSort("sexe")}
-              >
+              <th className="sortable" scope="col" aria-sort={getAriaSort("sexe")} tabIndex={0} onClick={() => handleSort("sexe")} onKeyDown={(e) => handleSortKeyDown(e, "sexe")}>
                 Sexe{getSortIcon("sexe")}
               </th>
-              <th
-                className="sortable"
-                onClick={() => handleSort("typeCompetition")}
-              >
+              <th className="sortable" scope="col" aria-sort={getAriaSort("typeCompetition")} tabIndex={0} onClick={() => handleSort("typeCompetition")} onKeyDown={(e) => handleSortKeyDown(e, "typeCompetition")}>
                 Type{getSortIcon("typeCompetition")}
               </th>
-              <th
-                className="sortable"
-                onClick={() => handleSort("annee")}
-              >
+              <th className="sortable" scope="col" aria-sort={getAriaSort("annee")} tabIndex={0} onClick={() => handleSort("annee")} onKeyDown={(e) => handleSortKeyDown(e, "annee")}>
                 Année{getSortIcon("annee")}
               </th>
-              <th
-                className="sortable"
-                onClick={() => handleSort("poids")}
-              >
+              <th className="sortable" scope="col" aria-sort={getAriaSort("poids")} tabIndex={0} onClick={() => handleSort("poids")} onKeyDown={(e) => handleSortKeyDown(e, "poids")}>
                 Poids{getSortIcon("poids")}
               </th>
-              <th
-                className="sortable"
-                onClick={() => handleSort("gant")}
-              >
+              <th className="sortable" scope="col" aria-sort={getAriaSort("gant")} tabIndex={0} onClick={() => handleSort("gant")} onKeyDown={(e) => handleSortKeyDown(e, "gant")}>
                 Gant{getSortIcon("gant")}
               </th>
-              <th
-                className="sortable"
-                onClick={() => handleSort("categoriePoids")}
-              >
+              <th className="sortable" scope="col" aria-sort={getAriaSort("categoriePoids")} tabIndex={0} onClick={() => handleSort("categoriePoids")} onKeyDown={(e) => handleSortKeyDown(e, "categoriePoids")}>
                 Cat. Poids{getSortIcon("categoriePoids")}
               </th>
-              <th
-                className="sortable"
-                onClick={() => handleSort("categorieAge")}
-              >
+              <th className="sortable" scope="col" aria-sort={getAriaSort("categorieAge")} tabIndex={0} onClick={() => handleSort("categorieAge")} onKeyDown={(e) => handleSortKeyDown(e, "categorieAge")}>
                 Cat. Âge{getSortIcon("categorieAge")}
               </th>
-              <th
-                className="sortable"
-                onClick={() => handleSort("club")}
-              >
+              <th className="sortable" scope="col" aria-sort={getAriaSort("club")} tabIndex={0} onClick={() => handleSort("club")} onKeyDown={(e) => handleSortKeyDown(e, "club")}>
                 Club{getSortIcon("club")}
               </th>
-              <th className="text-center" title="Information complète">
+              <th scope="col" className="text-center" title="Information complète" aria-label="Statut information">
                 ℹ️
               </th>
-              <th>Actions</th>
+              <th scope="col" aria-label="Actions"></th>
             </tr>
           </thead>
           <tbody>
@@ -260,11 +245,10 @@ function TireurRow({
           type="text"
           onSave={async (newValue) => {
             const parts = String(newValue).trim().split(/\s+/);
-            if (parts.length >= 2) {
-              const nom = parts[0];
-              const prenom = parts.slice(1).join(" ");
-              await onUpdate(b.id, "nom", `${nom}|${prenom}`);
-            }
+            if (parts.length < 2) return; // NOM + Prénom requis
+            const nom = parts[0];
+            const prenom = parts.slice(1).join(" ");
+            await onUpdate(b.id, "nom", `${nom}|${prenom}`);
           }}
         />
       </td>
@@ -309,7 +293,7 @@ function TireurRow({
               />{" "}
               {annee != null && (
                 <span className="age-hint">
-                  ({new Date().getUTCFullYear() - annee} ans)
+                  ({getCurrentYear() - annee} ans)
                 </span>
               )}
             </>
@@ -385,17 +369,17 @@ function TireurRow({
         >
           🗑️
         </button>
+        {revealed && (
+          <div className="swipe-delete-action">
+            <button onClick={handleDelete} aria-label="Supprimer">
+              🗑️ Supprimer
+            </button>
+            <button onClick={reset} className="swipe-cancel" aria-label="Annuler">
+              ✕
+            </button>
+          </div>
+        )}
       </td>
-      {revealed && (
-        <td className="swipe-delete-action" data-label="">
-          <button onClick={handleDelete} aria-label="Supprimer">
-            🗑️ Supprimer
-          </button>
-          <button onClick={reset} className="swipe-cancel" aria-label="Annuler">
-            ✕
-          </button>
-        </td>
-      )}
     </tr>
   );
 }

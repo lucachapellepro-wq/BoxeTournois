@@ -1,14 +1,13 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { Suspense, useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useMatches } from "@/hooks/useMatches";
 import Link from "next/link";
 import { Match } from "@/types/match";
 import { TournoiDetail } from "@/types";
 import {
-  isInterclub, isManuel, isMixte, isDemi, isFinale, isPoule,
-  isInterclubOrMixte,
+  isDemi, isFinale, isPoule,
   getMatchColor, getMatchLabel, getMatchLabelFull,
   getMatchTypeBadgeClass,
   extractWinners,
@@ -17,11 +16,17 @@ import { useTouchDragDrop } from "@/hooks/useTouchDragDrop";
 
 /** Feuille de tournoi imprimable : ordre des combats avec drag & drop, légende couleurs, vainqueurs */
 /** Organise les matchs par rounds avec espacement (fonction pure, hors composant) */
-function organizeByRounds(matchesToOrganize: Match[], spacing: number): Match[] {
+function organizeByRounds(matchesToOrganize: Match[], spacing: number, shuffle = false): Match[] {
   const spaceMatches = (matchList: Match[]) => {
     if (matchList.length === 0) return [];
 
-    const shuffled = [...matchList].sort(() => Math.random() - 0.5);
+    const shuffled = [...matchList];
+    if (shuffle) {
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+    }
     const result: Match[] = [];
     const remaining = [...shuffled];
 
@@ -77,6 +82,14 @@ function organizeByRounds(matchesToOrganize: Match[], spacing: number): Match[] 
 }
 
 export default function FeuilleTournoiPage() {
+  return (
+    <Suspense fallback={<div className="feuille-container"><div className="card"><div className="loading-state"><div className="spinner" /></div></div></div>}>
+      <FeuilleTournoiContent />
+    </Suspense>
+  );
+}
+
+function FeuilleTournoiContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const autoPrint = searchParams.get("print") === "true";
@@ -89,19 +102,30 @@ export default function FeuilleTournoiPage() {
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [minSpacing, setMinSpacing] = useState<number>(2);
   const [userReordered, setUserReordered] = useState(false);
+  const [printDate, setPrintDate] = useState("");
 
   const handleTouchReorder = useCallback((fromIndex: number, toIndex: number) => {
-    const newMatches = [...matches];
-    const [draggedMatch] = newMatches.splice(fromIndex, 1);
-    newMatches.splice(toIndex, 0, draggedMatch);
-    setMatches(newMatches);
+    setMatches((prev) => {
+      const newMatches = [...prev];
+      const [draggedMatch] = newMatches.splice(fromIndex, 1);
+      newMatches.splice(toIndex, 0, draggedMatch);
+      return newMatches;
+    });
     setUserReordered(true);
-  }, [matches]);
-  const touchDrag = useTouchDragDrop(matches, handleTouchReorder);
+  }, []);
+  const touchDrag = useTouchDragDrop(handleTouchReorder);
 
-  // Auto-print quand ouvert avec ?print=true (pour export PDF via "Enregistrer en PDF")
+  // Set print date client-side to avoid hydration mismatch
   useEffect(() => {
-    if (autoPrint && matches.length > 0 && tournoi) {
+    const now = new Date();
+    setPrintDate(`${now.toLocaleDateString("fr-FR")} à ${now.toLocaleTimeString("fr-FR")}`);
+  }, []);
+
+  // Auto-print quand ouvert avec ?print=true (une seule fois)
+  const hasPrinted = useRef(false);
+  useEffect(() => {
+    if (autoPrint && matches.length > 0 && tournoi && !hasPrinted.current) {
+      hasPrinted.current = true;
       const timer = setTimeout(() => window.print(), 500);
       return () => clearTimeout(timer);
     }
@@ -136,8 +160,8 @@ export default function FeuilleTournoiPage() {
     try {
       const res = await fetch(`/api/tournois/${tournoiId}`);
       if (res.ok) {
-        const data = await res.json();
-        setTournoi(data);
+        const data = await res.json().catch(() => null);
+        if (data) setTournoi(data);
       }
     } catch (error) {
       console.error("Erreur fetch tournoi:", error);
@@ -183,9 +207,9 @@ export default function FeuilleTournoiPage() {
     const realMatches = allMatches.filter(m => m.boxeur1 || m.boxeur2);
     const tbdMatches = allMatches.filter(m => !m.boxeur1 && !m.boxeur2);
 
-    // Organiser les deux groupes
-    const organizedReal = organizeByRounds(realMatches, minSpacing);
-    const organizedTbd = organizeByRounds(tbdMatches, minSpacing);
+    // Organiser les deux groupes (shuffle = true pour randomiser)
+    const organizedReal = organizeByRounds(realMatches, minSpacing, true);
+    const organizedTbd = organizeByRounds(tbdMatches, minSpacing, true);
 
     // Combiner avec séparateur
     const combined: (Match | { separator: true })[] = [];
@@ -205,6 +229,7 @@ export default function FeuilleTournoiPage() {
   };
 
   const winners = useMemo(() => extractWinners(initialMatches), [initialMatches]);
+  const realMatchCount = useMemo(() => matches.filter(m => !('separator' in m)).length, [matches]);
 
   if (!tournoi) {
     return (
@@ -234,13 +259,14 @@ export default function FeuilleTournoiPage() {
               ← Retour
             </Link>
             <div className="feuille-spacing-control">
-              <label>Espacement min :</label>
+              <label htmlFor="spacing-input">Espacement min :</label>
               <input
+                id="spacing-input"
                 type="number"
                 min="0"
                 max="20"
                 value={minSpacing}
-                onChange={(e) => setMinSpacing(parseInt(e.target.value) || 0)}
+                onChange={(e) => setMinSpacing(Math.max(0, parseInt(e.target.value) || 0))}
                 className="feuille-spacing-input"
               />
             </div>
@@ -262,10 +288,11 @@ export default function FeuilleTournoiPage() {
               year: "numeric",
               month: "long",
               day: "numeric",
+              timeZone: "UTC",
             })}
           </p>
           <p className="feuille-title-count">
-            {matches.filter(m => !('separator' in m)).length} combat{matches.filter(m => !('separator' in m)).length > 1 ? "s" : ""}
+            {realMatchCount} combat{realMatchCount > 1 ? "s" : ""}
           </p>
         </div>
 
@@ -430,7 +457,7 @@ export default function FeuilleTournoiPage() {
 
         {/* Footer pour impression */}
         <div className="feuille-footer">
-          <p>Document généré le {new Date().toLocaleDateString("fr-FR")} à {new Date().toLocaleTimeString("fr-FR")}</p>
+          {printDate && <p>Document généré le {printDate}</p>}
         </div>
       </div>
     </>

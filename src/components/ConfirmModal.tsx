@@ -1,7 +1,9 @@
 "use client";
 
+import { useId } from "react";
 import { useBottomSheetDrag } from "@/hooks/useBottomSheetDrag";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
+import { useEscapeKey } from "@/hooks/useEscapeKey";
 
 interface ConfirmModalProps {
   show: boolean;
@@ -12,6 +14,7 @@ interface ConfirmModalProps {
   loading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
+  id?: string;
 }
 
 /** Modal de confirmation mobile-friendly (remplace window.confirm) */
@@ -24,9 +27,13 @@ export function ConfirmModal({
   loading = false,
   onConfirm,
   onCancel,
+  id,
 }: ConfirmModalProps) {
   const { modalRef, onTouchStart, onTouchMove, onTouchEnd } = useBottomSheetDrag(onCancel);
   useBodyScrollLock(show);
+  useEscapeKey(show, onCancel);
+  const reactId = useId();
+  const titleId = `${id || reactId}-title`;
 
   if (!show) return null;
 
@@ -37,6 +44,7 @@ export function ConfirmModal({
         ref={modalRef}
         role="dialog"
         aria-modal="true"
+        aria-labelledby={titleId}
         onClick={(e) => e.stopPropagation()}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
@@ -44,7 +52,7 @@ export function ConfirmModal({
       >
         <div className="modal-handle" />
         <div className="modal-header">
-          <h2 className="modal-title">{title}</h2>
+          <h2 id={titleId} className="modal-title">{title}</h2>
           <button className="modal-close" onClick={onCancel} aria-label="Fermer">
             ✕
           </button>

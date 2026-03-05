@@ -47,7 +47,7 @@ export function BoxeursSeulsView({ boxeurs, onAddMatch }: BoxeursSeulsViewProps)
       </div>
 
       <div className="boxeur-seul-badges">
-        <span className="badge badge-sexe">{boxeur.sexe}</span>
+        <span className="badge badge-sexe">{boxeur.sexe === "M" ? "H" : "F"}</span>
         <span className="badge badge-poids">{boxeur.categoriePoids}</span>
         <span className="badge badge-age">{boxeur.categorieAge}</span>
         <span className="badge-gant" style={getGantStyle(boxeur.gant)}>

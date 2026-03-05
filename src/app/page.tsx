@@ -8,11 +8,13 @@ import { ConfirmModal } from "@/components/ConfirmModal";
 import { formatDate } from "@/lib/ui-helpers";
 import { Tournoi } from "@/types";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 /** Page d'accueil : liste des tournois avec création, édition et suppression */
 export default function TournoiPage() {
   const { tournois, loading, fetchTournois, createTournoi, updateTournoi, deleteTournoi } = useTournois();
   const { showToast } = useGlobalToast();
+  const router = useRouter();
 
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -70,8 +72,9 @@ export default function TournoiPage() {
       }
     } catch {
       showToast("Erreur réseau", "error");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   const handleDelete = (e: React.MouseEvent, id: number, nom: string) => {
@@ -133,18 +136,21 @@ export default function TournoiPage() {
             const upcoming = isUpcoming(t.date);
             const count = t._count?.boxeurs || 0;
             return (
-              <Link
+              <div
                 key={t.id}
-                href={`/tournois/${t.id}`}
                 className={`card card-clickable tournoi-card ${upcoming ? "tournoi-card-upcoming" : ""}`}
+                role="link"
+                tabIndex={0}
+                onClick={() => router.push(`/tournois/${t.id}`)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(`/tournois/${t.id}`); } }}
               >
                 <div className="tournoi-card-header">
                   <div className="tournoi-card-date">
                     <span className="tournoi-card-day">
-                      {new Date(t.date).getDate()}
+                      {new Date(t.date).getUTCDate()}
                     </span>
                     <span className="tournoi-card-month">
-                      {new Date(t.date).toLocaleDateString("fr-FR", { month: "short" }).toUpperCase()}
+                      {new Date(t.date).toLocaleDateString("fr-FR", { month: "short", timeZone: "UTC" }).toUpperCase()}
                     </span>
                     <span className="tournoi-card-year">
                       {new Date(t.date).getUTCFullYear()}
@@ -154,7 +160,7 @@ export default function TournoiPage() {
                     <h3 className="tournoi-card-name">{t.nom}</h3>
                     <p className="tournoi-card-meta">
                       {formatDate(t.date)}
-                      {upcoming && <span className="badge badge-upcoming">A venir</span>}
+                      {upcoming && <span className="badge badge-upcoming">À venir</span>}
                     </p>
                   </div>
                 </div>
@@ -172,18 +178,19 @@ export default function TournoiPage() {
                   <button
                     className="btn btn-sm btn-ghost"
                     onClick={(e) => handleOpenEdit(e, t)}
+                    aria-label={`Modifier le tournoi ${t.nom}`}
                   >
                     ✏️ Modifier
                   </button>
                   <button
                     className="btn-icon btn-danger"
                     onClick={(e) => handleDelete(e, t.id, t.nom)}
-                    title="Supprimer"
+                    aria-label={`Supprimer le tournoi ${t.nom}`}
                   >
                     🗑️
                   </button>
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>

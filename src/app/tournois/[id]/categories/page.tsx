@@ -5,30 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { sortByWeight } from "@/lib/ui-helpers";
 import { getGantStyle, getGantLabel } from "@/lib/categories";
-
-interface Boxeur {
-  id: number;
-  nom: string;
-  prenom: string;
-  sexe: string;
-  poids: number;
-  categoriePoids: string;
-  categorieAge: string;
-  gant: string;
-  typeCompetition: string;
-  club: {
-    nom: string;
-  };
-}
-
-interface TournoiDetail {
-  id: number;
-  nom: string;
-  date: string;
-  boxeurs: Array<{
-    boxeur: Boxeur;
-  }>;
-}
+import { Boxeur, TournoiDetail } from "@/types";
 
 export default function CategoriesPage() {
   const params = useParams();
@@ -41,8 +18,8 @@ export default function CategoriesPage() {
     try {
       const res = await fetch(`/api/tournois/${tournoiId}`);
       if (res.ok) {
-        const data = await res.json();
-        setTournoi(data);
+        const data = await res.json().catch(() => null);
+        if (data) setTournoi(data);
       }
     } catch (error) {
       console.error("Erreur fetch tournoi:", error);
@@ -155,6 +132,7 @@ export default function CategoriesPage() {
               year: "numeric",
               month: "long",
               day: "numeric",
+              timeZone: "UTC",
             })}
           </p>
         </div>
@@ -189,12 +167,13 @@ export default function CategoriesPage() {
       </div>
 
       {/* Filtre */}
-      <div className="filter-group section-gap">
+      <div className="filter-group section-gap" role="group" aria-label="Filtrer par type">
         {(["TOUS", "TOURNOI", "INTERCLUB"] as const).map((t) => (
           <button
             key={t}
             className={`btn btn-sm ${typeFilter === t ? "btn-primary" : "btn-ghost"}`}
             onClick={() => setTypeFilter(t)}
+            aria-pressed={typeFilter === t}
           >
             {t === "TOUS" ? "Tous" : t === "TOURNOI" ? "Tournoi" : "Interclub"}
           </button>

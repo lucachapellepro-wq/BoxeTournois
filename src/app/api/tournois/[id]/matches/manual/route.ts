@@ -55,6 +55,13 @@ export async function POST(
       return apiNotFound("Un ou plusieurs boxeurs non trouvés dans ce tournoi");
     }
 
+    // Calculer le prochain displayOrder
+    const maxOrder = await prisma.match.aggregate({
+      where: { tournoiId },
+      _max: { displayOrder: true },
+    });
+    const nextOrder = (maxOrder._max.displayOrder ?? 0) + 1;
+
     // Créer le match manuel (aucune restriction de catégorie)
     const match = await prisma.match.create({
       data: {
@@ -62,13 +69,13 @@ export async function POST(
         boxeur1: { connect: { id: boxeur1Id } },
         boxeur2: { connect: { id: boxeur2Id } },
         matchType: "POOL",
-        sexe: boxeur1.sexe === boxeur2.sexe ? boxeur1.sexe : "MIXTE",
+        sexe: boxeur1.sexe,
         categorieAge: categorieAge || boxeur1.categorieAge || "Non classé",
         categoriePoids: categoriePoids || boxeur1.categoriePoids || "Non classé",
         gant: gant || boxeur1.gant,
         categoryDisplay: "MANUEL",
         poolName: "MANUEL",
-        displayOrder: 999,
+        displayOrder: nextOrder,
       },
       include: {
         boxeur1: { include: { club: true } },

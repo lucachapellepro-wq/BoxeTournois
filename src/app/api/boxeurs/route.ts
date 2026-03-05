@@ -9,10 +9,16 @@ import { apiSuccess, apiBadRequest, apiConflict, apiError, safeJson, logApiError
 const boxeurSchema = z.object({
   nom: z.string().min(1, "Nom obligatoire").max(100),
   prenom: z.string().min(1, "Prénom obligatoire").max(100),
-  anneeNaissance: z.string().regex(/^\d{4}$/, "Année de naissance invalide"),
+  anneeNaissance: z.string().regex(/^\d{4}$/, "Année de naissance invalide").refine(
+    (v) => { const y = parseInt(v); return y >= 1920 && y <= new Date().getUTCFullYear(); },
+    "Année hors limites"
+  ),
   sexe: z.enum(["M", "F"], { message: "Sexe invalide (M ou F)" }),
-  poids: z.string().regex(/^\d+(\.\d+)?$/, "Poids invalide"),
-  gant: z.string().min(1, "Gant obligatoire"),
+  poids: z.string().regex(/^\d+(\.\d+)?$/, "Poids invalide").refine(
+    (v) => { const n = parseFloat(v); return n >= 20 && n <= 200; },
+    "Poids hors limites (20-200 kg)"
+  ),
+  gant: z.enum(["bleu", "vert", "rouge", "blanc", "jaune", "bronze", "argent", "or"], { message: "Gant invalide" }),
   clubId: z.string().regex(/^\d+$/, "Club invalide"),
   typeCompetition: z.enum(["TOURNOI", "INTERCLUB"]).optional().default("TOURNOI"),
 });
@@ -86,6 +92,10 @@ export async function POST(request: NextRequest) {
         `Ce tireur existe déjà : ${existing.nom.toUpperCase()} ${existing.prenom} (${existing.club.nom})`
       );
     }
+
+    // Vérifier que le club existe
+    const club = await prisma.club.findUnique({ where: { id: parseInt(clubId) } });
+    if (!club) return apiBadRequest("Club introuvable");
 
     const categorieAge: string = getCategorieAge(annee);
     const categoriePoids: string = getCategoriePoids(poidsNum, sexe, annee);

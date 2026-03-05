@@ -109,11 +109,13 @@ export default function TireursPage() {
       return;
     }
 
-    // Détection doublons côté client
+    // Détection doublons côté client (nom + prénom + année)
     const duplicate = boxeurs.find(
       (b) =>
         b.nom.toLowerCase() === form.nom.toLowerCase() &&
-        b.prenom.toLowerCase() === form.prenom.toLowerCase()
+        b.prenom.toLowerCase() === form.prenom.toLowerCase() &&
+        b.dateNaissance != null &&
+        new Date(b.dateNaissance).getUTCFullYear() === parseInt(form.anneeNaissance)
     );
     if (duplicate) {
       showToast(
@@ -145,13 +147,14 @@ export default function TireursPage() {
         setShowModal(false);
         fetchBoxeurs();
       } else {
-        const err = await res.json();
-        showToast(err.error || "Erreur", "error");
+        const err = await res.json().catch(() => null);
+        showToast(err?.error || "Erreur", "error");
       }
     } catch {
       showToast("Erreur réseau", "error");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   const handleAddClub = async () => {
@@ -159,19 +162,23 @@ export default function TireursPage() {
       showToast("Nom et ville obligatoires", "error");
       return;
     }
-    const res = await fetch("/api/clubs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(clubForm),
-    });
-    if (res.ok) {
-      showToast("Club ajouté ✓", "success");
-      setClubForm({ nom: "", ville: "", coach: "", couleur: "" });
-      setShowClubModal(false);
-      fetchClubs();
-    } else {
-      const err = await res.json().catch(() => null);
-      showToast(err?.error || "Erreur création club", "error");
+    try {
+      const res = await fetch("/api/clubs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(clubForm),
+      });
+      if (res.ok) {
+        showToast("Club ajouté ✓", "success");
+        setClubForm({ nom: "", ville: "", coach: "", couleur: "" });
+        setShowClubModal(false);
+        fetchClubs();
+      } else {
+        const err = await res.json().catch(() => null);
+        showToast(err?.error || "Erreur création club", "error");
+      }
+    } catch {
+      showToast("Erreur réseau", "error");
     }
   };
 
@@ -206,7 +213,7 @@ export default function TireursPage() {
                 }),
               });
               if (res.ok) {
-                showToast("Tireur restauré ✓", "success");
+                showToast("Tireur recréé (inscriptions tournois perdues)", "success");
                 fetchBoxeurs();
               }
             } catch {
@@ -291,10 +298,12 @@ export default function TireursPage() {
           placeholder="Rechercher par nom, prénom ou club..."
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
+          aria-label="Rechercher par nom, prénom ou club"
         />
         <select
           value={filterClub}
           onChange={(e) => setFilterClub(e.target.value)}
+          aria-label="Filtrer par club"
         >
           <option value="">Tous les clubs</option>
           {clubs.map((c) => (
@@ -304,6 +313,7 @@ export default function TireursPage() {
         <select
           value={filterSexe}
           onChange={(e) => setFilterSexe(e.target.value)}
+          aria-label="Filtrer par sexe"
         >
           <option value="">H / F</option>
           <option value="M">Hommes</option>
@@ -312,6 +322,7 @@ export default function TireursPage() {
         <select
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
+          aria-label="Filtrer par type de compétition"
         >
           <option value="">Tous types</option>
           <option value="TOURNOI">Tournoi</option>
@@ -329,22 +340,31 @@ export default function TireursPage() {
         )}
       </div>
 
-      <div className="tabs">
+      <div className="tabs" role="tablist">
         <button
-          className={`tab ${activeTab === "liste" ? "active" : ""}`}
+          id="tab-liste"
+          className={`tab ${activeTab === "liste" ? "tab-active" : ""}`}
           onClick={() => setActiveTab("liste")}
+          role="tab"
+          aria-selected={activeTab === "liste"}
+          aria-controls="tabpanel-liste"
         >
           Liste éditable
         </button>
         <button
-          className={`tab ${activeTab === "recap" ? "active" : ""}`}
+          id="tab-recap"
+          className={`tab ${activeTab === "recap" ? "tab-active" : ""}`}
           onClick={() => setActiveTab("recap")}
+          role="tab"
+          aria-selected={activeTab === "recap"}
+          aria-controls="tabpanel-recap"
         >
           Récapitulatif par catégorie
         </button>
       </div>
 
       {activeTab === "liste" && (
+        <div id="tabpanel-liste" role="tabpanel" aria-labelledby="tab-liste">
         <TireursTable
           boxeurs={filteredBoxeurs}
           loading={loading}
@@ -352,10 +372,13 @@ export default function TireursPage() {
           onUpdate={handleUpdate}
           onOpenModal={() => setShowModal(true)}
         />
+        </div>
       )}
 
       {activeTab === "recap" && (
-        <TireursRecap groupedByCategory={groupedByCategory} />
+        <div id="tabpanel-recap" role="tabpanel" aria-labelledby="tab-recap">
+          <TireursRecap groupedByCategory={groupedByCategory} />
+        </div>
       )}
 
       <ModalTireur

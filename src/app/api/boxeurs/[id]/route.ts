@@ -8,10 +8,16 @@ import { apiSuccess, apiBadRequest, apiNotFound, apiConflict, apiError, parseId,
 const boxeurUpdateSchema = z.object({
   nom: z.string().min(1).max(100).optional(),
   prenom: z.string().min(1).max(100).optional(),
-  anneeNaissance: z.string().regex(/^\d{4}$/, "Année invalide").optional(),
+  anneeNaissance: z.string().regex(/^\d{4}$/, "Année invalide").refine(
+    (v) => { const y = parseInt(v); return y >= 1920 && y <= new Date().getUTCFullYear(); },
+    "Année hors limites"
+  ).optional(),
   sexe: z.enum(["M", "F"]).optional(),
-  poids: z.string().regex(/^\d+(\.\d+)?$/, "Poids invalide").optional(),
-  gant: z.string().min(1).optional(),
+  poids: z.string().regex(/^\d+(\.\d+)?$/, "Poids invalide").refine(
+    (v) => { const n = parseFloat(v); return n >= 20 && n <= 200; },
+    "Poids hors limites (20-200 kg)"
+  ).optional(),
+  gant: z.enum(["bleu", "vert", "rouge", "blanc", "jaune", "bronze", "argent", "or"]).optional(),
   infoIncomplete: z.boolean().optional(),
   typeCompetition: z.enum(["TOURNOI", "INTERCLUB"]).optional(),
 });
@@ -25,15 +31,14 @@ export async function DELETE(
   const boxeurId = parseId(id);
   if (!boxeurId) return apiBadRequest("ID invalide");
   try {
-    // Vérifier si le boxeur a des matchs en attente (PENDING uniquement)
+    // Vérifier si le boxeur a des matchs (tous statuts confondus)
     const matchCount = await prisma.match.count({
       where: {
         OR: [{ boxeur1Id: boxeurId }, { boxeur2Id: boxeurId }],
-        status: "PENDING",
       },
     });
     if (matchCount > 0) {
-      return apiConflict(`Ce tireur a ${matchCount} combat(s) en attente. Retirez-le des tournois d'abord.`);
+      return apiConflict(`Ce tireur a ${matchCount} combat(s) associé(s). Retirez-le des tournois d'abord.`);
     }
 
     await prisma.boxeur.delete({ where: { id: boxeurId } });
@@ -108,15 +113,22 @@ export async function PUT(
 
       const poidsToUse = poids ? parseFloat(poids) : currentBoxeur.poids;
       const sexeToUse = sexe || currentBoxeur.sexe;
+      if (!anneeNaissance && currentBoxeur.dateNaissance == null) {
+        return apiBadRequest("Date de naissance manquante, impossible de recalculer la catégorie");
+      }
       const anneeToUse = anneeNaissance
         ? parseInt(anneeNaissance)
-        : currentBoxeur.dateNaissance.getUTCFullYear();
+        : currentBoxeur.dateNaissance!.getUTCFullYear();
 
       updateData.categoriePoids = getCategoriePoids(
         poidsToUse,
         sexeToUse,
         anneeToUse
       );
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return apiBadRequest("Aucune donnée à mettre à jour");
     }
 
     const boxeur = await prisma.boxeur.update({

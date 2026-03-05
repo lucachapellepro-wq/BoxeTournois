@@ -46,11 +46,13 @@ export function NavBar() {
         ref={toggleRef}
         className="nav-toggle"
         onClick={() => setIsOpen(!isOpen)}
-        aria-label="Menu"
+        aria-label={isOpen ? "Fermer le menu" : "Ouvrir le menu"}
+        aria-expanded={isOpen}
+        aria-controls="main-nav"
       >
         {isOpen ? "✕" : "☰"}
       </button>
-      <nav ref={navRef} className={isOpen ? "nav-mobile-open" : ""}>
+      <nav ref={navRef} id="main-nav" aria-label="Navigation principale" className={isOpen ? "nav-mobile-open" : ""}>
         <Link href="/" className={isActive("/")} onClick={() => setIsOpen(false)}>
           Tournoi
         </Link>

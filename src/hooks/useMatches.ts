@@ -5,12 +5,10 @@ import { Match, MatchResult, MatchStats } from "@/types/match";
 export function useMatches(tournoiId: number) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<MatchStats | null>(null);
 
   const fetchMatches = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       const res = await fetch(`/api/tournois/${tournoiId}/matches?stats=true`);
       if (res.ok) {
@@ -50,8 +48,6 @@ export function useMatches(tournoiId: number) {
         });
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Erreur réseau";
-      setError(message);
       console.error("Erreur fetch matchs:", err);
     } finally {
       setLoading(false);
@@ -179,27 +175,9 @@ export function useMatches(tournoiId: number) {
     [tournoiId, fetchMatches]
   );
 
-  const deleteAllMatches = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/tournois/${tournoiId}/matches?force=true`, {
-        method: "DELETE",
-      });
-
-      if (res.ok) {
-        await fetchMatches();
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error("Erreur suppression matchs:", error);
-      return false;
-    }
-  }, [tournoiId, fetchMatches]);
-
   return {
     matches,
     loading,
-    error,
     stats,
     fetchMatches,
     generateMatches,
@@ -207,6 +185,5 @@ export function useMatches(tournoiId: number) {
     addOpponentToMatch,
     updateMatchResult,
     deleteMatch,
-    deleteAllMatches,
   };
 }

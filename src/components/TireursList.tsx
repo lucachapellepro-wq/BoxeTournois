@@ -1,6 +1,6 @@
 import { Boxeur, getAnneeFromDate } from "@/types";
 import { getGantStyle, getGantLabel } from "@/lib/categories";
-import { clubColorStyle } from "@/lib/ui-helpers";
+import { clubColorStyle, getCurrentYear } from "@/lib/ui-helpers";
 import { useSwipeRow } from "./SwipeRow";
 
 /** Props de la liste de tireurs (lecture seule) */
@@ -38,18 +38,18 @@ export function TireursList({ boxeurs, loading, onDelete, onOpenModal }: Tireurs
   return (
     <div className="card">
       <div className="table-wrapper">
-        <table>
+        <table aria-label="Liste des tireurs du tournoi">
           <thead>
             <tr>
-              <th>Nom</th>
-              <th>Sexe</th>
-              <th>Année</th>
-              <th>Poids</th>
-              <th>Gant</th>
-              <th>Cat. Poids</th>
-              <th>Cat. Âge</th>
-              <th>Club</th>
-              <th></th>
+              <th scope="col">Nom</th>
+              <th scope="col">Sexe</th>
+              <th scope="col">Année</th>
+              <th scope="col">Poids</th>
+              <th scope="col">Gant</th>
+              <th scope="col">Cat. Poids</th>
+              <th scope="col">Cat. Âge</th>
+              <th scope="col">Club</th>
+              <th scope="col" aria-label="Actions"></th>
             </tr>
           </thead>
           <tbody>
@@ -78,12 +78,12 @@ function TireurListRow({ b, onDelete }: { b: Boxeur; onDelete: () => void }) {
         </span>
       </td>
       <td data-label="Année">
-        {b.dateNaissance ? getAnneeFromDate(b.dateNaissance) : "—"}{" "}
-        {b.dateNaissance != null && (
-          <span className="age-hint">
-            ({new Date().getUTCFullYear() - (getAnneeFromDate(b.dateNaissance) ?? 0)} ans)
-          </span>
-        )}
+        {(() => {
+          const annee = b.dateNaissance != null ? getAnneeFromDate(b.dateNaissance) : null;
+          return annee != null
+            ? <>{annee} <span className="age-hint">({getCurrentYear() - annee} ans)</span></>
+            : "—";
+        })()}
       </td>
       <td data-label="Poids">{b.poids} kg</td>
       <td data-label="Gant">
@@ -104,21 +104,21 @@ function TireurListRow({ b, onDelete }: { b: Boxeur; onDelete: () => void }) {
         <button
           className="btn btn-danger btn-sm"
           onClick={onDelete}
-          aria-label="Retirer du tournoi"
+          aria-label={`Retirer ${b.nom} ${b.prenom} du tournoi`}
         >
           ✕
         </button>
+        {revealed && (
+          <div className="swipe-delete-action">
+            <button onClick={handleDelete} aria-label="Supprimer">
+              🗑️ Supprimer
+            </button>
+            <button onClick={reset} className="swipe-cancel" aria-label="Annuler">
+              ✕
+            </button>
+          </div>
+        )}
       </td>
-      {revealed && (
-        <td className="swipe-delete-action" data-label="">
-          <button onClick={handleDelete} aria-label="Supprimer">
-            🗑️ Supprimer
-          </button>
-          <button onClick={reset} className="swipe-cancel" aria-label="Annuler">
-            ✕
-          </button>
-        </td>
-      )}
     </tr>
   );
 }

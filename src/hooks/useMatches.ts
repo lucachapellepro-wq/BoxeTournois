@@ -4,7 +4,7 @@ import { Match, MatchResult, MatchStats } from "@/types/match";
 /** Hook de gestion des matchs d'un tournoi : CRUD, génération auto, stats par catégorie */
 export function useMatches(tournoiId: number) {
   const [matches, setMatches] = useState<Match[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<MatchStats | null>(null);
 
   const fetchMatches = useCallback(async () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useMatches } from "@/hooks/useMatches";
 import { useGlobalToast } from "@/contexts/ToastContext";
@@ -36,13 +36,13 @@ function renderSexeSections<T>(
       {data.F.length > 0 && (
         <div className="section-gap">
           <h2 className="section-header section-header-femmes">FEMMES</h2>
-          {data.F.map(([cat, items]) => renderContent(cat, items))}
+          {data.F.map(([cat, items]) => <React.Fragment key={cat}>{renderContent(cat, items)}</React.Fragment>)}
         </div>
       )}
       {data.M.length > 0 && (
         <div className="section-gap-lg">
           <h2 className="section-header section-header-hommes">HOMMES</h2>
-          {data.M.map(([cat, items]) => renderContent(cat, items))}
+          {data.M.map(([cat, items]) => <React.Fragment key={cat}>{renderContent(cat, items)}</React.Fragment>)}
         </div>
       )}
     </>
@@ -127,21 +127,20 @@ export default function AffrontementsPage() {
     const match = matches.find((m) => m.id === matchId);
     const success = await deleteMatch(matchId);
     if (success) {
-      showToast("Combat supprimé ✓", "success", {
+      const canRestore = !!(match?.boxeur1Id && match?.boxeur2Id);
+      showToast("Combat supprimé ✓", "success", canRestore ? {
         action: {
           label: "Annuler",
           onClick: async () => {
-            if (match?.boxeur1Id && match?.boxeur2Id) {
-              const restored = await createManualMatch(match.boxeur1Id, match.boxeur2Id);
-              if (restored) {
-                showToast("Combat recréé en manuel", "success");
-              } else {
-                showToast("Erreur restauration", "error");
-              }
+            const restored = await createManualMatch(match!.boxeur1Id!, match!.boxeur2Id!);
+            if (restored) {
+              showToast("Combat recréé en manuel", "success");
+            } else {
+              showToast("Erreur restauration", "error");
             }
           },
         },
-      });
+      } : undefined);
     } else {
       showToast("Erreur lors de la suppression", "error");
     }

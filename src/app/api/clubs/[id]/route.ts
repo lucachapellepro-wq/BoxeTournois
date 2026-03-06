@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { apiSuccess, apiBadRequest, apiNotFound, apiError, parseId, safeJson } from "@/lib/api-response";
+import { apiSuccess, apiBadRequest, apiNotFound, apiConflict, apiError, parseId, safeJson } from "@/lib/api-response";
 
 /** Schéma de validation Zod pour la mise à jour d'un club */
 const clubUpdateSchema = z.object({
@@ -86,5 +86,34 @@ export async function PUT(
       return apiNotFound("Club non trouvé");
     }
     return apiError("Erreur lors de la mise à jour");
+  }
+}
+
+// DELETE /api/clubs/[id]
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const clubId = parseId(id);
+  if (!clubId) return apiBadRequest("ID invalide");
+  try {
+    // Vérifier si le club a des boxeurs
+    const boxeurCount = await prisma.boxeur.count({
+      where: { clubId },
+    });
+    if (boxeurCount > 0) {
+      return apiConflict(
+        `Ce club a ${boxeurCount} tireur(s). Supprimez ou réaffectez les tireurs d'abord.`
+      );
+    }
+
+    await prisma.club.delete({ where: { id: clubId } });
+    return apiSuccess({ success: true });
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "P2025") {
+      return apiNotFound("Club non trouvé");
+    }
+    return apiError("Erreur lors de la suppression");
   }
 }

@@ -117,8 +117,9 @@ export type WinnerEntry = {
 export function extractWinners(matches: Match[]): WinnerEntry[] {
   const result: WinnerEntry[] = [];
 
-  // 1. Boxeurs seuls (match avec un seul boxeur)
+  // 1. Boxeurs seuls (match avec un seul boxeur) — exclure MANUEL partiels
   matches.forEach((m) => {
+    if (isManuel(m)) return; // MANUEL partiel = match incomplet, pas un vainqueur
     if (m.boxeur1 && !m.boxeur2) {
       result.push({ boxeur: m.boxeur1, category: m.categoryDisplay || m.categoriePoids, sexe: m.sexe, source: "solo" });
     } else if (!m.boxeur1 && m.boxeur2) {
@@ -126,14 +127,17 @@ export function extractWinners(matches: Match[]): WinnerEntry[] {
     }
   });
 
-  // 2. Tireurs Tournoi dans les rencontres interclub/mixte (exclure manuels et solos)
+  // 2. Tireurs Tournoi dans les rencontres interclub/mixte (exclure manuels, solos, doublons)
+  const seenIds = new Set(result.map((r) => r.boxeur.id));
   matches.forEach((m) => {
     if (!isInterclub(m) && !isMixte(m)) return;
     if (!m.boxeur1 || !m.boxeur2) return;
-    if (m.boxeur1?.typeCompetition === "TOURNOI") {
+    if (m.boxeur1.typeCompetition === "TOURNOI" && !seenIds.has(m.boxeur1.id)) {
+      seenIds.add(m.boxeur1.id);
       result.push({ boxeur: m.boxeur1, category: m.categoryDisplay || m.categoriePoids, sexe: m.sexe, source: "interclub" });
     }
-    if (m.boxeur2?.typeCompetition === "TOURNOI") {
+    if (m.boxeur2.typeCompetition === "TOURNOI" && !seenIds.has(m.boxeur2.id)) {
+      seenIds.add(m.boxeur2.id);
       result.push({ boxeur: m.boxeur2, category: m.categoryDisplay || m.categoriePoids, sexe: m.sexe, source: "interclub" });
     }
   });

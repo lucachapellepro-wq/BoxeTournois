@@ -106,8 +106,8 @@ export default function ClubsPage() {
     const boxeur = boxeurs.find((b) => b.id === id);
     if (!boxeur) return;
 
-    const success = await deleteBoxeur(id);
-    if (success) {
+    const result = await deleteBoxeur(id);
+    if (result.success) {
       showToast(`${boxeur.nom.toUpperCase()} ${boxeur.prenom} supprimé`, "success", {
         action: {
           label: "Annuler",
@@ -141,7 +141,7 @@ export default function ClubsPage() {
         },
       });
     } else {
-      showToast("Erreur suppression", "error");
+      showToast(result.error || "Erreur suppression", "error");
     }
   };
 

@@ -287,9 +287,10 @@ function generatePoolsWithFinal(
   cat: CategoryInfo,
   tid: number
 ): MatchCreateData[] {
-  const mid = Math.ceil(boxers.length / 2);
-  const pouleA = boxers.slice(0, mid);
-  const pouleB = boxers.slice(mid);
+  const sorted = smartPairing(boxers);
+  const mid = Math.ceil(sorted.length / 2);
+  const pouleA = sorted.slice(0, mid);
+  const pouleB = sorted.slice(mid);
 
   const matchesA = generateRoundRobin(pouleA, cat, tid, "A", 0);
   const matchesB = generateRoundRobin(pouleB, cat, tid, "B", matchesA.length);
@@ -306,8 +307,9 @@ function generateTwoPools(
   cat: CategoryInfo,
   tid: number
 ): MatchCreateData[] {
-  const matchesA = generateRoundRobin(boxers.slice(0, 4), cat, tid, "A", 0);
-  const matchesB = generateRoundRobin(boxers.slice(4, 7), cat, tid, "B", matchesA.length);
+  const sorted = smartPairing(boxers);
+  const matchesA = generateRoundRobin(sorted.slice(0, 4), cat, tid, "A", 0);
+  const matchesB = generateRoundRobin(sorted.slice(4, 7), cat, tid, "B", matchesA.length);
   return [...matchesA, ...matchesB];
 }
 
@@ -341,7 +343,7 @@ export function generateLargePools(
   tid: number
 ): MatchCreateData[] {
   const matches: MatchCreateData[] = [];
-  const pools = divideIntoPools(boxers);
+  const pools = divideIntoPools(smartPairing(boxers));
 
   pools.forEach((pool, poolIdx) => {
     const poolName = String.fromCharCode(65 + poolIdx); // A, B, C...
@@ -380,6 +382,7 @@ function smartPairing(boxers: Boxeur[]): Boxeur[] {
 
 /** Retourne la valeur la plus fréquente d'un tableau de strings */
 function mostFrequent(values: string[]): string {
+  if (values.length === 0) return "";
   const counts = new Map<string, number>();
   for (const v of values) {
     counts.set(v, (counts.get(v) ?? 0) + 1);
@@ -432,7 +435,7 @@ export function linkBracketMatches(
     currentMatches.forEach((match, idx) => {
       updates.push({
         id: match.id,
-        nextMatchId: nextMatches[Math.floor(idx / 2)]?.id || null,
+        nextMatchId: nextMatches[Math.floor(idx / 2)]?.id ?? null,
       });
     });
   }

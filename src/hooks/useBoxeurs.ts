@@ -7,18 +7,18 @@ export function useBoxeurs() {
   const { data: boxeurs, loading, error, fetchData: fetchBoxeurs } = useFetch<Boxeur[]>("/api/boxeurs", []);
 
   const deleteBoxeur = useCallback(
-    async (id: number) => {
+    async (id: number): Promise<{ success: boolean; error?: string }> => {
       try {
         const res = await fetch(`/api/boxeurs/${id}`, { method: "DELETE" });
         if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || "Erreur suppression");
+          const err = await res.json().catch(() => null);
+          return { success: false, error: err?.error || "Erreur suppression" };
         }
         await fetchBoxeurs();
-        return true;
+        return { success: true };
       } catch (error) {
         console.error("Erreur suppression boxeur:", error);
-        return false;
+        return { success: false, error: "Erreur réseau" };
       }
     },
     [fetchBoxeurs],
